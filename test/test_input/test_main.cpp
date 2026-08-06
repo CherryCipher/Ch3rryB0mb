@@ -1,6 +1,7 @@
 #include <unity.h>
 
 #include "input/InputEvent.h"
+#include "FakeInputDevice.h"
 
 void setUp() {
 }
@@ -25,10 +26,45 @@ void test_input_event_stores_action_and_type() {
     );
 }
 
+void test_fake_input_device_returns_added_event() {
+    FakeInputDevice device;
+
+    device.addEvent({
+        InputAction::Down,
+        InputEventType::Pressed
+    });
+
+    InputEvent receivedEvent;
+    bool received = device.poll(receivedEvent);
+
+    TEST_ASSERT_TRUE(received);
+
+    TEST_ASSERT_EQUAL_INT(
+        static_cast<int>(InputAction::Down),
+        static_cast<int>(receivedEvent.action)
+    );
+
+    TEST_ASSERT_EQUAL_INT(
+        static_cast<int>(InputEventType::Pressed),
+        static_cast<int>(receivedEvent.type)
+    );
+}
+
+void test_fake_input_device_returns_false_when_empty() {
+    FakeInputDevice device;
+    InputEvent receivedEvent;
+
+    bool received = device.poll(receivedEvent);
+
+    TEST_ASSERT_FALSE(received);
+}
+
 int main() {
     UNITY_BEGIN();
 
     RUN_TEST(test_input_event_stores_action_and_type);
+    RUN_TEST(test_fake_input_device_returns_added_event);
+    RUN_TEST(test_fake_input_device_returns_false_when_empty);
 
     return UNITY_END();
 }
