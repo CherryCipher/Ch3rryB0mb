@@ -30,6 +30,17 @@ part of the project.
 
 > In it to learn. Building it to understand it.
 
+## Disclaimer
+
+Ch3rryB0mb is educational firmware intended for learning about embedded
+development, networking and the security of systems you own or are
+explicitly authorized to test.
+
+Do not use this software against networks, devices or systems without
+permission. The author does not encourage or condone misuse.
+
+Be curious. Be responsible.
+
 ## Features
 
 Currently implemented:
@@ -53,3 +64,12 @@ Build the ESP32 firmware:
 
 ```powershell
 pio run -e esp32dev
+```
+
+## Contributing
+
+Ch3rryB0mb is currently a personal learning project, but feedback, suggestions and educational contributions are welcome.
+
+## License
+
+No specific license has been selected yet, but the project will be open source.
