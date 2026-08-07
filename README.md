@@ -64,11 +64,8 @@ Ch3rryB0mb is built as a modular collection of educational apps. Each app is des
 |    ☐   | **💳 Tag Creator**              | Create tags containing text, URLs, contact cards and Wi-Fi credentials.                                       |
 |    ☐   | **💳 Tag Library**              | Store, organize and reuse frequently used tag templates.                                                      |
 |    ☐   | **💳 Access Card Analyzer**     | Explore supported RFID cards to learn about memory layout, sectors and stored data.                           |
-|    ☐   | **🔐 Crypto Lab**               | Learn how modern encryption works by exchanging encrypted messages between devices.                           |
-|    ☐   | **🔐 Hash Playground**          | Explore hashing algorithms and compare their properties.                                                      |
 |    ☐   | **🔐 Secure Radio**             | Experiment with encrypted communication over NRF24 and LoRa.                                                  |
 |    ☐   | **🌐 Protocol Visualizer**      | Watch network protocols move through the OSI model in real time.                                              |
-|    ☐   | **🌐 OSI Explorer**             | Interactively explore every OSI layer with live examples and explanations.                                    |
 |    ☐   | **🌐 Packet Timeline**          | Visualize complete communication flows from ARP and DNS to TCP, TLS and HTTP.                                 |
 |    ☐   | **📈 Signal Recorder**          | Capture wireless measurements for later analysis.                                                             |
 |    ☐   | **📈 Waterfall Display**        | Visualize radio activity over time.                                                                           |
