@@ -52,17 +52,11 @@ Ch3rryB0mb is built as a modular collection of educational apps. Each app is des
 |    ☐   | **📡 LoRa Explorer**            | Explore LoRa communication while experimenting with frequency, spreading factor and bandwidth.                |
 |    ☐   | **📡 LoRa Packet Lab**          | Build and analyze LoRa communication while learning about airtime, reliability and range.                     |
 |    ☐   | **📡 LoRa Messenger**           | Create secure long-range messaging between Ch3rryB0mb devices.                                                |
-|    ☐   | **📡 LoRa Telemetry**           | Transmit and visualize sensor data over long distances.                                                       |
 |    ☐   | **📻 CC1101 Spectrum Explorer** | Visualize Sub-GHz radio activity across supported frequency ranges.                                           |
 |    ☐   | **📻 CC1101 Signal Analyzer**   | Measure RSSI, modulation and channel occupancy.                                                               |
 |    ☐   | **📻 CC1101 Packet Lab**        | Experiment with your own Sub-GHz communication protocols and compare modulation settings.                     |
 |    ☐   | **📍 GPS Dashboard**            | View live position, speed, altitude, satellites and positioning accuracy.                                     |
-|    ☐   | **📍 GPS Logger**               | Record routes and export GPX, CSV and KML tracks.                                                             |
 |    ☐   | **📍 RF Mapper**                | Combine GPS with Wi-Fi, BLE and RF scans to create wireless coverage maps.                                    |
-|    ☐   | **🌐 Protocol Visualizer**      | Watch network protocols move through the OSI model in real time.                                              |
-|    ☐   | **🌐 Packet Timeline**          | Visualize complete communication flows from ARP and DNS to TCP, TLS and HTTP.                                 |
-|    ☐   | **📈 Signal Recorder**          | Capture wireless measurements for later analysis.                                                             |
-|    ☐   | **📈 Waterfall Display**        | Visualize radio activity over time.                                                                           |
 |    ☐   | **📈 Live Spectrum**            | Monitor RF activity across all supported radio modules in real time.                                          |
 
 
