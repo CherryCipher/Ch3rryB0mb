@@ -42,7 +42,7 @@ Ch3rryB0mb is built as a modular collection of educational apps. Each app is des
 |    ☐   | **📡 WiFi Channel Analyzer**    | Visualize channel usage, interference and channel overlap.                                                    |
 |    ☐   | **📡 WiFi Packet Lab**          | Learn networking by sending and observing protocols such as ARP, ICMP, DNS, TCP and HTTP on your own network. |
 |    ☐   | **📡 WiFi Network Health**      | Analyze signal strength, channel congestion, roaming quality and security recommendations.                    |
-|    ☐   | **📡 WiFi Wardrive**            | Map Wi-Fi networks with GPS and export results to CSV, GPX, KML or GeoJSON.                                   |
+|    ☐   | **📡 Wardrive**                 | Map Wi-Fi networks with GPS and export results to CSV, GPX, KML or GeoJSON.                                   |
 |    ☐   | **📶 BLE Explorer**             | Discover nearby BLE devices and inspect advertisements, manufacturers, services and signal strength.          |
 |    ☐   | **📶 BLE Fox Hunt**             | Locate Bluetooth devices using live signal strength, audio feedback and distance estimation.                  |
 |    ☐   | **📶 BLE Device Logger**        | Record and revisit discovered BLE devices over time.                                                          |
@@ -59,12 +59,6 @@ Ch3rryB0mb is built as a modular collection of educational apps. Each app is des
 |    ☐   | **📍 GPS Dashboard**            | View live position, speed, altitude, satellites and positioning accuracy.                                     |
 |    ☐   | **📍 GPS Logger**               | Record routes and export GPX, CSV and KML tracks.                                                             |
 |    ☐   | **📍 RF Mapper**                | Combine GPS with Wi-Fi, BLE and RF scans to create wireless coverage maps.                                    |
-|    ☐   | **💳 RFID Explorer**            | Read and inspect supported RFID and NFC tags.                                                                 |
-|    ☐   | **💳 RFID Writer**              | Write supported RFID and NFC tags for educational and laboratory use.                                         |
-|    ☐   | **💳 Tag Creator**              | Create tags containing text, URLs, contact cards and Wi-Fi credentials.                                       |
-|    ☐   | **💳 Tag Library**              | Store, organize and reuse frequently used tag templates.                                                      |
-|    ☐   | **💳 Access Card Analyzer**     | Explore supported RFID cards to learn about memory layout, sectors and stored data.                           |
-|    ☐   | **🔐 Secure Radio**             | Experiment with encrypted communication over NRF24 and LoRa.                                                  |
 |    ☐   | **🌐 Protocol Visualizer**      | Watch network protocols move through the OSI model in real time.                                              |
 |    ☐   | **🌐 Packet Timeline**          | Visualize complete communication flows from ARP and DNS to TCP, TLS and HTTP.                                 |
 |    ☐   | **📈 Signal Recorder**          | Capture wireless measurements for later analysis.                                                             |
