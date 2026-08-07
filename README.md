@@ -72,7 +72,6 @@ Ch3rryB0mb is designed around the ESP32 Cheap Yellow Display (CYD) and a collect
 |  ☐ | **NRF24L01+ PA/LNA**            | 2.4 GHz transceiver for custom wireless communication and spectrum exploration. |
 |  ☐ | **CC1101**                      | Sub-GHz transceiver supporting 315 / 433 / 868 / 915 MHz experimentation.       |
 |  ☐ | **SX1262 LoRa Module**          | Long-range LoRa communication and telemetry experiments.                        |
-|  ☐ | **MFRC522 RFID/NFC Reader**     | Read, write and explore compatible RFID and NFC tags.                           |
 |  ☐ | **NEO-M8N GPS Module**          | GPS positioning, wardriving and RF mapping.                                     |
 
 ### Planned Hardware
