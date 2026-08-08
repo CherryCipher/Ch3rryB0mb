@@ -36,25 +36,16 @@ Ch3rryB0mb is built as a modular collection of educational apps. Each app is des
 
 > **Note:** This is a wishlist and roadmap. Features will be checked off as they are implemented.
 
-| Status | App                             | Description                                                                                                   |
-| :----: | ------------------------------- | ------------------------------------------------------------------------------------------------------------- |
-|    ☐   | **📡 WiFi Explorer**            | Discover and inspect nearby Wi-Fi networks, including security, channels, vendors and signal quality.         |
-|    ☐   | **📡 WiFi Channel Analyzer**    | Visualize channel usage, interference and channel overlap.                                                    |
-|    ☐   | **📡 WiFi Packet Lab**          | Learn networking by sending and observing protocols such as ARP, ICMP, DNS, TCP and HTTP on your own network. |
-|    ☐   | **📡 WiFi Network Health**      | Analyze signal strength, channel congestion, roaming quality and security recommendations.                    |
-|    ☐   | **📡 Wardrive**                 | Map Wi-Fi networks with GPS and export results to CSV, GPX, KML or GeoJSON.                                   |
-|    ☐   | **📶 BLE Explorer**             | Discover nearby BLE devices and inspect advertisements, manufacturers, services and signal strength.          |
-|    ☐   | **📶 BLE Fox Hunt**             | Locate Bluetooth devices using live signal strength, audio feedback and distance estimation.                  |
-|    ☐   | **📶 BLE Device Logger**        | Record and revisit discovered BLE devices over time.                                                          |
-|    ☐   | **📻 NRF24 Spectrum Explorer**  | Visualize activity across the 2.4 GHz ISM band using NRF24 radio modules.                                     |
-|    ☐   | **📻 NRF24 Packet Lab**         | Send, receive and inspect NRF24 packets while experimenting with payloads, acknowledgements and data rates.   |
-|    ☐   | **📻 NRF24 Messenger**          | Exchange encrypted messages between Ch3rryB0mb devices.                                                       |
-|    ☐   | **📡 LoRa Explorer**            | Explore LoRa communication while experimenting with frequency, spreading factor and bandwidth.                |
-|    ☐   | **📡 LoRa Packet Lab**          | Build and analyze LoRa communication while learning about airtime, reliability and range.                     |
-|    ☐   | **📡 LoRa Messenger**           | Create secure long-range messaging between Ch3rryB0mb devices.                                                |
-|    ☐   | **📻 CC1101 Spectrum Explorer** | Visualize Sub-GHz radio activity across supported frequency ranges.                                           |
-|    ☐   | **📻 CC1101 Signal Analyzer**   | Measure RSSI, modulation and channel occupancy.                                                               |
-|    ☐   | **📻 CC1101 Packet Lab**        | Experiment with your own Sub-GHz communication protocols and compare modulation settings.                     |
+| Status | Feature                  | Description                                                                                                   |
+| :----: | -------------------      | ------------------------------------------------------------------------------------------------------------- |
+|    ☐   | **📡 WiFi Lab**         | Discover and inspect nearby Wi-Fi networks, visualize channel usage, interference and channel overlap, send and observe protocols such as ARP, ICMP, DNS, TCP and HTTP. Analyze signal strength, RSSI, SNR, channel congestion, roaming quality and security|
+|    ☐   | **📡 Wardriving**       | Map Wi-Fi networks with GPS and export results to CSV, GPX, KML or GeoJSON.|
+|    ☐   | **📡 AP Mode**          | Turn your Ch3rryB0mb into a configurable Wi-Fi access point. Experiment with channels, security, connected clients and RF statistics. |
+|    ☐   | **📶 BLE Explorer**     | Discover nearby BLE devices and inspect advertisements, manufacturers, services and signal strength.          |
+|    ☐   | **📶 BLE Fox Hunt**     | Locate Bluetooth devices using live signal strength, audio feedback and distance estimation.                  |
+|    ☐   | **📻 NRF24 Lab**        | Visualize activity across the 2.4 GHz ISM band using NRF24 radio modules, Send, receive and inspect NRF24 packets. With Ch3rryN0des exchange encrypted messages between Ch3rryB0mb devices.                                     |
+|    ☐   | **📡 LoRa Lab**         | Explore LoRa communication, experiment with frequency, spreading factor and bandwidth. Create secure long-range messaging between Ch3rryB0mb and Ch3rryN0de devices.               |
+|    ☐   | **📻 CC1101 Lab**       | Visualize Sub-GHz radio activity, measure RSSI, modulation and channel occupancy. Experiment with your own Sub-GHz communication protocols and compare modulation settings.|
 |    ☐   | **📍 GPS Dashboard**            | View live position, speed, altitude, satellites and positioning accuracy.                                     |
 |    ☐   | **📍 RF Mapper**                | Combine GPS with Wi-Fi, BLE and RF scans to create wireless coverage maps.                                    |
 |    ☐   | **📈 Live Spectrum**            | Monitor RF activity across all supported radio modules in real time.                                          |
