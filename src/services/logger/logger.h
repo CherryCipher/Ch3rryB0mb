@@ -60,6 +60,8 @@ public:
     /**
     * @brief Prints the application banner to the serial console.
     *
+    * The actual banner content is defined in Banner.cpp namespace and can be modified there as needed.
+    * 
     * Example:
     * @code
     * logger.printBanner();
