@@ -65,22 +65,6 @@ Ch3rryB0mb is designed around the ESP32 Cheap Yellow Display (CYD) and a collect
 |  ☐ | **SX1262 LoRa Module**          | Long-range LoRa communication and telemetry experiments.                        |
 |  ☐ | **NEO-M8N GPS Module**          | GPS positioning, wardriving and RF mapping.                                     |
 
-### Planned Hardware
-
-The modular design allows additional hardware to be supported in the future, including:
-
-* External battery management
-* MicroSD storage
-* I²C sensors
-* Environmental sensors
-* Additional RF modules
-* External antennas
-* Expansion boards
-
-## Schematics and Wiring
-
-tbd.
-
 ## Building
 
 This project uses [PlatformIO](https://platformio.org/).
