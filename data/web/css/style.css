@@ -1,0 +1,211 @@
+/* --------------------------------------------------
+   Ch3rryB0mb AP Interface
+   -------------------------------------------------- */
+
+* {
+    box-sizing: border-box;
+}
+
+html,
+body {
+    margin: 0;
+    padding: 0;
+    min-height: 100%;
+}
+
+body {
+    min-height: 100vh;
+
+    background:
+        linear-gradient(
+            rgba(60, 0, 15, 0.35),
+            rgba(15, 0, 20, 0.8)
+        ),
+        #110008;
+
+    color: #f2e8ee;
+
+    font-family:
+        "Courier New",
+        Courier,
+        monospace;
+
+    padding: 40px 20px;
+}
+
+
+/* Main container */
+
+.terminal {
+    width: 100%;
+    max-width: 900px;
+
+    margin: 0 auto;
+
+    border: 1px solid #8b1538;
+
+    background: #18000c;
+
+    padding: 40px;
+
+    box-shadow:
+        0 0 25px rgba(190, 20, 70, 0.15),
+        8px 8px 0 #310018;
+}
+
+
+/* Header */
+
+header {
+    margin-bottom: 45px;
+}
+
+.system-label {
+    margin: 0 0 10px 0;
+
+    color: #b95cff;
+
+    font-size: 0.8rem;
+    letter-spacing: 0.15em;
+}
+
+h1 {
+    margin: 0;
+
+    color: #ff315f;
+
+    font-size: clamp(2.5rem, 8vw, 5rem);
+    line-height: 1;
+
+    letter-spacing: -0.07em;
+
+    text-shadow:
+        3px 3px 0 #5a0020,
+        0 0 15px rgba(255, 49, 95, 0.25);
+}
+
+.cursor {
+    color: #b95cff;
+    animation: blink 1s steps(1) infinite;
+}
+
+
+/* Intro */
+
+.intro {
+    max-width: 700px;
+    font-size: 1rem;
+    line-height: 1.8;
+}
+
+.intro p {
+    margin: 0 0 20px 0;
+}
+
+.intro strong {
+    color: #ff315f;
+}
+
+.muted {
+    color: #a88c9c;
+}
+
+
+/* Connection status */
+
+.status {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+
+    color: #d785ff;
+
+    font-size: 0.85rem;
+    font-weight: bold;
+
+    letter-spacing: 0.08em;
+
+    margin-bottom: 30px !important;
+}
+
+.status-dot {
+    display: inline-block;
+
+    width: 8px;
+    height: 8px;
+
+    background: #ff315f;
+
+    box-shadow: 0 0 8px #ff315f;
+}
+
+
+/* Divider */
+
+.divider {
+    margin: 45px 0 20px 0;
+
+    border-top: 1px solid #4b1029;
+
+    position: relative;
+}
+
+.divider span {
+    position: relative;
+    top: -10px;
+
+    background: #18000c;
+
+    color: #7d2cff;
+
+    padding-right: 12px;
+
+    font-size: 0.8rem;
+}
+
+
+/* Reserved space for future controls */
+
+.empty {
+    min-height: 180px;
+}
+
+
+/* Tiny terminal-style blink */
+
+@keyframes blink {
+    0%,
+    49% {
+        opacity: 1;
+    }
+
+    50%,
+    100% {
+        opacity: 0;
+    }
+}
+
+
+/* Mobile */
+
+@media (max-width: 600px) {
+
+    body {
+        padding: 15px;
+    }
+
+    .terminal {
+        padding: 25px 20px;
+
+        box-shadow:
+            4px 4px 0 #310018;
+    }
+
+    header {
+        margin-bottom: 35px;
+    }
+
+    .intro {
+        font-size: 0.9rem;
+    }
+}
