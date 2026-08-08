@@ -16,7 +16,6 @@ Ch3rryB0mb is designed around the ESP32 Cheap Yellow Display (CYD) and a collect
 | Status | Hardware                        | Purpose                                                                         |
 | :----: | ------------------------------- | ------------------------------------------------------------------------------- |
 |  ☐ | **ESP32 CYD (ESP32-2432S028R)** | Main controller with touchscreen, Wi-Fi and Bluetooth.                          |
-|  ☐ | **MicroSD Card Reader**         | Storage                                  |
 
 ## Networking and RF Modules
 
@@ -46,47 +45,3 @@ Main controller:
 - Resistive touchscreen
 
 ---
-
-## MicroSD Card Reader
-
-### Module
-
-3.3 V SPI MicroSD / TF card reader.
-
-### Module pins
-
-| SD Module | Function | CYD Pin |
-|-----------|----------|---------|
-| 3V3       | Power    | TBD     |
-| CS        | Chip Select | TBD  |
-| MOSI      | SPI Data Out | TBD |
-| CLK       | SPI Clock | TBD   |
-| MISO      | SPI Data In | TBD |
-| GND       | Ground   | TBD     |
-
-> CYD pin assignments will be added after hardware verification.
-
-### Connection
-
-The SD reader will not be permanently soldered directly to the CYD.
-
-The planned connection is:
-
-CYD → Perfboard → JST-XH connector → SD reader
-
-This makes the SD reader removable and allows the wiring to be
-replaced or modified without soldering directly to the CYD.
-
-### Connector
-
-Planned connector:
-
-- JST-XH
-- 2.54 mm pitch
-- 6 pins
-
-Pinout: TBD
-
-### Wiring diagram
-
-Coming soon.
