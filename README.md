@@ -20,9 +20,9 @@ My first C++ and embedded-development project, built with PlatformIO.
 
 Ch3rryB0mb is an open-source educational firmware for the ESP32 platform that turns inexpensive hardware into a portable wireless networking laboratory.
 
-Rather than focusing on offensive capabilities, Ch3rryB0mb helps students, hobbyists and professionals explore, visualize and understand how modern wireless technologies actually work.
+Rather than focusing on offensive capabilities, C3B0 aims to help visualize and understand how wireless technologies work.
 
-Wi-Fi, Bluetooth, LoRa, NRF24 and Sub-GHz communication become visible, measurable and interactive, allowing users to learn through experimentation on their own devices and networks.
+Wi-Fi, Bluetooth, LoRa, NRF24 and Sub-GHz communication are made visible, measurable and interactive.
 
 Ch3rryB0mb is built to spark curiosity, not disruption. Every feature is designed to help people learn how wireless technology works through observation, experimentation and visualization.
 
