@@ -6,6 +6,10 @@
 
 My first C++ and embedded-development project, built with PlatformIO.
 
+<b>Full Disclaimer:</b> Ch3rryB0mb is partly vibe-coded using ChatGPT and Copilot.
+<br> However every generated line is read, reviewed and understood === No code is pushed I don't fully understand.
+<br> I want to learn, not just generate code...
+
 [![Build](https://img.shields.io/badge/build-passing-brightgreen)](#)
 [![Platform](https://img.shields.io/badge/platform-ESP32-E7352C)](https://www.espressif.com/)
 [![Framework](https://img.shields.io/badge/framework-Arduino-00979D)](https://www.arduino.cc/)
