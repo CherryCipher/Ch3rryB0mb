@@ -1,18 +1,36 @@
 #include <Arduino.h>
 
-// put function declarations here:
-int myFunction(int, int);
+#include "app/Application.h"
 
-void setup() {
-  // put your setup code here, to run once:
-  int result = myFunction(2, 3);
-}
+/**
+ * @file main.cpp
+ * @brief Entry point for the Ch3rryB0mb firmware.
+ *
+ * This file contains the setup and loop functions required by the Arduino framework.
+ * It initializes the application and continuously updates it in the main loop.
+ *
+ * @note The application lifecycle is managed by the Application class defined in src/app/Application.h.
+ */
+Application app;
 
-void loop() {
-  // put your main code here, to run repeatedly:
-}
+  /**
+   * @brief Arduino setup function.
+   *
+   * This function is called once when the microcontroller starts.
+   * It initializes the application by calling the start() method.
+   */
+  void setup()
+  {
+      app.start();
+  }
 
-// put function definitions here:
-int myFunction(int x, int y) {
-  return x + y;
-}
+  /**
+   * @brief Arduino loop function.
+   *
+   * This function is called repeatedly in an infinite loop by the Arduino framework.
+   * It continuously updates the application by calling the update() method.
+   */
+  void loop()
+  {
+      app.update();
+  }
