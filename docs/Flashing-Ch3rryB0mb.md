@@ -328,10 +328,12 @@ Keep any external modules disconnected until the CYD itself boots correctly.
 After the first successful flash, the c3B0 should boot in AP Mode and any wireless device should be able to connect
 to the device using:
 
+```text
 ssid = "CherryLab";
 password = "ch3rryb0mb";
+```
 
-And load the captive portal at http://192.168.4.1
+And load the captive portal through http://192.168.4.1
 
 Then continue with the Ch3rryB0mb hardware setup and test each subsystem individually.
 
