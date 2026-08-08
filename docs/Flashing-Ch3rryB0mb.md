@@ -130,9 +130,8 @@ page instead.
 To use the full web interface:
 
 1. Format a MicroSD card as FAT32.
-2. Copy the `web` directory from the Ch3rryB0mb repository to the root
+2. Copy the `web` folder from the `data/web` directory from the Ch3rryB0mb repository to the root
    of the MicroSD card.
-3. Insert the MicroSD card into the CYD.
 
 The resulting structure should look like:
 
@@ -144,12 +143,11 @@ MicroSD/
         └── style.css
 ```
 
-> [!IMPORTANT]
-> Copy the full `web` directory itself to the MicroSD card.
->
-> The firmware expects `index.html` and the other web assets to be accessible from the web/ folder of the card.
+3. Safely eject the MicroSD card from your computer and insert it into the CYD.
 
-Safely eject the MicroSD card from your computer and insert it into the CYD.
+> [!IMPORTANT]
+> Copy the only, and the full `web` directory itself to the MicroSD card. Not the `data` folder.
+
 
 ---
 
@@ -169,7 +167,7 @@ If multiple serial devices are connected, specify the port manually:
 pio run -t upload --upload-port COM5
 ```
 
-Replace `COM5` with the port assigned to your CYD.
+Replace `COM5` with the port assigned to your CYD (see step 3).
 
 ---
 
@@ -247,14 +245,6 @@ This makes hardware and firmware problems much easier to isolate.
 
 ---
 
-## Built-in MicroSD Reader
-
-The ESP32-2432S028R includes a built-in MicroSD card reader.
-
-An external MicroSD module is therefore **not required** for Ch3rryB0mb.
-
----
-
 # Troubleshooting
 
 ## `pio` is not recognized
@@ -292,11 +282,11 @@ Check the following:
 
 Check:
 
-- The correct COM port is selected.
+- The correct COM port is selected (otherwise set it manualy see step 3 & 6).
 - No other program is using the serial port.
-- The USB cable supports data.
-- The CYD is receiving power.
-- Manual bootloader mode if required.
+- The USB cable you are using supports data.
+- The CYD is receiving power (check possible status LEDs).
+- Manual bootloader mode is required (see step 6).
 
 You can explicitly select the port:
 
@@ -313,15 +303,36 @@ Open the serial monitor:
 ```bash
 pio device monitor
 ```
-
 Check the ESP32 boot messages for errors.
 
-Keep all external modules disconnected until the CYD itself boots correctly.
+If you see:
+
+```text
+========== FATAL ERROR ==========
+Application failed to start.
+System halted.
+=================================
+
+System halted. FATAL ERROR: Application failed to start.
+System halted. FATAL ERROR: Application failed to start.
+System halted. FATAL ERROR: Application failed to start.
+```
+Verify no external modules are shorting.
+Possibly remove any or all external modules and reflash the CYD.
+Keep any external modules disconnected until the CYD itself boots correctly.
 
 ---
 
 ## Next Step
 
-After the first successful flash, continue with the Ch3rryB0mb hardware setup and test each subsystem individually.
+After the first successful flash, the c3B0 should boot in AP Mode and any wireless device should be able to connect
+to the device using:
+
+ssid = "CherryLab";
+password = "ch3rryb0mb";
+
+And load the captive portal at http://192.168.4.1
+
+Then continue with the Ch3rryB0mb hardware setup and test each subsystem individually.
 
 **Do not assume it works. Test it. Document it. Then build on it. 🍒**
