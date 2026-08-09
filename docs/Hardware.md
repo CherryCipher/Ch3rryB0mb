@@ -45,3 +45,5 @@ Main controller:
 - Resistive touchscreen
 
 ---
+
+![Wiring Diagram](wiring/Ch3rryB0mb.svg)
