@@ -30,7 +30,9 @@
         // Temporary startup behavior.
         // Later this will become the BootManager/UI.
         //
-        //First create a default WiFiAPConfig object with the default values. Then start the AP with the default config.
+        // First create a default WiFiAPConfig object with the default values. Then start the AP with the default config.
+        // Initialy I would love to check if any external modules are connected to the ESP32
+        // if no modules are connected, automatically start in AP mode and serve the captive portal 
         WiFiAPConfig config;
         services.wifi.startAP(config);
 

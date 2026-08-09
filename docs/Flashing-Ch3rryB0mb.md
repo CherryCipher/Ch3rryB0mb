@@ -325,7 +325,7 @@ Keep any external modules disconnected until the CYD itself boots correctly.
 
 ## Next Step
 
-After the first successful flash, the c3B0 should boot in AP Mode and any wireless device should be able to connect
+After the first successful flash, the c3b0 should boot in AP Mode and any wireless device should be able to connect
 to the device using:
 
 ```text
