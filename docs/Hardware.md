@@ -46,4 +46,4 @@ Main controller:
 
 ---
 
-![Wiring Diagram](wiring/Ch3rryB0mb.svg)
+![Wiring Diagram](wiring/Ch3rryB0mb.svg?v=2)
