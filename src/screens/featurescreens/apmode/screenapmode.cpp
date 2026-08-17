@@ -10,7 +10,7 @@
  *
  * @return Pointer to the created LVGL screen object.
  */
-lv_obj_t* ScreenAPMode::create(ScreenManager& screenManager, Features& feature)
+lv_obj_t* ScreenAPMode::create(ScreenManager& screenManager, APMode& apMode)
 {
     lv_obj_t* screen = lv_obj_create(nullptr);
 
@@ -185,7 +185,7 @@ lv_obj_t* ScreenAPMode::create(ScreenManager& screenManager, Features& feature)
         startButton,
         startClicked,
         LV_EVENT_CLICKED,
-        &screenManager
+        &apMode
     );
 
     //
@@ -261,7 +261,7 @@ lv_obj_t* ScreenAPMode::create(ScreenManager& screenManager, Features& feature)
         stopButton,
         stopClicked,
         LV_EVENT_CLICKED,
-        &screenManager
+        &apMode
     );
 
     //
@@ -352,9 +352,15 @@ lv_obj_t* ScreenAPMode::create(ScreenManager& screenManager, Features& feature)
  */
 void ScreenAPMode::startClicked(lv_event_t* event)
 {
-    //
-    // AP Mode start logic will be connected here later.
-    //
+    auto* apMode =
+        static_cast<APMode*>(lv_event_get_user_data(event));
+
+    if (apMode == nullptr)
+    {
+        return;
+    }
+
+    apMode->start();
 }
 
 /**
@@ -366,9 +372,15 @@ void ScreenAPMode::startClicked(lv_event_t* event)
  */
 void ScreenAPMode::stopClicked(lv_event_t* event)
 {
-    //
-    // AP Mode stop logic will be connected here later.
-    //
+    auto* apMode =
+        static_cast<APMode*>(lv_event_get_user_data(event));
+
+    if (apMode == nullptr)
+    {
+        return;
+    }
+
+    apMode->stop();
 }
 
 /**

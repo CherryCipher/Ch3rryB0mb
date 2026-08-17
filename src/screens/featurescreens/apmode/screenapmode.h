@@ -3,6 +3,7 @@
 #include <lvgl.h>
 
 class ScreenManager;
+class APMode;
 
 /**
  * @class ScreenAPMode
@@ -27,7 +28,7 @@ public:
      *
      * @return Pointer to the created LVGL screen object.
      */
-    static lv_obj_t* create(ScreenManager& screenManager, Features& feature);
+    static lv_obj_t* create(ScreenManager& screenManager, APMode& apMode);
 
 private:
     /**
@@ -59,8 +60,8 @@ private:
     static void backClicked(lv_event_t* event);
 
     /**
-    * @brief Reference to the application's Features to hand of to screens.
+    * @brief Reference to the Apmode.
     *.
     */
-    Features& features;
+    APMode& apMode;
 };

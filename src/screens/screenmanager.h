@@ -5,6 +5,7 @@
 #include "../services/logger/logger.h"
 #include "../src/app/features/features.h"
 
+class Features;
 
 /**
  * @enum Screen
@@ -43,7 +44,7 @@ public:
      *
      * @param logger Reference to the application's Logger.
      */
-    explicit ScreenManager(Logger& logger, Features& features);
+    ScreenManager(Logger& logger, Features& features);
 
     /**
      * @brief Starts the screen manager.
@@ -120,8 +121,10 @@ private:
     Logger& logger;
 
     /**
-    * @brief Reference to the application's Features to hand of to screens.
-    *.
-    */
+     * @brief Reference to the application's feature container.
+     *
+     * Used to provide screens access to the application features
+     * they require.
+     */
     Features& features;
 };
