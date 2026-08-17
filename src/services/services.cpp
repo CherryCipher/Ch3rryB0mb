@@ -143,16 +143,22 @@ bool Services::startAPMode()
     logger.info("AP Mode Activated: Starting Access Point");
 
     WiFiAPConfig config;
-    wifi.startAP(config);
+
+    if (!wifi.startAP(config))
+    {
+        logger.error("Failed to start Access Point.");
+        return false;
+    }
 
     if (!web.start())
     {
         logger.error("Failed to start WebServerManager.");
+        wifi.stopAP();
         return false;
     }
-    else
-    {
-        logger.error("Succes: Webserver started");
-        logger.error("Connect and navigate to: http://192.168.4.1");
-    }
+
+    logger.info("Success: Webserver started.");
+    logger.info("Connect and navigate to: http://192.168.4.1");
+
+    return true;
 }
