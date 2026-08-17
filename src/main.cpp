@@ -1,107 +1,61 @@
 #include <Arduino.h>
-#include <esp32_smartdisplay.h>
-#include <lvgl.h>
 
-lv_obj_t* buttonLabel = nullptr;
+#include "app/Application.h"
 
-static void buttonClicked(lv_event_t* event)
-{
-    lv_label_set_text(buttonLabel, "TOUCH WORKS!");
-}
+/**
+ * @file main.cpp
+ * @brief Entry point for the Ch3rryB0mb firmware.
+ *
+ * This file contains the setup and loop functions required by the Arduino framework.
+ * It initializes the application and continuously updates it in the main loop.
+ *
+ * @note The application lifecycle is managed by the Application class defined in src/app/Application.h.
+ */
+Application app;
 
-void setup()
-{
-    Serial.begin(115200);
+  /**
+   * @brief Arduino setup function.
+   *
+   * This function is called once when the microcontroller starts.
+   * It initializes the application by calling the start() method.
+   */
+    void setup()
+    {
+        //Open a serial connection to the host computer for logging and debugging.
+        //A bootstrapper of sorts
+        Serial.begin(115200);
 
-    //
-    // Initialize CYD display + touch + LVGL.
-    //
-    smartdisplay_init();
+        if (!app.start())
+        {
+            Serial.println();
+            Serial.println("========== FATAL ERROR ==========");
+            Serial.println("Application failed to start.");
+            Serial.println("System halted.");
+            Serial.println("=================================");
 
-    //
-    // Get the active LVGL screen.
-    //
-    lv_obj_t* screen = lv_screen_active();
+            //This is a fatal error, so we halt the system by entering an infinite loop.
+            while (true)
+            {
+                delay(1000);
+                Serial.println("System halted. FATAL ERROR: Application failed to start.");
+            }
+        }
+        else
+        {
+            Serial.println("=========== ENHANCE ============");
+            Serial.println("Application started successfully.");
+            Serial.println("Welcome to Ch3rryB0mb!");
+            Serial.println("=================================");
+        }
+    }
 
-    //
-    // Black background.
-    //
-    lv_obj_set_style_bg_color(
-        screen,
-        lv_color_hex(0x000000),
-        LV_PART_MAIN
-    );
-
-    //
-    // Ch3rryB0mb title.
-    //
-    lv_obj_t* title = lv_label_create(screen);
-
-    lv_label_set_text(
-        title,
-        "Ch3rryB0mb"
-    );
-
-    lv_obj_set_style_text_color(
-        title,
-        lv_color_hex(0xFF0000),
-        LV_PART_MAIN
-    );
-
-    lv_obj_align(
-        title,
-        LV_ALIGN_CENTER,
-        0,
-        -60
-    );
-
-    //
-    // Touch test button.
-    //
-    lv_obj_t* button = lv_button_create(screen);
-
-    lv_obj_set_size(
-        button,
-        160,
-        60
-    );
-
-    lv_obj_center(button);
-
-    //
-    // Button label.
-    //
-    buttonLabel = lv_label_create(button);
-
-    lv_label_set_text(
-        buttonLabel,
-        "TOUCH ME"
-    );
-
-    lv_obj_center(buttonLabel);
-
-    //
-    // Register click event.
-    //
-    lv_obj_add_event_cb(
-        button,
-        buttonClicked,
-        LV_EVENT_CLICKED,
-        nullptr
-    );
-}
-
-void loop()
-{
-    static uint32_t lastTick = millis();
-
-    uint32_t now = millis();
-
-    lv_tick_inc(now - lastTick);
-
-    lastTick = now;
-
-    lv_timer_handler();
-
-    delay(5);
-}
+  /**
+   * @brief Arduino loop function.
+   *
+   * This function is called repeatedly in an infinite loop by the Arduino framework.
+   * It continuously updates the application by calling the update() method.
+   */
+  void loop()
+  {
+      app.update();
+  }

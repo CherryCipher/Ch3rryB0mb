@@ -24,6 +24,8 @@ Services::Services()
     , storage(logger)
     , wifi(logger)
     , web(storage, logger)
+    , ui(logger)
+    , screens(logger)
 {
 }
 
@@ -63,6 +65,18 @@ bool Services::start()
 
     logger.info("Starting application services...");
 
+    if (!ui.start())
+    {
+        Serial.println("FATAL ERROR: Can't start UIManager");
+        return false;
+    }
+
+    if (!screens.start())
+    {
+        Serial.println("FATAL ERROR: Can't start ScreenManager");
+        return false;
+    }
+
     if (!storage.start())
     {
         logger.error("Failed to start StorageManager.");
@@ -82,6 +96,10 @@ bool Services::start()
     logger.printBanner();
     logger.info("All services started successfully.");
 
+    //wait and switch to the main menu
+    delay(1000);
+    screens.show(Screen::MainMenu);
+
     return true;
 }
 
@@ -98,12 +116,10 @@ void Services::update()
         web.handleClients();
     }
 
-    // Future services
-    //
-    // wifi.update();
-    // display.update();
-    // gps.update();
-    // packetLab.update();
+    if(ui.isRunning())
+    {
+        ui.update();
+    }
 }
 
 /**
@@ -124,6 +140,12 @@ void Services::stop()
 
     storage.stop();
     logger.info("StorageManager stopped.");
+
+    screens.stop();
+    logger.info("ScreenManager stopped.");
+
+    ui.stop();
+    logger.info("UIManager stopped.");
 
     logger.info("Logger stopped.");
 
