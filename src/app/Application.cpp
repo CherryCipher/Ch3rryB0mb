@@ -28,24 +28,7 @@
             Serial.println("FATAL ERROR CAN'T START SERVICES");
             return false;
         }
-
-        //
-        // Temporary startup behavior.
-        // Later this will become the BootManager/UI.
-        //
-        // First create a default WiFiAPConfig object with the default values. Then start the AP with the default config.
-        // Initialy I would love to check if any external modules are connected to the ESP32
-        // if no modules are connected, automatically start in AP mode and serve the captive portal 
-        if (!services.startAPMode())
-        {
-            Serial.println("========== FATAL ERROR ==========");
-            Serial.println("FATAL ERROR CAN'T AP MODE");
-            return false;
-        }
-        else
-            Serial.println("========== AP MODE ACTIVATED ==========");
         
-
         return true;
     }
 

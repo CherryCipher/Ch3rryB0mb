@@ -38,13 +38,4 @@ private:
      * @param event Pointer to the LVGL event.
      */
     static void apModeClicked(lv_event_t* event);
-
-    /**
-     * @brief Logs the detected touch coordinates.
-     *
-     * Used temporarily to verify the touch orientation and mapping.
-     *
-     * @param event Pointer to the LVGL event.
-     */
-    static void touchDebug(lv_event_t* event);
 };

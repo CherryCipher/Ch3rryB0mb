@@ -65,6 +65,15 @@ bool Services::start()
 
     logger.info("Starting application services...");
 
+    //Storage is started first to prevent SPI bus conflicts with the touch and display!
+    if (!storage.start())
+    {
+        logger.error("Failed to start StorageManager.");
+        return false;
+    }
+
+    logger.info("StorageManager started.");
+
     if (!ui.start())
     {
         Serial.println("FATAL ERROR: Can't start UIManager");
@@ -76,14 +85,6 @@ bool Services::start()
         Serial.println("FATAL ERROR: Can't start ScreenManager");
         return false;
     }
-
-    if (!storage.start())
-    {
-        logger.error("Failed to start StorageManager.");
-        return false;
-    }
-
-    logger.info("StorageManager started.");
 
     if (!wifi.start())
     {

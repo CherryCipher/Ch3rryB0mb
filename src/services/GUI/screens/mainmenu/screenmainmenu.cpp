@@ -203,18 +203,6 @@ lv_obj_t* ScreenMainMenu::create(ScreenManager& screenManager)
         &screenManager
     );
 
-    lv_obj_add_flag(
-    screen,
-    LV_OBJ_FLAG_CLICKABLE
-);
-
-lv_obj_add_event_cb(
-    screen,
-    touchDebug,
-    LV_EVENT_PRESSED,
-    nullptr
-);
-
     return screen;
 }
 
@@ -243,34 +231,4 @@ void ScreenMainMenu::apModeClicked(lv_event_t* event)
 
     Serial.println("Showing AP MODE screen");
     screenManager->show(Screen::APMode);
-}
-
-/**
- * @brief Logs the detected touch coordinates.
- *
- * Retrieves the active LVGL input device and prints the last
- * detected touch position to the serial monitor.
- *
- * @param event Pointer to the LVGL event.
- */
-void ScreenMainMenu::touchDebug(lv_event_t* event)
-{
-    lv_indev_t* inputDevice = lv_indev_active();
-
-    if (inputDevice == nullptr)
-    {
-        return;
-    }
-
-    lv_point_t point;
-
-    lv_indev_get_point(
-        inputDevice,
-        &point
-    );
-
-    Serial.print("Touch X: ");
-    Serial.print(point.x);
-    Serial.print(" Y: ");
-    Serial.println(point.y);
 }
