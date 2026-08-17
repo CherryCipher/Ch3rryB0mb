@@ -1,0 +1,55 @@
+#pragma once
+
+class Services;
+
+/**
+ * @class APMode
+ * @brief Controls the Ch3rryB0mb Access Point mode feature.
+ *
+ * APMode combines the services required to provide Access Point mode.
+ *
+ * Starting AP mode will:
+ * - Start the WiFi access point.
+ * - Start the embedded web server.
+ *
+ * Stopping AP mode will:
+ * - Stop the embedded web server.
+ * - Stop the WiFi access point.
+ *
+ * APMode does not own these services. It uses the shared application
+ * services provided by the Services container.
+ */
+class APMode
+{
+public:
+    /**
+     * @brief Constructs the AP Mode feature.
+     *
+     * @param services Reference to the shared application services.
+     */
+    APMode(Services& services);
+
+    /**
+     * @brief Starts Access Point mode.
+     *
+     * Starts the WiFi access point followed by the embedded web server.
+     * If the web server fails to start, the access point is stopped again.
+     *
+     * @return true if AP mode started successfully.
+     * @return false if one of the required services failed to start.
+     */
+    bool start();
+
+    /**
+     * @brief Stops Access Point mode.
+     *
+     * Stops the web server first and then disables the WiFi access point.
+     */
+    void stop();
+
+private:
+    /**
+     * @brief Reference to the shared application services.
+     */
+    Services& services;
+};

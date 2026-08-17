@@ -23,10 +23,11 @@ public:
      * connects its controls to the provided ScreenManager.
      *
      * @param screenManager Reference to the application ScreenManager.
+     * @param apMode Reference to the AP MOde feature.
      *
      * @return Pointer to the created LVGL screen object.
      */
-    static lv_obj_t* create(ScreenManager& screenManager);
+    static lv_obj_t* create(ScreenManager& screenManager, Features& feature);
 
 private:
     /**
@@ -56,4 +57,10 @@ private:
      * @param event Pointer to the LVGL event.
      */
     static void backClicked(lv_event_t* event);
+
+    /**
+    * @brief Reference to the application's Features to hand of to screens.
+    *.
+    */
+    Features& features;
 };

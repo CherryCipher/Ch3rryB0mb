@@ -1,0 +1,30 @@
+#pragma once
+
+#include "apmode/apmode.h"
+
+class Services;
+
+/**
+ * @class Features
+ * @brief Container for all Ch3rryB0mb application features.
+ *
+ * Features combine one or more low-level services into
+ * user-facing functionality.
+ *
+ * Each feature receives access to the shared Services container.
+ */
+class Features
+{
+public:
+    /**
+     * @brief Constructs all application features.
+     *
+     * @param services Reference to the shared application services.
+     */
+    explicit Features(Services& services);
+
+    /**
+     * @brief Access Point Mode feature.
+     */
+    APMode apMode;
+};

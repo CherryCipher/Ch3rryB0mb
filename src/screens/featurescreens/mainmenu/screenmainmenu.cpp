@@ -1,5 +1,5 @@
 #include "screenmainmenu.h"
-#include "Services/GUI/screenmanager.h"
+#include "screens/screenmanager.h"
 
 /**
  * @brief Creates the main menu screen.

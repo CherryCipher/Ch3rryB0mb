@@ -25,7 +25,6 @@ Services::Services()
     , wifi(logger)
     , web(storage, logger)
     , ui(logger)
-    , screens(logger)
 {
 }
 
@@ -80,12 +79,6 @@ bool Services::start()
         return false;
     }
 
-    if (!screens.start())
-    {
-        Serial.println("FATAL ERROR: Can't start ScreenManager");
-        return false;
-    }
-
     if (!wifi.start())
     {
         logger.error("Failed to start WiFiManager.");
@@ -96,10 +89,6 @@ bool Services::start()
 
     logger.printBanner();
     logger.info("All services started successfully.");
-
-    //wait and switch to the main menu
-    delay(1000);
-    screens.show(Screen::MainMenu);
 
     return true;
 }
@@ -142,46 +131,10 @@ void Services::stop()
     storage.stop();
     logger.info("StorageManager stopped.");
 
-    screens.stop();
-    logger.info("ScreenManager stopped.");
-
     ui.stop();
     logger.info("UIManager stopped.");
 
     logger.info("Logger stopped.");
 
     logger.stop();
-}
-
-/**
- * @brief Starts AP mode on the Ch3rryB0mb
- *
- * Automatically starts AP mode, and starts the webserver
- * 
- * @return true if all services started successfully.
- * @return false if one or more services failed.
- */
-bool Services::startAPMode()
-{
-    logger.info("AP Mode Activated: Starting Access Point");
-
-    WiFiAPConfig config;
-
-    if (!wifi.startAP(config))
-    {
-        logger.error("Failed to start Access Point.");
-        return false;
-    }
-
-    if (!web.start())
-    {
-        logger.error("Failed to start WebServerManager.");
-        wifi.stopAP();
-        return false;
-    }
-
-    logger.info("Success: Webserver started.");
-    logger.info("Connect and navigate to: http://192.168.4.1");
-
-    return true;
 }

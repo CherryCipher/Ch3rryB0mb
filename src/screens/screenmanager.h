@@ -2,7 +2,9 @@
 
 #include <lvgl.h>
 #include <cstdint>
-#include "../logger/logger.h"
+#include "../services/logger/logger.h"
+#include "../src/app/features/features.h"
+
 
 /**
  * @enum Screen
@@ -41,7 +43,7 @@ public:
      *
      * @param logger Reference to the application's Logger.
      */
-    explicit ScreenManager(Logger& logger);
+    explicit ScreenManager(Logger& logger, Features& features);
 
     /**
      * @brief Starts the screen manager.
@@ -116,4 +118,10 @@ private:
     * Used for logging messages related to web server operations.
     */
     Logger& logger;
+
+    /**
+    * @brief Reference to the application's Features to hand of to screens.
+    *.
+    */
+    Features& features;
 };

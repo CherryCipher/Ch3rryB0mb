@@ -1,7 +1,7 @@
 #include "screenmanager.h"
 
-#include "screens/mainmenu/screenmainmenu.h"
-#include "screens/apmode/screenapmode.h"
+#include "featurescreens/mainmenu/screenmainmenu.h"
+#include "featurescreens/apmode/screenapmode.h"
 
 /**
  * @brief Constructs a new ScreenManager.
@@ -10,8 +10,9 @@
  *
  * @param logger Reference to the application's Logger.
  */
-ScreenManager::ScreenManager(Logger& logger)
+ScreenManager::ScreenManager(Logger& logger, Features& features)
     : logger(logger)
+    , features(features)
 {
 }
 
@@ -59,7 +60,7 @@ void ScreenManager::show(Screen screen)
             break;
 
         case Screen::APMode:
-            newScreen = ScreenAPMode::create(*this);
+            newScreen = ScreenAPMode::create(*this, features.apMode);
             break;
     }
 

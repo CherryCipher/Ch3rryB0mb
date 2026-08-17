@@ -6,7 +6,10 @@
      * Initializes all shared services and prepares the application
      * for startup.
      */
-    Application::Application()
+    Application::Application()    
+        :   services(),
+            features(services),
+            screens(services.logger, features)
     {
     }
 
@@ -26,6 +29,12 @@
         if (!services.start())
         {
             Serial.println("FATAL ERROR CAN'T START SERVICES");
+            return false;
+        }
+
+        if (!screens.start())
+        {
+            Serial.println("FATAL ERROR: Can't start ScreenManager");
             return false;
         }
         
@@ -62,4 +71,5 @@
     void Application::stop()
     {
         services.stop();
+        screens.stop();
     }

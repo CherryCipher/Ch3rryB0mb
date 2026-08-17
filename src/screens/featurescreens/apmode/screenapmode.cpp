@@ -1,5 +1,5 @@
 #include "screenapmode.h"
-#include "Services/GUI/screenmanager.h"
+#include "screens/screenmanager.h"
 
 /**
  * @brief Creates the AP Mode screen.
@@ -10,7 +10,7 @@
  *
  * @return Pointer to the created LVGL screen object.
  */
-lv_obj_t* ScreenAPMode::create(ScreenManager& screenManager)
+lv_obj_t* ScreenAPMode::create(ScreenManager& screenManager, Features& feature)
 {
     lv_obj_t* screen = lv_obj_create(nullptr);
 
