@@ -25,6 +25,7 @@ Services::Services()
     , wifi(logger)
     , web(storage, logger)
     , display(logger)
+    , touch(logger)
 {
 }
 
@@ -67,6 +68,13 @@ bool Services::start()
     if (!display.start())
     {
         Serial.println("FATAL ERROR: Can't start DisplayManager");
+        return false;
+    }
+
+    //Display first then touch, as touch needsa display
+    if (!touch.start())
+    {
+        Serial.println("FATAL ERROR: Can't start TouchManager");
         return false;
     }
 
@@ -121,6 +129,12 @@ void Services::stop()
 
     storage.stop();
     logger.info("StorageManager stopped.");
+
+    //touch.stop();
+    logger.info("TouchManager stopped.");
+
+    //display.stop();
+    logger.info("DisplayManager stopped.");
 
     logger.info("Logger stopped.");
 

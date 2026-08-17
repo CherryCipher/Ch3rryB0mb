@@ -5,6 +5,7 @@
 #include "wifi/WiFiManager.h"
 #include "webserver/WebServerManager.h"
 #include "display/DisplayManager.h"
+#include "touch/touchmanager.h"
 
 /**
  * @class Services
@@ -157,4 +158,9 @@ public:
     * @brief Shared embedded DisplayManager.
     */
     DisplayManager display;
+
+    /**
+    * @brief Shared embedded TouchManager.
+    */
+    TouchManager touch;
 };
