@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../services/services.h"
+#include "uimanager/uimanager.h"
 
 /**
  * @class Application
@@ -64,4 +65,9 @@ private:
      * found in src/services/services.h.
      */
     Services services;
+
+    /**
+    * @brief custom UIManager running on LVGL.
+    */
+    UIManager ui;
 };

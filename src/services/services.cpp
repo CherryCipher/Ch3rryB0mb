@@ -24,6 +24,7 @@ Services::Services()
     , storage(logger)
     , wifi(logger)
     , web(storage, logger)
+    , display(logger)
 {
 }
 
@@ -63,21 +64,23 @@ bool Services::start()
 
     logger.info("Starting application services...");
 
+    if (!display.start())
+    {
+        Serial.println("FATAL ERROR: Can't start DisplayManager");
+        return false;
+    }
+
     if (!storage.start())
     {
         logger.error("Failed to start StorageManager.");
         return false;
     }
 
-    logger.info("StorageManager started.");
-
     if (!wifi.start())
     {
         logger.error("Failed to start WiFiManager.");
         return false;
     }
-
-    logger.info("WiFiManager started.");
 
     logger.printBanner();
     logger.info("All services started successfully.");
@@ -94,16 +97,10 @@ bool Services::start()
 void Services::update()
 {
     if (web.isRunning())
-    {
         web.handleClients();
-    }
 
-    // Future services
-    //
-    // wifi.update();
-    // display.update();
-    // gps.update();
-    // packetLab.update();
+    if(display.isRunning())
+        display.update();
 }
 
 /**

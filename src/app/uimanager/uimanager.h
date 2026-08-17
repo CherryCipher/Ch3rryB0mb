@@ -1,0 +1,123 @@
+#pragma once
+
+#include <Arduino.h>
+#include <lvgl.h>
+
+#include "services/display/displaymanager.h"
+#include "services/logger/logger.h"
+
+/**
+ * @class UIManager
+ * @brief Manages the Ch3rryB0mb graphical user interface.
+ *
+ * The UIManager is responsible for creating and managing the
+ * graphical user interface shown on the Ch3rryB0mb display.
+ *
+ * All graphical interface elements are created using LVGL.
+ * The UIManager does not communicate directly with the physical
+ * TFT display hardware.
+ *
+ * Responsibilities
+ * ----------------
+ * - Initialize the graphical user interface.
+ * - Create and manage LVGL interface elements.
+ * - Manage the currently displayed interface.
+ * - Provide the application with a central UI controller.
+ *
+ * Example
+ * -------
+ * @code
+ * UIManager ui(display, logger);
+ *
+ * if (!ui.start())
+ * {
+ *     logger.error("Failed to start UIManager.");
+ * }
+ * @endcode
+ */
+class UIManager
+{
+public:
+    /**
+     * @brief Constructs a new UIManager.
+     *
+     * @param display Reference to the DisplayManager.
+     * @param logger Reference to the application Logger.
+     */
+    UIManager(
+        DisplayManager& display,
+        Logger& logger
+    );
+
+    /**
+     * @brief Initializes the graphical user interface.
+     *
+     * Creates the initial Ch3rryB0mb interface using LVGL.
+     *
+     * The DisplayManager must be running before the UIManager
+     * can be started.
+     *
+     * Example
+     * -------
+     * @code
+     * if (!ui.start())
+     * {
+     *     logger.error("Failed to initialize UI.");
+     * }
+     * @endcode
+     *
+     * @return true if the user interface initialized successfully.
+     * @return false otherwise.
+     */
+    bool start();
+
+    /**
+     * @brief Updates the graphical user interface.
+     *
+     * This method can later be used for UI-specific updates,
+     * animations and state changes.
+     *
+     * Example
+     * -------
+     * @code
+     * if (ui.isRunning())
+     * {
+     *     ui.update();
+     * }
+     * @endcode
+     */
+    void update();
+
+    /**
+     * @brief Returns whether the UIManager is running.
+     *
+     * Example
+     * -------
+     * @code
+     * if (ui.isRunning())
+     * {
+     *     logger.info("UI is ready.");
+     * }
+     * @endcode
+     *
+     * @return true if the user interface is initialized.
+     * @return false otherwise.
+     */
+    bool isRunning() const;
+
+private:
+    /**
+     * @brief Indicates whether the UIManager is initialized.
+     */
+    bool running = false;
+
+    /**
+     * @brief Reference to the DisplayManager.
+     */
+    DisplayManager& display;
+
+    /**
+     * @brief Reference to the application Logger.
+     */
+    Logger& logger;
+};

@@ -4,6 +4,7 @@
 #include "storage/StorageManager.h"
 #include "wifi/WiFiManager.h"
 #include "webserver/WebServerManager.h"
+#include "display/DisplayManager.h"
 
 /**
  * @class Services
@@ -151,4 +152,9 @@ public:
      * @brief Shared embedded web server.
      */
     WebServerManager web;
+
+    /**
+    * @brief Shared embedded DisplayManager.
+    */
+    DisplayManager display;
 };

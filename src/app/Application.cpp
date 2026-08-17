@@ -7,6 +7,7 @@
      * for startup.
      */
     Application::Application()
+        : ui(services.display, services.logger)
     {
     }
 
@@ -28,6 +29,17 @@
             Serial.println("FATAL ERROR CAN'T START SERVICES");
             return false;
         }
+
+        if(!ui.start())
+        {
+            Serial.println("FATAL ERROR CAN'T START UI");
+            return false;
+        }
+        else
+        {
+            Serial.println("========== UI MANAGER STARTED ==========");
+        }
+       
 
         //
         // Temporary startup behavior.
@@ -67,6 +79,9 @@
     void Application::update()
     {
         // Update all services in the application.
+        if(ui.isRunning())
+            ui.update();
+
         services.update();
     }
 

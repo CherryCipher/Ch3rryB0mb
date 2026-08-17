@@ -1,0 +1,185 @@
+#include "uimanager.h"
+
+/**
+ * @brief Constructs a new UIManager.
+ *
+ * Stores references to the DisplayManager and Logger used by
+ * the graphical user interface.
+ */
+UIManager::UIManager(
+    DisplayManager& display,
+    Logger& logger
+)
+    : display(display),
+      logger(logger)
+{
+}
+
+/**
+ * @brief Initializes the graphical user interface.
+ *
+ * Creates the initial Ch3rryB0mb screen using LVGL.
+ *
+ * Workflow
+ * --------
+ * @code
+ * Start UIManager
+ *        │
+ *        ▼
+ * Check DisplayManager
+ *        │
+ *        ├── Not running ──► Return false
+ *        │
+ *        ▼
+ * Get active LVGL screen
+ *        │
+ *        ▼
+ * Set screen background
+ *        │
+ *        ▼
+ * Create Ch3rryB0mb title
+ *        │
+ *        ▼
+ * Create SYSTEM READY label
+ *        │
+ *        ▼
+ * Mark UIManager as running
+ *        │
+ *        ▼
+ * UI ready
+ * @endcode
+ *
+ * @return true if the user interface initialized successfully.
+ * @return false otherwise.
+ */
+bool UIManager::start()
+{
+    logger.info("Starting UIManager.");
+
+    // The display must be initialized before creating LVGL objects.
+    if (!display.isRunning())
+    {
+        logger.error("Can't start UIManager: DisplayManager is not running.");
+        return false;
+    }
+
+    // Get the active LVGL screen.
+    lv_obj_t* screen = lv_screen_active();
+
+    if (screen == nullptr)
+    {
+        logger.error("Can't start UIManager: No active LVGL screen.");
+        return false;
+    }
+
+    // Configure screen background.
+    lv_obj_set_style_bg_color(
+        screen,
+        lv_color_hex(0x000000),
+        LV_PART_MAIN
+    );
+
+
+    // Create Ch3rryB0mb title.
+    lv_obj_t* title = lv_label_create(screen);
+
+    lv_label_set_text(
+        title,
+        "Ch3rryB0mb"
+    );
+
+    lv_obj_set_style_text_color(
+        title,
+        lv_color_hex(0xFF0000),
+        LV_PART_MAIN
+    );
+
+    lv_obj_set_style_text_font(
+        title,
+        &lv_font_montserrat_20,
+        LV_PART_MAIN
+    );
+
+    lv_obj_align(
+        title,
+        LV_ALIGN_CENTER,
+        0,
+        -20
+    );
+
+    // Create system status label.
+    lv_obj_t* status = lv_label_create(screen);
+
+    lv_label_set_text(
+        status,
+        "SYSTEM READY"
+    );
+
+    lv_obj_set_style_text_color(
+        status,
+        lv_color_hex(0xFFFFFF),
+        LV_PART_MAIN
+    );
+
+    lv_obj_set_style_text_font(
+        status,
+        &lv_font_montserrat_14,
+        LV_PART_MAIN
+    );
+
+    lv_obj_align(
+        status,
+        LV_ALIGN_CENTER,
+        0,
+        20
+    );
+
+    running = true;
+
+    logger.info("UIManager started.");
+
+    return true;
+}
+
+/**
+ * @brief Updates the graphical user interface.
+ *
+ * Currently no UI-specific processing is required.
+ * LVGL rendering and timers are handled by the DisplayManager.
+ *
+ * Workflow
+ * --------
+ * @code
+ * update()
+ *    │
+ *    ▼
+ * UI running?
+ *    │
+ *    ├── No ──► Return
+ *    │
+ *    ▼
+ * Process UI-specific updates
+ * @endcode
+ */
+void UIManager::update()
+{
+    if (!running)
+    {
+        return;
+    }
+
+    //
+    // Future UI-specific updates will be handled here.
+    //
+}
+
+/**
+ * @brief Returns whether the UIManager is running.
+ *
+ * @return true if the user interface is initialized.
+ * @return false otherwise.
+ */
+bool UIManager::isRunning() const
+{
+    return running;
+}
