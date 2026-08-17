@@ -141,4 +141,14 @@ private:
      * UI code should use LVGL instead.
      */
     TFT_eSPI tft;
+
+    /**
+     * @brief LVGL display instance.
+     */
+    lv_display_t* lvDisplay = nullptr;
+
+    /**
+     * @brief LVGL rendering buffer.
+     */
+    void* buffer = nullptr;
 };

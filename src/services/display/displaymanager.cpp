@@ -50,6 +50,12 @@ DisplayManager::DisplayManager(Logger& logger)
  */
 bool DisplayManager::start()
 {
+    if (running)
+    {
+        logger.info("DisplayManager already running.");
+        return true;
+    }
+
     logger.info("Starting DisplayManager.");
 
     // Enable display backlight
@@ -70,12 +76,12 @@ bool DisplayManager::start()
     lv_init();
 
     // Create LVGL display
-    lv_display_t* display = lv_display_create(
+    lvDisplay = lv_display_create(
         tft.width(),
         tft.height()
     );
 
-    if (display == nullptr)
+    if (lvDisplay == nullptr)
     {
         logger.error("Failed to create LVGL display.");
         return false;
@@ -83,13 +89,13 @@ bool DisplayManager::start()
 
     // Store this DisplayManager instance inside the LVGL display.
     // The static flush callback can retrieve it when drawing.
-    lv_display_set_user_data(display, this);
+    lv_display_set_user_data(lvDisplay, this);
 
     // Allocate a partial LVGL render buffer.
     const uint32_t bufferSize =
         tft.width() * 20 * sizeof(lv_color_t);
 
-    void* buffer = malloc(bufferSize);
+    buffer = malloc(bufferSize);
 
     if (buffer == nullptr)
     {
@@ -98,7 +104,7 @@ bool DisplayManager::start()
     }
 
     lv_display_set_buffers(
-        display,
+        lvDisplay,
         buffer,
         nullptr,
         bufferSize,
@@ -106,7 +112,7 @@ bool DisplayManager::start()
     );
 
     // Register callback used by LVGL to write pixels to the TFT.
-    lv_display_set_flush_cb(display, flushDisplay);
+    lv_display_set_flush_cb(lvDisplay, flushDisplay);
 
     running = true;
 
