@@ -19,7 +19,8 @@
         if (loggerRunning)
             return false;
 
-        Serial.begin(115200);
+        //This does not need to be started aghain
+        //Serial.begin(115200);
 
         //Unfortunately, Serial.begin() does not provide a way to check if the serial console started successfully.
         loggerRunning = true;

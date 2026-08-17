@@ -21,8 +21,11 @@
      */
     bool Application::start()
     {
+        Serial.println("Application::Start - We are staring the app");
+
         if (!services.start())
         {
+            Serial.println("FATAL ERROR CAN'T START SERVICES");
             return false;
         }
 
@@ -33,8 +36,7 @@
         // First create a default WiFiAPConfig object with the default values. Then start the AP with the default config.
         // Initialy I would love to check if any external modules are connected to the ESP32
         // if no modules are connected, automatically start in AP mode and serve the captive portal 
-        WiFiAPConfig config;
-        services.wifi.startAP(config);
+        services.startAPMode();
 
         return true;
     }

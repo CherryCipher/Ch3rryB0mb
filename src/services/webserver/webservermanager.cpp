@@ -42,6 +42,9 @@ bool WebServerManager::start()
     server.begin();
     logger.info("WebServerManager started. Web server started on port 80.");
 
+    //set running to true
+    running = true;
+
     return true;
 }
 
@@ -54,6 +57,20 @@ void WebServerManager::stop()
 {
     server.stop();
     logger.info("Web server stopped.");
+
+    //set running to false
+    running = false;
+}
+
+/**
+ * @brief Check to see if webserver is running
+ *
+ * @return true if the server is running
+ * @return false otherwise.
+ */
+bool WebServerManager::isRunning() const
+{
+    return running;
 }
 
 /**

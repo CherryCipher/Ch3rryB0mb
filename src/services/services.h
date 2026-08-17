@@ -119,6 +119,17 @@ public:
      */
     void stop();
 
+    /**
+     * @brief Starts AP mode on the Ch3rryB0mb
+     *
+     * Automatically starts AP mode, and starts the webserver
+     * 
+     * @return true if all services started successfully.
+     * @return false if one or more services failed.
+     */
+    bool startAPMode();
+
+
 public:
 
     /**

@@ -53,8 +53,11 @@ Services::Services()
  */
 bool Services::start()
 {
+    Serial.println("Services::Start - We are staring the app");
+
     if (!logger.start())
     {
+        Serial.println("FATAL ERROR: Can't start Logger");
         return false;
     }
 
@@ -76,14 +79,6 @@ bool Services::start()
 
     logger.info("WiFiManager started.");
 
-    if (!web.start())
-    {
-        logger.error("Failed to start WebServerManager.");
-        return false;
-    }
-
-    logger.info("WebServerManager started.");
-
     logger.printBanner();
     logger.info("All services started successfully.");
 
@@ -98,7 +93,10 @@ bool Services::start()
  */
 void Services::update()
 {
-    web.handleClients();
+    if (web.isRunning())
+    {
+        web.handleClients();
+    }
 
     // Future services
     //
@@ -130,4 +128,31 @@ void Services::stop()
     logger.info("Logger stopped.");
 
     logger.stop();
+}
+
+/**
+ * @brief Starts AP mode on the Ch3rryB0mb
+ *
+ * Automatically starts AP mode, and starts the webserver
+ * 
+ * @return true if all services started successfully.
+ * @return false if one or more services failed.
+ */
+bool Services::startAPMode()
+{
+    logger.info("AP Mode Activated: Starting Access Point");
+
+    WiFiAPConfig config;
+    wifi.startAP(config);
+
+    if (!web.start())
+    {
+        logger.error("Failed to start WebServerManager.");
+        return false;
+    }
+    else
+    {
+        logger.error("Succes: Webserver started");
+        logger.error("Connect and navigate to: http://192.168.4.1");
+    }
 }

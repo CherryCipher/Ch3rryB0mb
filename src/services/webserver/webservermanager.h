@@ -106,6 +106,15 @@ public:
      */
     void handleClients();
 
+    
+    /**
+     * @brief Returns true if the webserver is running
+     * 
+     * @return true if webserver is running.
+     * @return false if otherwise.
+     */
+    bool isRunning() const;
+
 private:
 
     /**
@@ -162,6 +171,12 @@ private:
     String getMimeType(const String& path);
 
 private:
+    /**
+     * @brief Variable to check if webserver is running
+     *
+     * Used to check if the webserver is runnign to handle updating in services
+     */
+    bool running = false;
 
     /**
      * @brief Reference to the application's storage service.
