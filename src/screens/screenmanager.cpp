@@ -105,7 +105,7 @@ void ScreenManager::showInternal( Screen screen, bool addToHistory )
             break;
         
         case Screen::NRFScanner:
-            newScreen = ScreenNrfScanner::create(*this);
+            newScreen = ScreenNrfScanner::create(*this, features.nrfScanner);
             break;
     }
 

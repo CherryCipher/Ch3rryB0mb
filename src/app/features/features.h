@@ -2,6 +2,7 @@
 
 #include "apmode/apmode.h"
 #include "wifilab/wifilab.h"
+#include "nrfscanner/nrfscanner.h"
 
 class Services;
 
@@ -33,4 +34,9 @@ public:
      * @brief Wi-Fi Lab feature.
      */
     WiFiLab wifiLab;
+
+    /**
+     * @brief NRF Scanner feature.
+     */
+    NRFScanner nrfScanner;
 };
