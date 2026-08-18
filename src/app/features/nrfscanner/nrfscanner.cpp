@@ -13,16 +13,17 @@ NRFScanner::NRFScanner(Services& services) : services(services)
 /**
  * @brief Starts continuous NRF scanning.
  *
- * Enables scanning and resets the scan timer so the first scan
- * is performed immediately during the next update.
+ * Resets the scanner position and enables continuous scanning.
  */
 void NRFScanner::start()
 {
     if (running)
         return;
 
-    running = true;
+    resetScanPosition();
+
     lastScan = 0;
+    running = true;
 
     services.logger.info("NRF Scanner started.");
 }
@@ -30,7 +31,7 @@ void NRFScanner::start()
 /**
  * @brief Stops continuous NRF scanning.
  *
- * Stops new scans while preserving the latest scan results.
+ * Stops new measurements while keeping the latest results available.
  */
 void NRFScanner::stop()
 {
@@ -45,7 +46,7 @@ void NRFScanner::stop()
 /**
  * @brief Updates the NRF Scanner feature.
  *
- * Performs a scan when continuous scanning is active and the configured
+ * Performs one small scan step when scanning is active and the minimum
  * scan interval has elapsed.
  */
 void NRFScanner::update()
@@ -55,13 +56,16 @@ void NRFScanner::update()
 
     uint32_t now = millis();
 
-    if (lastScan != 0 && now - lastScan < scanInterval)
+    if (lastScan != 0 && now - lastScan < SCAN_INTERVAL_MS)
         return;
 
     lastScan = now;
 
-    if (!scan())
-        services.logger.error("NRF Scanner: Scan failed.");
+    if (!scanStep())
+    {
+        services.logger.error("NRF Scanner: Scan step failed.");
+        stop();
+    }
 }
 
 /**
@@ -83,12 +87,13 @@ bool NRFScanner::isRunning() const
 void NRFScanner::setMode(ScanMode mode)
 {
     this->mode = mode;
+    resetScanPosition();
 }
 
 /**
  * @brief Returns the current scanner operating mode.
  *
- * @return Current ScanMode.
+ * @return Current scanner operating mode.
  */
 NRFScanner::ScanMode NRFScanner::getMode() const
 {
@@ -110,6 +115,9 @@ bool NRFScanner::setNrfChannel(uint8_t channel)
 
     nrfChannel = channel;
 
+    if (mode == ScanMode::NrfChannel)
+        resetScanPosition();
+
     return true;
 }
 
@@ -124,7 +132,7 @@ uint8_t NRFScanner::getNrfChannel() const
 }
 
 /**
- * @brief Sets the selected 2.4 GHz Wi-Fi channel.
+ * @brief Sets the selected Wi-Fi channel.
  *
  * @param channel Wi-Fi channel between 1 and 13.
  *
@@ -138,6 +146,9 @@ bool NRFScanner::setWifiChannel(uint8_t channel)
 
     wifiChannel = channel;
 
+    if (mode == ScanMode::WifiBand)
+        resetScanPosition();
+
     return true;
 }
 
@@ -149,26 +160,6 @@ bool NRFScanner::setWifiChannel(uint8_t channel)
 uint8_t NRFScanner::getWifiChannel() const
 {
     return wifiChannel;
-}
-
-/**
- * @brief Sets the interval between scans.
- *
- * @param interval Scan interval in milliseconds.
- */
-void NRFScanner::setScanInterval(uint32_t interval)
-{
-    scanInterval = interval;
-}
-
-/**
- * @brief Returns the configured scan interval.
- *
- * @return Scan interval in milliseconds.
- */
-uint32_t NRFScanner::getScanInterval() const
-{
-    return scanInterval;
 }
 
 /**
@@ -194,7 +185,7 @@ uint8_t NRFScanner::getNrfChannelActivity() const
 /**
  * @brief Returns the latest Wi-Fi band scan results.
  *
- * @return Pointer to the Wi-Fi scan result array.
+ * @return Pointer to the Wi-Fi band result array.
  */
 const uint8_t* NRFScanner::getWifiResults() const
 {
@@ -204,7 +195,7 @@ const uint8_t* NRFScanner::getWifiResults() const
 /**
  * @brief Returns the first NRF24 channel represented by the Wi-Fi results.
  *
- * @return First NRF24 channel in the Wi-Fi scan result array.
+ * @return First NRF24 channel in the Wi-Fi result array.
  */
 uint8_t NRFScanner::getWifiStartChannel() const
 {
@@ -212,27 +203,94 @@ uint8_t NRFScanner::getWifiStartChannel() const
 }
 
 /**
- * @brief Performs one scan using the current scanner mode.
+ * @brief Performs one incremental RF scan step.
  *
- * Delegates RF measurements to NRFManager and stores the latest
- * scan results inside the feature.
+ * Full spectrum and Wi-Fi scans process one NRF24 channel per call.
+ * Individual NRF channel mode samples the selected channel once per call.
  *
- * @return true if the scan completed successfully.
+ * @return true if the scan step completed successfully.
  * @return false otherwise.
  */
-bool NRFScanner::scan()
+bool NRFScanner::scanStep()
+{
+    uint8_t activity = 0;
+
+    switch (mode)
+    {
+        case ScanMode::FullSpectrum:
+        {
+            if (!services.nrf.scanNrfChannel(currentScanChannel, activity, SAMPLES_PER_STEP))
+                return false;
+
+            spectrumResults[currentScanChannel] = activity;
+
+            currentScanChannel++;
+
+            if (currentScanChannel >= NRFManager::NRF_CHANNEL_COUNT)
+                currentScanChannel = 0;
+
+            return true;
+        }
+
+        case ScanMode::NrfChannel:
+        {
+            return services.nrf.scanNrfChannel(
+                nrfChannel,
+                nrfChannelActivity,
+                SAMPLES_PER_STEP
+            );
+        }
+
+        case ScanMode::WifiBand:
+        {
+            uint8_t endChannel = wifiStartChannel + NRFManager::WIFI_SCAN_WIDTH;
+
+            if (currentScanChannel < wifiStartChannel || currentScanChannel >= endChannel)
+                currentScanChannel = wifiStartChannel;
+
+            if (!services.nrf.scanNrfChannel(currentScanChannel, activity, SAMPLES_PER_STEP))
+                return false;
+
+            wifiResults[currentScanChannel - wifiStartChannel] = activity;
+
+            currentScanChannel++;
+
+            if (currentScanChannel >= endChannel)
+                currentScanChannel = wifiStartChannel;
+
+            return true;
+        }
+    }
+
+    return false;
+}
+
+/**
+ * @brief Resets the current scan position.
+ *
+ * Selects the appropriate starting NRF24 channel for the current
+ * operating mode.
+ */
+void NRFScanner::resetScanPosition()
 {
     switch (mode)
     {
         case ScanMode::FullSpectrum:
-            return services.nrf.scanSpectrum(spectrumResults);
+            currentScanChannel = 0;
+            break;
 
         case ScanMode::NrfChannel:
-            return services.nrf.scanNrfChannel(nrfChannel, nrfChannelActivity);
+            currentScanChannel = nrfChannel;
+            break;
 
         case ScanMode::WifiBand:
-            return services.nrf.scanWifiChannel(wifiChannel, wifiResults, wifiStartChannel);
-    }
+        {
+            uint8_t centerChannel = 12 + ((wifiChannel - 1) * 5);
 
-    return false;
+            wifiStartChannel = centerChannel - (NRFManager::WIFI_SCAN_WIDTH / 2);
+            currentScanChannel = wifiStartChannel;
+
+            break;
+        }
+    }
 }

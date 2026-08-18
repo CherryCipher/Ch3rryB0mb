@@ -3,7 +3,7 @@
  * @brief NRF Scanner screen interface.
  *
  * This file defines the NRF Scanner screen used to configure
- * and display NRF24 radio scanning functionality.
+ * and visualize NRF24 radio scanning functionality.
  */
 
 #pragma once
@@ -18,21 +18,16 @@ class NRFScanner;
  * @class ScreenNrfScanner
  * @brief Provides the Ch3rryB0mb NRF Scanner screen.
  *
- * The ScreenNrfScanner provides controls for selecting scan modes
- * and channels and displays live RF activity returned by the
- * NRFScanner feature.
+ * The screen provides scan mode and channel controls, start and stop
+ * controls and live RF activity visualization.
  *
- * The screen is responsible only for presentation and user interaction.
- * RF scanning itself is delegated to the NRFScanner feature.
+ * RF scanning is delegated to the NRFScanner feature.
  */
 class ScreenNrfScanner
 {
 public:
     /**
      * @brief Creates the NRF Scanner screen.
-     *
-     * Creates scanner controls, signal visualization and navigation
-     * controls and connects the screen to the NRFScanner feature.
      *
      * @param screenManager Reference to the application ScreenManager.
      * @param nrfScanner Reference to the NRFScanner feature.
@@ -44,15 +39,23 @@ public:
 private:
     /**
      * @enum ScanMode
-     * @brief Scan modes displayed by the scanner mode dropdown.
-     *
-     * The numeric values correspond directly to NRFScanner::ScanMode.
+     * @brief Scan modes displayed by the mode dropdown.
      */
     enum class ScanMode : uint8_t
     {
         FullSpectrum = 0,
         NrfChannel,
         WifiBand
+    };
+
+    /**
+     * @struct BackContext
+     * @brief Holds references required by the back navigation event.
+     */
+    struct BackContext
+    {
+        ScreenManager* screenManager;
+        NRFScanner* nrfScanner;
     };
 
     /**
@@ -81,9 +84,14 @@ private:
     static lv_chart_series_t* signalSeries;
 
     /**
-     * @brief Timer used to update scanning and signal visualization.
+     * @brief Timer used to update scanning and visualization.
      */
     static lv_timer_t* updateTimer;
+
+    /**
+     * @brief Context used by the back button.
+     */
+    static BackContext backContext;
 
     /**
      * @brief Buffer containing generated NRF channel options.
@@ -93,8 +101,6 @@ private:
     /**
      * @brief Handles changes to the scanner mode dropdown.
      *
-     * Updates the NRFScanner feature and rebuilds the channel selector.
-     *
      * @param event Pointer to the LVGL event.
      */
     static void modeChanged(lv_event_t* event);
@@ -102,26 +108,26 @@ private:
     /**
      * @brief Handles changes to the channel dropdown.
      *
-     * Updates either the selected NRF24 channel or Wi-Fi channel
-     * depending on the current scanner mode.
-     *
      * @param event Pointer to the LVGL event.
      */
     static void channelChanged(lv_event_t* event);
 
     /**
-     * @brief Handles the scan button event.
-     *
-     * Starts or stops continuous RF scanning.
+     * @brief Handles the scanner start button event.
      *
      * @param event Pointer to the LVGL event.
      */
-    static void scanClicked(lv_event_t* event);
+    static void startClicked(lv_event_t* event);
 
     /**
-     * @brief Periodically updates scanning and visualization.
+     * @brief Handles the scanner stop button event.
      *
-     * Calls NRFScanner::update() and renders the latest scan results.
+     * @param event Pointer to the LVGL event.
+     */
+    static void stopClicked(lv_event_t* event);
+
+    /**
+     * @brief Periodically updates the scanner and chart.
      *
      * @param timer Pointer to the LVGL timer.
      */
@@ -135,16 +141,12 @@ private:
     static void updateChannelDropdown(ScanMode mode);
 
     /**
-     * @brief Generates NRF channel dropdown options.
-     *
-     * Generates selectable NRF channels from 0 through 125.
+     * @brief Generates the NRF channel dropdown options.
      */
     static void buildNrfChannelOptions();
 
     /**
      * @brief Renders the latest scanner results.
-     *
-     * Updates the chart based on the active scan mode.
      *
      * @param nrfScanner Reference to the NRFScanner feature.
      */
@@ -153,8 +155,7 @@ private:
     /**
      * @brief Handles the NRF Scanner back button event.
      *
-     * Stops scanning, removes the update timer and navigates
-     * to the previous screen.
+     * Stops scanning, removes the update timer and navigates back.
      *
      * @param event Pointer to the LVGL event.
      */
