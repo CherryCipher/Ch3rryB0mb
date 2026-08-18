@@ -390,3 +390,47 @@ lv_obj_t* UIWidgets::addStatusBox(lv_obj_t* parent, const char* text, int width,
 
     return statusBox;
 }
+
+/**
+ * @brief Creates a styled dropdown selector.
+ *
+ * Creates an LVGL dropdown and applies the default Ch3rryB0mb
+ * input styling.
+ *
+ * @param parent Parent LVGL object.
+ * @param x Horizontal position in pixels.
+ * @param y Vertical position in pixels.
+ * @param options Newline-separated dropdown options.
+ * @param width Dropdown width in pixels.
+ *
+ * @return Pointer to the created LVGL dropdown object.
+ */
+lv_obj_t* UIWidgets::addDropdown(lv_obj_t* parent, int x, int y, const char* options, int width)
+{
+    lv_obj_t* dropdown = lv_dropdown_create(parent);
+
+    lv_obj_set_pos(dropdown, x, y);
+    lv_obj_set_width(dropdown, width);
+    lv_dropdown_set_options(dropdown, options);
+
+    // Dropdown styling.
+    lv_obj_set_style_bg_color(dropdown, lv_color_hex(0x080808), LV_PART_MAIN);
+    lv_obj_set_style_bg_opa(dropdown, LV_OPA_COVER, LV_PART_MAIN);
+    lv_obj_set_style_text_color(dropdown, lv_color_hex(0xFFFFFF), LV_PART_MAIN);
+    lv_obj_set_style_border_width(dropdown, 1, LV_PART_MAIN);
+    lv_obj_set_style_border_color(dropdown, lv_color_hex(0xFF1744), LV_PART_MAIN);
+    lv_obj_set_style_radius(dropdown, 3, LV_PART_MAIN);
+
+    // Dropdown list styling.
+    lv_obj_t* list = lv_dropdown_get_list(dropdown);
+
+    if (list != nullptr)
+    {
+        lv_obj_set_style_bg_color(list, lv_color_hex(0x080808), LV_PART_MAIN);
+        lv_obj_set_style_text_color(list, lv_color_hex(0xFFFFFF), LV_PART_MAIN);
+        lv_obj_set_style_border_color(list, lv_color_hex(0xFF1744), LV_PART_MAIN);
+        lv_obj_set_style_border_width(list, 1, LV_PART_MAIN);
+    }
+
+    return dropdown;
+}
