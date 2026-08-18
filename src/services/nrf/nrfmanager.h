@@ -1,5 +1,8 @@
 #pragma once
 
+#include <Arduino.h>
+#include <RF24.h>
+
 #include "../logger/logger.h"
 #include "../spi/spimanager.h"
 
@@ -7,11 +10,11 @@
  * @class NRFManager
  * @brief Manages NRF24 radio functionality.
  *
- * The NRFManager is responsible for all communication with the NRF24 radio.
- * It uses the shared SPI bus provided by SPIManager.
+ * The NRFManager is responsible for initializing and controlling
+ * the NRF24 radio used by Ch3rryB0mb.
  *
- * Applications and features should never communicate directly with the
- * NRF24 library. All NRF24 operations should be performed through this manager.
+ * The radio uses the software SPI configuration provided by
+ * SPIManager.
  *
  * Responsibilities
  * ----------------
@@ -28,19 +31,17 @@ public:
      * @brief Constructs a new NRFManager.
      *
      * @param logger Reference to the application's Logger.
-     * @param spiManager Reference to the shared SPIManager.
+     * @param spiManager Reference to the application's SPIManager.
      */
     NRFManager(Logger& logger, SPIManager& spiManager);
 
     /**
-     * @brief Initializes the NRFManager.
+     * @brief Initializes the NRF24 radio.
      *
-     * Verifies that the shared SPI bus is available and prepares the
-     * NRFManager for use.
+     * Verifies that the SPI infrastructure is available and attempts
+     * to initialize the connected NRF24 radio using software SPI.
      *
-     * The physical NRF24 radio is not initialized yet.
-     *
-     * @return true if initialization succeeded.
+     * @return true if the NRF24 radio was initialized successfully.
      * @return false otherwise.
      */
     bool start();
@@ -48,9 +49,9 @@ public:
     /**
      * @brief Stops the NRFManager.
      *
-     * Stops NRF24 functionality and returns the manager to an inactive state.
+     * Powers down the NRF24 radio and marks the manager as inactive.
      *
-     * @return true if the manager stopped successfully.
+     * @return true if the NRFManager stopped successfully.
      */
     bool stop();
 
@@ -64,18 +65,34 @@ public:
 
 private:
     /**
+     * @brief GPIO pin connected to the NRF24 Chip Enable pin.
+     */
+    static constexpr uint8_t NRF_CE = 27;
+
+    /**
+     * @brief GPIO pin connected to the NRF24 Chip Select pin.
+     */
+    static constexpr uint8_t NRF_CSN = 22;
+
+    /**
      * @brief Reference to the application's Logger instance.
-     *
-     * Used for logging NRF24 related operations.
      */
     Logger& logger;
 
     /**
-     * @brief Reference to the shared SPIManager.
+     * @brief Reference to the application's SPIManager.
      *
-     * Provides access to the SPI bus used by the NRF24 radio.
+     * Provides the centralized SPI configuration used by the radio.
      */
     SPIManager& spiManager;
+
+    /**
+     * @brief NRF24 radio instance.
+     *
+     * The RF24 library uses software SPI when SOFTSPI is enabled
+     * through the project build configuration.
+     */
+    RF24 radio;
 
     /**
      * @brief Indicates whether the NRFManager is currently running.

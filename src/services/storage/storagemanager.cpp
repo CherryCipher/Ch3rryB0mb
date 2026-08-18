@@ -32,7 +32,7 @@ bool StorageManager::start()
         return false;
     }
 
-    mounted = SD.begin(SD_CS, spiManager.getBus());
+    mounted = SD.begin(SD_CS, spiManager.getHardwareBus());
 
     if (mounted)
         logger.info("Storage mounted successfully.");

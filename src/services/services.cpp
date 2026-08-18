@@ -68,7 +68,6 @@ bool Services::start()
         return false;
     }
 
-
     logger.printBanner();
     logger.info("All services started successfully.");
 

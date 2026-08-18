@@ -3,18 +3,20 @@
 /**
  * @brief Constructs a new SPIManager.
  *
+ * Creates the hardware SPI bus used by shared SPI peripherals.
+ *
  * @param logger Reference to the application's Logger.
  */
 SPIManager::SPIManager(Logger& logger)
-    : logger(logger),
-      bus(VSPI)
+    : logger(logger), hardwareBus(VSPI)
 {
 }
 
 /**
- * @brief Initializes the shared external SPI bus.
+ * @brief Initializes the SPI infrastructure.
  *
- * Configures the SPI bus used by external peripherals.
+ * Initializes the shared hardware SPI bus using the configured
+ * SCK, MISO and MOSI pins.
  *
  * @return true if initialization succeeded.
  */
@@ -25,7 +27,7 @@ bool SPIManager::start()
 
     logger.info("Starting SPIManager.");
 
-    bus.begin(SPI_SCK, SPI_MISO, SPI_MOSI);
+    hardwareBus.begin(HARDWARE_SPI_SCK, HARDWARE_SPI_MISO, HARDWARE_SPI_MOSI);
 
     running = true;
 
@@ -35,17 +37,18 @@ bool SPIManager::start()
 }
 
 /**
- * @brief Stops the shared external SPI bus.
+ * @brief Stops the SPI infrastructure.
  *
- * @return true if the SPI bus was stopped successfully.
+ * Stops the shared hardware SPI bus and marks the manager as inactive.
+ *
+ * @return true if the SPIManager stopped successfully.
  */
 bool SPIManager::stop()
 {
     if (!running)
         return true;
 
-    bus.end();
-
+    hardwareBus.end();
     running = false;
 
     logger.info("SPIManager stopped.");
@@ -54,9 +57,10 @@ bool SPIManager::stop()
 }
 
 /**
- * @brief Returns whether the SPIManager is running.
+ * @brief Returns whether the SPIManager is currently running.
  *
- * @return true if the SPI bus is initialized.
+ * @return true if the SPIManager is running.
+ * @return false otherwise.
  */
 bool SPIManager::isRunning() const
 {
@@ -64,11 +68,41 @@ bool SPIManager::isRunning() const
 }
 
 /**
- * @brief Returns the shared SPI bus instance.
+ * @brief Returns the shared hardware SPI bus.
  *
- * @return Reference to the shared SPIClass instance.
+ * @return Reference to the hardware SPIClass instance.
  */
-SPIClass& SPIManager::getBus()
+SPIClass& SPIManager::getHardwareBus()
 {
-    return bus;
+    return hardwareBus;
+}
+
+/**
+ * @brief Returns the radio software SPI clock pin.
+ *
+ * @return GPIO number used for SCK.
+ */
+uint8_t SPIManager::getRadioSckPin() const
+{
+    return RADIO_SPI_SCK;
+}
+
+/**
+ * @brief Returns the radio software SPI MISO pin.
+ *
+ * @return GPIO number used for MISO.
+ */
+uint8_t SPIManager::getRadioMisoPin() const
+{
+    return RADIO_SPI_MISO;
+}
+
+/**
+ * @brief Returns the radio software SPI MOSI pin.
+ *
+ * @return GPIO number used for MOSI.
+ */
+uint8_t SPIManager::getRadioMosiPin() const
+{
+    return RADIO_SPI_MOSI;
 }
