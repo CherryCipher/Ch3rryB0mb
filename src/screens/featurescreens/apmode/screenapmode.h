@@ -21,20 +21,21 @@ public:
      * @brief Creates the AP Mode screen.
      *
      * Creates the LVGL objects required for the AP Mode screen and
-     * connects its controls to the provided ScreenManager.
+     * connects its controls to the provided ScreenManager and APMode.
      *
      * @param screenManager Reference to the application ScreenManager.
-     * @param apMode Reference to the AP MOde feature.
+     * @param apMode Reference to the AP Mode feature.
      *
      * @return Pointer to the created LVGL screen object.
      */
-    static lv_obj_t* create(ScreenManager& screenManager, APMode& apMode);
+    static lv_obj_t* create(
+        ScreenManager& screenManager,
+        APMode& apMode
+    );
 
 private:
     /**
      * @brief Handles the AP Mode start button event.
-     *
-     * Called when the user activates the START control.
      *
      * @param event Pointer to the LVGL event.
      */
@@ -43,8 +44,6 @@ private:
     /**
      * @brief Handles the AP Mode stop button event.
      *
-     * Called when the user activates the STOP control.
-     *
      * @param event Pointer to the LVGL event.
      */
     static void stopClicked(lv_event_t* event);
@@ -52,16 +51,7 @@ private:
     /**
      * @brief Handles the AP Mode back button event.
      *
-     * Retrieves the ScreenManager from the LVGL event user data
-     * and requests navigation to the previous screen.
-     *
      * @param event Pointer to the LVGL event.
      */
     static void backClicked(lv_event_t* event);
-
-    /**
-    * @brief Reference to the Apmode.
-    *.
-    */
-    APMode& apMode;
 };
