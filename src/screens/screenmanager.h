@@ -17,7 +17,8 @@ class Features;
 enum class Screen : uint8_t
 {
     MainMenu,
-    APMode
+    APMode,
+    ApModeConfig
 };
 
 /**

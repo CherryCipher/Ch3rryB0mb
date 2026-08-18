@@ -174,6 +174,27 @@ lv_obj_t* UIWidgets::addButton(
     );
 
     //
+    // Disabled state styling.
+    //
+    lv_obj_set_style_bg_color(
+        button,
+        lv_color_hex(0x101010),
+        LV_PART_MAIN | LV_STATE_DISABLED
+    );
+
+    lv_obj_set_style_border_color(
+        button,
+        lv_color_hex(0x444444),
+        LV_PART_MAIN | LV_STATE_DISABLED
+    );
+
+    lv_obj_set_style_text_color(
+        button,
+        lv_color_hex(0x666666),
+        LV_PART_MAIN | LV_STATE_DISABLED
+    );
+
+    //
     // Button label
     //
     lv_obj_t* label = lv_label_create(button);
@@ -252,6 +273,144 @@ lv_obj_t* UIWidgets::addText(
 }
 
 /**
+ * @brief Creates a styled text input field.
+ *
+ * Creates an LVGL textarea configured as a single-line input and applies
+ * the default Ch3rryB0mb styling. Password mode can optionally be enabled
+ * to obscure entered characters.
+ *
+ * @param parent Parent LVGL object.
+ * @param x Horizontal position in pixels.
+ * @param y Vertical position in pixels.
+ * @param text Initial text displayed in the input field.
+ * @param width Input field width in pixels.
+ * @param passwordMode true to hide entered characters, otherwise false.
+ *
+ * @return Pointer to the created LVGL textarea object.
+ */
+lv_obj_t* UIWidgets::addInput(
+    lv_obj_t* parent,
+    int x,
+    int y,
+    const char* text,
+    int width,
+    bool passwordMode
+)
+{
+    lv_obj_t* input = lv_textarea_create(parent);
+
+    lv_obj_set_pos(
+        input,
+        x,
+        y
+    );
+
+    lv_obj_set_size(
+        input,
+        width,
+        40
+    );
+
+    //
+    // Input behavior.
+    //
+    lv_textarea_set_one_line(
+        input,
+        true
+    );
+
+    lv_textarea_set_text(
+        input,
+        text
+    );
+
+    lv_textarea_set_password_mode(
+        input,
+        passwordMode
+    );
+
+    //
+    // Input styling.
+    //
+    lv_obj_set_style_bg_color(
+        input,
+        lv_color_hex(0x080808),
+        LV_PART_MAIN
+    );
+
+    lv_obj_set_style_bg_opa(
+        input,
+        LV_OPA_COVER,
+        LV_PART_MAIN
+    );
+
+    lv_obj_set_style_border_width(
+        input,
+        1,
+        LV_PART_MAIN
+    );
+
+    lv_obj_set_style_border_color(
+        input,
+        lv_color_hex(0xFF1744),
+        LV_PART_MAIN
+    );
+
+    lv_obj_set_style_radius(
+        input,
+        3,
+        LV_PART_MAIN
+    );
+
+    lv_obj_set_style_text_color(
+        input,
+        lv_color_hex(0xFFFFFF),
+        LV_PART_MAIN
+    );
+
+    lv_obj_set_style_pad_left(
+        input,
+        8,
+        LV_PART_MAIN
+    );
+
+    lv_obj_set_style_pad_right(
+        input,
+        8,
+        LV_PART_MAIN
+    );
+
+    lv_obj_set_style_pad_top(
+        input,
+        8,
+        LV_PART_MAIN
+    );
+
+    lv_obj_set_style_pad_bottom(
+        input,
+        8,
+        LV_PART_MAIN
+    );
+
+    //
+    // Cursor styling.
+    //
+    lv_obj_set_style_border_color(
+        input,
+        lv_color_hex(0xFFFFFF),
+        LV_PART_CURSOR
+    );
+
+    lv_obj_set_style_border_width(
+        input,
+        2,
+        LV_PART_CURSOR
+    );
+
+    return input;
+}
+
+/**
  * @brief Creates a default Ch3rryB0mb screen.
  *
  * Creates a new LVGL screen object and applies the default
@@ -296,4 +455,84 @@ lv_obj_t* UIWidgets::createScreen()
     );
 
     return screen;
+}
+
+/**
+ * @brief Creates a scrollable content container.
+ *
+ * Creates a transparent LVGL container with vertical scrolling enabled.
+ * Child widgets can extend beyond the visible height and are accessible
+ * by scrolling the container.
+ *
+ * @param parent Parent LVGL object.
+ * @param x Horizontal position in pixels.
+ * @param y Vertical position in pixels.
+ * @param width Container width in pixels.
+ * @param height Container height in pixels.
+ *
+ * @return Pointer to the created scrollable LVGL container.
+ */
+lv_obj_t* UIWidgets::createScrollContainer(
+    lv_obj_t* parent,
+    int x,
+    int y,
+    int width,
+    int height
+)
+{
+    lv_obj_t* container = lv_obj_create(parent);
+
+    lv_obj_set_pos(
+        container,
+        x,
+        y
+    );
+
+    lv_obj_set_size(
+        container,
+        width,
+        height
+    );
+
+    //
+    // Container styling.
+    //
+    lv_obj_set_style_bg_opa(
+        container,
+        LV_OPA_TRANSP,
+        LV_PART_MAIN
+    );
+
+    lv_obj_set_style_border_width(
+        container,
+        0,
+        LV_PART_MAIN
+    );
+
+    lv_obj_set_style_radius(
+        container,
+        0,
+        LV_PART_MAIN
+    );
+
+    lv_obj_set_style_pad_all(
+        container,
+        0,
+        LV_PART_MAIN
+    );
+
+    //
+    // Enable vertical scrolling only.
+    //
+    lv_obj_set_scroll_dir(
+        container,
+        LV_DIR_VER
+    );
+
+    lv_obj_set_scrollbar_mode(
+        container,
+        LV_SCROLLBAR_MODE_AUTO
+    );
+
+    return container;
 }

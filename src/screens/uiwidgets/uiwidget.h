@@ -92,6 +92,31 @@ public:
     );
 
     /**
+     * @brief Creates a styled text input field.
+     *
+     * Creates an LVGL textarea using the default Ch3rryB0mb input styling.
+     * The field is configured as a single-line input and can optionally
+     * hide entered characters for password input.
+     *
+     * @param parent Parent LVGL object.
+     * @param x Horizontal position in pixels.
+     * @param y Vertical position in pixels.
+     * @param text Initial text displayed in the input field.
+     * @param width Input field width in pixels.
+     * @param passwordMode true to hide entered characters, otherwise false.
+     *
+     * @return Pointer to the created LVGL textarea object.
+     */
+    static lv_obj_t* addInput(
+        lv_obj_t* parent,
+        int x,
+        int y,
+        const char* text,
+        int width = 210,
+        bool passwordMode = false
+    );
+
+    /**
      * @brief Creates a default Ch3rryB0mb screen.
      *
      * Creates a new LVGL screen object using the default Ch3rryB0mb
@@ -100,4 +125,27 @@ public:
      * @return Pointer to the created LVGL screen object.
      */
     static lv_obj_t* createScreen();
+
+    /**
+     * @brief Creates a scrollable content container.
+     *
+     * Creates an LVGL container intended for vertically scrollable screen
+     * content. Widgets added to this container move together while fixed
+     * screen elements such as headers remain stationary.
+     *
+     * @param parent Parent LVGL object.
+     * @param x Horizontal position in pixels.
+     * @param y Vertical position in pixels.
+     * @param width Container width in pixels.
+     * @param height Container height in pixels.
+     *
+     * @return Pointer to the created scrollable LVGL container.
+     */
+    static lv_obj_t* createScrollContainer(
+        lv_obj_t* parent,
+        int x,
+        int y,
+        int width,
+        int height
+    );
 };

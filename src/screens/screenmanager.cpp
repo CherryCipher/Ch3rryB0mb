@@ -4,6 +4,7 @@
 
 #include "featurescreens/mainmenu/screenmainmenu.h"
 #include "featurescreens/apmode/screenapmode.h"
+#include "featurescreens/apmode/screenapmodeconfig.h"
 
 /**
  * @brief Constructs a new ScreenManager.
@@ -61,8 +62,12 @@ void ScreenManager::show(Screen screen)
             break;
 
         case Screen::APMode:
-        newScreen = ScreenAPMode::create(*this, features.apMode);
-        break;
+            newScreen = ScreenAPMode::create(*this, features.apMode);
+            break;
+
+        case Screen::ApModeConfig:
+            newScreen = ScreenAPModeConfig::create(*this, features.apMode);
+            break;
     }
 
     if (newScreen == nullptr)
