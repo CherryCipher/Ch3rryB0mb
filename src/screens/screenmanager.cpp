@@ -14,6 +14,8 @@
 
 #include "featurescreens/wifilab/screenwifilab.h"
 
+#include "featurescreens/nrfscanner/screennrfscanner.h"
+
 /**
  * @brief Constructs a new ScreenManager.
  *
@@ -100,6 +102,10 @@ void ScreenManager::showInternal( Screen screen, bool addToHistory )
 
         case Screen::WifiLab:
             newScreen = ScreenWifiLab::create(*this, features.wifiLab);
+            break;
+        
+        case Screen::NRFScanner:
+            newScreen = ScreenNrfScanner::create(*this, features.nrfScanner);
             break;
     }
 

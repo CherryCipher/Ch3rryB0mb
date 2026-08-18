@@ -184,4 +184,20 @@ public:
      * @return Pointer to the created LVGL status box object.
      */
     static lv_obj_t* addStatusBox(lv_obj_t* parent, const char* text, int width = 160, int height = 60);
+
+    /**
+     * @brief Creates a styled dropdown selector.
+     *
+     * Creates an LVGL dropdown using the default Ch3rryB0mb input styling.
+     * Dropdown options must be separated using newline characters.
+     *
+     * @param parent Parent LVGL object.
+     * @param x Horizontal position in pixels.
+     * @param y Vertical position in pixels.
+     * @param options Newline-separated dropdown options.
+     * @param width Dropdown width in pixels.
+     *
+     * @return Pointer to the created LVGL dropdown object.
+     */
+    static lv_obj_t* addDropdown(lv_obj_t* parent, int x, int y, const char* options, int width = 100);
 }; 

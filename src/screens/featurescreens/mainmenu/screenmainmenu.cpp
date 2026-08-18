@@ -42,6 +42,17 @@ lv_obj_t* ScreenMainMenu::create(ScreenManager& screenManager)
         &screenManager
     );
 
+    // NRF Scanner Button
+    lv_obj_t* nrfScannerButton = UIWidgets::addButton(screen, 15, 115, "> NRF Sc4n", 100, 45);
+
+    // AP Mode navigation event.
+    lv_obj_add_event_cb(
+        nrfScannerButton,
+        nrfScannerClicked,
+        LV_EVENT_CLICKED,
+        &screenManager
+    );
+
     return screen;
 }
 
@@ -79,4 +90,22 @@ void ScreenMainMenu::wifiLabClicked(lv_event_t* event)
         return;
 
     screenManager->show(Screen::WifiLab);
+}
+
+/**
+ * @brief Handles the NRF Scanner menu button event.
+ *
+ * Retrieves the ScreenManager from the LVGL event user data
+ * and requests navigation to the AP Mode screen.
+ *
+ * @param event Pointer to the LVGL event.
+ */
+void ScreenMainMenu::nrfScannerClicked(lv_event_t* event)
+{
+    ScreenManager* screenManager = static_cast<ScreenManager*>( lv_event_get_user_data(event) );
+
+    if (screenManager == nullptr)
+        return;
+
+    screenManager->show(Screen::NRFScanner);
 }

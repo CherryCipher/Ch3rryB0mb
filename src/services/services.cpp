@@ -8,10 +8,12 @@
  */
 Services::Services()
     : logger()
-    , storage(logger)
+    , spi(logger)
+    , storage(logger, spi)
     , wifi(logger)
     , web(storage, logger)
     , ui(logger)
+    , nrf(logger, spi)
 {
 }
 
@@ -36,14 +38,17 @@ bool Services::start()
 
     logger.info("Starting application services...");
 
-    //Storage is started first to prevent SPI bus conflicts with the touch and display!
+    if (!spi.start())
+    {
+        logger.error("Failed to start SPI Manager.");
+        return false;
+    }
+
     if (!storage.start())
     {
         logger.error("Failed to start StorageManager.");
         return false;
     }
-
-    logger.info("StorageManager started.");
 
     if (!ui.start())
     {
@@ -57,7 +62,11 @@ bool Services::start()
         return false;
     }
 
-    logger.info("WiFiManager started.");
+    if (!nrf.start())
+    {
+        logger.error("Failed to start NRFManager.");
+        return false;
+    }
 
     logger.printBanner();
     logger.info("All services started successfully.");
@@ -74,14 +83,10 @@ bool Services::start()
 void Services::update()
 {
     if (web.isRunning())
-    {
         web.handleClients();
-    }
 
     if(ui.isRunning())
-    {
         ui.update();
-    }
 }
 
 /**
@@ -105,6 +110,9 @@ void Services::stop()
 
     ui.stop();
     logger.info("UIManager stopped.");
+
+    nrf.stop();
+    logger.info("NRFManager stopped.");
 
     logger.info("Logger stopped.");
 

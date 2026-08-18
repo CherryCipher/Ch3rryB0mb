@@ -1,10 +1,12 @@
 #pragma once
 
 #include "logger/Logger.h"
+#include "spi/spimanager.h"
 #include "storage/StorageManager.h"
 #include "wifi/WiFiManager.h"
 #include "webserver/WebServerManager.h"
 #include "UI/uimanager.h"
+#include "nrf/nrfmanager.h"
 
 /**
  * @class Services
@@ -94,6 +96,11 @@ public:
     Logger logger;
 
     /**
+     * @brief Shared embedded NRFManager.
+     */
+    SPIManager spi;
+
+    /**
      * @brief Shared storage service.
      */
     StorageManager storage;
@@ -112,4 +119,9 @@ public:
      * @brief Shared embedded UIManager.
      */
     UIManager ui;
+
+    /**
+     * @brief Shared embedded NRFManager.
+     */
+    NRFManager nrf;
 };
