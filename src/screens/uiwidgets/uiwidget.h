@@ -167,4 +167,38 @@ public:
         int width = 240,
         int height = 140
     );
+
+    /**
+     * @brief Creates a styled toggle switch.
+     *
+     * Creates an LVGL switch using the default Ch3rryB0mb styling.
+     * The initial checked state can be configured when the widget is created.
+     *
+     * @param parent Parent LVGL object.
+     * @param x Horizontal position in pixels.
+     * @param y Vertical position in pixels.
+     * @param checked true to create the toggle in the enabled state, otherwise false.
+     *
+     * @return Pointer to the created LVGL switch object.
+     */
+    static lv_obj_t* addToggle(lv_obj_t* parent, int x, int y, bool checked = false);
+
+    /**
+     * @brief Creates an invisible spacer object.
+     *
+     * Creates a transparent LVGL object that can be used to add empty
+     * vertical space inside layouts or scroll containers.
+     *
+     * This is especially useful for extending the scrollable content area
+     * so widgets can be moved above overlays such as an on-screen keyboard.
+     *
+     * @param parent Parent LVGL object.
+     * @param x Horizontal position in pixels.
+     * @param y Vertical position in pixels.
+     * @param width Spacer width in pixels.
+     * @param height Spacer height in pixels.
+     *
+     * @return Pointer to the created LVGL spacer object.
+     */
+    static lv_obj_t* addSpacer(lv_obj_t* parent, int x, int y, int width, int height);
 };

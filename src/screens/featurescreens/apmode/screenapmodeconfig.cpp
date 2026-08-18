@@ -13,26 +13,38 @@
 #include "app/features/apmode/apmode.h"
 
 /**
-* @brief Savecontext holds the references for the save feature
-*/
-ScreenAPModeConfig::SaveContext ScreenAPModeConfig::saveContext = {
-    nullptr,
-    nullptr
-};
+ * @brief Save context containing references required by the SAVE callback.
+ */
+ScreenAPModeConfig::SaveContext ScreenAPModeConfig::saveContext = { nullptr, nullptr };
 
 /**
-* @brief SSID input field used by the configuration screen.
-*/
+ * @brief SSID input field used by the configuration screen.
+ */
 lv_obj_t* ScreenAPModeConfig::ssidInput = nullptr;
 
 /**
-* @brief Password input field used by the configuration screen.
-*/
+ * @brief Password input field used by the configuration screen.
+ */
 lv_obj_t* ScreenAPModeConfig::passwordInput = nullptr;
 
 /**
-* @brief Onscreen touch Keyboard used by the configuration screen.
-*/
+ * @brief Input field used to configure the WiFi channel.
+ */
+lv_obj_t* ScreenAPModeConfig::channelInput = nullptr;
+
+/**
+ * @brief Toggle used to configure whether the Access Point is hidden.
+ */
+lv_obj_t* ScreenAPModeConfig::hiddenToggle = nullptr;
+
+/**
+ * @brief Input field used to configure the maximum number of AP clients.
+ */
+lv_obj_t* ScreenAPModeConfig::maxClientsInput = nullptr;
+
+/**
+ * @brief On-screen touch keyboard used by the configuration screen.
+ */
 lv_obj_t* ScreenAPModeConfig::keyboard = nullptr;
 
 /**
@@ -47,29 +59,17 @@ lv_obj_t* ScreenAPModeConfig::keyboard = nullptr;
  *
  * @return Pointer to the created LVGL screen object.
  */
-lv_obj_t* ScreenAPModeConfig::create(
-    ScreenManager& screenManager,
-    APMode& apMode
-)
+lv_obj_t* ScreenAPModeConfig::create(ScreenManager& screenManager, APMode& apMode)
 {
-    // Create screen.
+    // Create screen and fixed header.
     lv_obj_t* screen = UIWidgets::createScreen();
-
-    // Header.
     UIWidgets::addHeader(screen, 0, 0, "CONFIG AP");
 
-    // Back button remains outside the scroll container so it stays
-    // visible while the configuration fields are scrolled.
+    // Back button remains outside the scroll container.
     lv_obj_t* backButton = UIWidgets::addButton(screen, 150, 5, "< BACK", 80, 30);
+    lv_obj_add_event_cb(backButton, backClicked, LV_EVENT_CLICKED, &screenManager);
 
-    lv_obj_add_event_cb(
-        backButton,
-        backClicked,
-        LV_EVENT_CLICKED,
-        &screenManager
-    );
-
-    // Scrollable configuration area below the fixed header. -40px for header
+    // Scrollable configuration area below the 40px header.
     lv_obj_t* content = UIWidgets::createScrollContainer(screen, 0, 40, 240, 280);
 
     // Load current AP configuration.
@@ -77,76 +77,46 @@ lv_obj_t* ScreenAPModeConfig::create(
 
     // SSID.
     UIWidgets::addText(content, 15, 15, "SSID", 210);
-
-    //adeed to content not to screen to add it to the scrollarea
     ssidInput = UIWidgets::addInput(content, 15, 40, config.ssid.c_str(), 210);
 
-
     // Password.
-    //adeed to content not to screen to add it to the scrollarea
     UIWidgets::addText(content, 15, 95, "PASSWORD", 210);
-
     passwordInput = UIWidgets::addInput(content, 15, 120, config.password.c_str(), 210, true);
 
-    // Future configuration fields.
-    //adeed to content not to screen to add it to the scrollarea
-    UIWidgets::addText(content, 15, 175, "CHANNEL", 210);
+    // WiFi channel.
+    UIWidgets::addText(content, 15, 175, "CHANNEL (1-13)", 210);
+    channelInput = UIWidgets::addInput(content, 15, 200, String(config.channel).c_str(), 210);
 
-    UIWidgets::addText(content, 15, 220, "HIDDEN", 210);
+    // Hidden SSID.
+    UIWidgets::addText(content, 15, 255, "HIDDEN", 210);
+    hiddenToggle = UIWidgets::addToggle(content, 15, 280, config.hidden);
 
-    UIWidgets::addText(content, 15, 265, "MAX CLIENTS", 210);
+    // Maximum connected clients.
+    UIWidgets::addText(content, 15, 335, "MAX CLIENTS (1-10)", 210);
+    maxClientsInput = UIWidgets::addInput(content, 15, 360, String(config.maxClients).c_str(), 210);
 
     // Save button.
-    lv_obj_t* saveButton = UIWidgets::addButton(content, 15, 320, "SAVE", 210, 40);
+    lv_obj_t* saveButton = UIWidgets::addButton(content, 15, 415, "SAVE", 210, 40);
 
-    //create savecontext, so we can save and Back
+    // Configure SAVE callback context.
     saveContext.apMode = &apMode;
     saveContext.screenManager = &screenManager;
+    lv_obj_add_event_cb(saveButton, saveClicked, LV_EVENT_CLICKED, &saveContext);
 
-    lv_obj_add_event_cb(
-        saveButton,
-        saveClicked,
-        LV_EVENT_CLICKED,
-        &saveContext
-    );
+    //We add a space so the keyboard does not cover up the bottom content
+    UIWidgets::addSpacer(content, 0, 470, 1, 150);
 
-    //Create the onscreen keyboard
+    // Create the on-screen keyboard.
     keyboard = UIWidgets::addKeyboard(screen);
 
-    lv_obj_add_flag(
-        keyboard,
-        LV_OBJ_FLAG_HIDDEN
-    );
+    lv_obj_add_event_cb(keyboard, keyboardFinished, LV_EVENT_READY, nullptr);
+    lv_obj_add_event_cb(keyboard, keyboardFinished, LV_EVENT_CANCEL, nullptr);
 
-    lv_obj_add_event_cb(
-        keyboard,
-        keyboardFinished,
-        LV_EVENT_READY,
-        nullptr
-    );
-
-    lv_obj_add_event_cb(
-        keyboard,
-        keyboardFinished,
-        LV_EVENT_CANCEL,
-        nullptr
-    );
-
-    //SSID focus event
-    lv_obj_add_event_cb(
-        ssidInput,
-        inputFocused,
-        LV_EVENT_FOCUSED,
-        nullptr
-    );
-
-    //password focus event
-    lv_obj_add_event_cb(
-        passwordInput,
-        inputFocused,
-        LV_EVENT_FOCUSED,
-        nullptr
-    );
+    // Connect input fields to the keyboard.
+    lv_obj_add_event_cb(ssidInput, inputFocused, LV_EVENT_FOCUSED, nullptr);
+    lv_obj_add_event_cb(passwordInput, inputFocused, LV_EVENT_FOCUSED, nullptr);
+    lv_obj_add_event_cb(channelInput, inputFocused, LV_EVENT_FOCUSED, nullptr);
+    lv_obj_add_event_cb(maxClientsInput, inputFocused, LV_EVENT_FOCUSED, nullptr);
 
     return screen;
 }
@@ -161,15 +131,10 @@ lv_obj_t* ScreenAPModeConfig::create(
  */
 void ScreenAPModeConfig::backClicked(lv_event_t* event)
 {
-    ScreenManager* screenManager =
-        static_cast<ScreenManager*>(
-            lv_event_get_user_data(event)
-        );
+    ScreenManager* screenManager = static_cast<ScreenManager*>(lv_event_get_user_data(event));
 
     if (screenManager == nullptr)
-    {
         return;
-    }
 
     screenManager->back();
 }
@@ -185,29 +150,16 @@ void ScreenAPModeConfig::backClicked(lv_event_t* event)
 void ScreenAPModeConfig::inputFocused(lv_event_t* event)
 {
     if (keyboard == nullptr)
-    {
         return;
-    }
 
-    lv_obj_t* input =
-    static_cast<lv_obj_t*>(
-        lv_event_get_target(event)
-    );
+    lv_obj_t* input = static_cast<lv_obj_t*>(lv_event_get_target(event));
 
-    lv_keyboard_set_textarea(
-        keyboard,
-        input
-    );
+    if (input == nullptr)
+        return;
 
-    lv_obj_clear_flag(
-        keyboard,
-        LV_OBJ_FLAG_HIDDEN
-    );
-
-    lv_obj_scroll_to_view(
-        input,
-        LV_ANIM_ON
-    );
+    lv_keyboard_set_textarea(keyboard, input);
+    lv_obj_clear_flag(keyboard, LV_OBJ_FLAG_HIDDEN);
+    lv_obj_scroll_to_view(input, LV_ANIM_ON);
 }
 
 /**
@@ -220,59 +172,62 @@ void ScreenAPModeConfig::inputFocused(lv_event_t* event)
 void ScreenAPModeConfig::keyboardFinished(lv_event_t* event)
 {
     if (keyboard == nullptr)
-    {
         return;
-    }
 
-    lv_keyboard_set_textarea(
-        keyboard,
-        nullptr
-    );
-
-    lv_obj_add_flag(
-        keyboard,
-        LV_OBJ_FLAG_HIDDEN
-    );
+    lv_keyboard_set_textarea(keyboard, nullptr);
+    lv_obj_add_flag(keyboard, LV_OBJ_FLAG_HIDDEN);
 }
 
 /**
  * @brief Handles the SAVE button event.
  *
- * Reads the edited configuration values, stores the updated
- * configuration in APMode and returns to the previous screen.
+ * Reads the edited configuration values, validates numeric settings,
+ * stores the updated configuration in APMode and returns to the previous
+ * screen.
  *
  * @param event Pointer to the LVGL event.
  */
 void ScreenAPModeConfig::saveClicked(lv_event_t* event)
 {
-    SaveContext* context =
-        static_cast<SaveContext*>(
-            lv_event_get_user_data(event)
-        );
+    SaveContext* context = static_cast<SaveContext*>(lv_event_get_user_data(event));
 
     if (context == nullptr ||
         context->apMode == nullptr ||
         context->screenManager == nullptr ||
         ssidInput == nullptr ||
-        passwordInput == nullptr)
+        passwordInput == nullptr ||
+        channelInput == nullptr ||
+        hiddenToggle == nullptr ||
+        maxClientsInput == nullptr)
     {
         return;
     }
 
     // Create an editable copy of the current configuration.
-    WiFiAPConfig newConfig =
-        context->apMode->getConfig();
+    WiFiAPConfig newConfig = context->apMode->getConfig();
 
-    // Read the edited values.
-    newConfig.ssid =
-        lv_textarea_get_text(ssidInput);
+    // Read text values.
+    newConfig.ssid = lv_textarea_get_text(ssidInput);
+    newConfig.password = lv_textarea_get_text(passwordInput);
 
-    newConfig.password =
-        lv_textarea_get_text(passwordInput);
+    // Read numeric values.
+    int channel = atoi(lv_textarea_get_text(channelInput));
+    int maxClients = atoi(lv_textarea_get_text(maxClientsInput));
 
-    // Store the new configuration.
+    // Validate channel range.
+    if (channel < 1) channel = 1;
+    if (channel > 13) channel = 13;
+
+    // Validate maximum client range.
+    if (maxClients < 1) maxClients = 1;
+    if (maxClients > 10) maxClients = 10;
+
+    // Store remaining configuration.
+    newConfig.channel = channel;
+    newConfig.hidden = lv_obj_has_state(hiddenToggle, LV_STATE_CHECKED);
+    newConfig.maxClients = maxClients;
+
+    // Store the new configuration and return to AP Mode.
     context->apMode->setConfig(newConfig);
-
-    // Return to AP Mode.
     context->screenManager->back();
 }

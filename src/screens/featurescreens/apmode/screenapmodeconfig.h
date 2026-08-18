@@ -57,6 +57,28 @@ private:
     static lv_obj_t* passwordInput;
 
     /**
+     * @brief Input field used to configure the WiFi channel.
+     *
+     * Accepts a channel number between 1 and 13.
+     */
+    static lv_obj_t* channelInput;
+
+    /**
+     * @brief Toggle used to configure whether the Access Point is hidden.
+     *
+     * The checked state represents a hidden SSID.
+     */
+    static lv_obj_t* hiddenToggle;
+
+    /**
+     * @brief Input field used to configure the maximum number of AP clients.
+     *
+     * Accepts the maximum number of devices that may connect to the
+     * Access Point simultaneously.
+     */
+    static lv_obj_t* maxClientsInput;
+
+    /**
      * @brief Handles the SAVE button event.
      *
      * The actual configuration update functionality will be connected
