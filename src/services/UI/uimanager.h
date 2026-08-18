@@ -1,16 +1,20 @@
 #pragma once
 
 #include <Arduino.h>
+#include <lvgl.h>
+
 #include "../logger/logger.h"
+#include "softtouch.h"
 
 /**
  * @class UIManager
  * @brief Manages the graphical user interface.
  *
- * The UIManager initializes the display and touch interface through
- * esp32-smartdisplay and keeps LVGL updated during runtime.
+ * The UIManager initializes the display and LVGL through
+ * esp32-smartdisplay.
  *
- * Screen creation and navigation can be added on top of this manager.
+ * Touch input is handled separately through the SoftTouch
+ * software SPI driver to prevent conflicts with the SD card.
  */
 class UIManager
 {
@@ -25,18 +29,18 @@ public:
     /**
      * @brief Starts the user interface.
      *
-     * Initializes esp32-smartdisplay, including the display,
-     * touch controller and LVGL.
+     * Initializes esp32-smartdisplay, the software SPI touch
+     * controller and registers the touch device with LVGL.
      *
      * @return true if the UI was started successfully.
      */
     bool start();
 
     /**
-     * @brief Returns true if the UIManager is running
-     * 
+     * @brief Returns true if the UIManager is running.
+     *
      * @return true if manager is running.
-     * @return false if otherwise.
+     * @return false otherwise.
      */
     bool isRunning() const;
 
@@ -52,20 +56,30 @@ public:
     void update();
 
     /**
-    * @brief Stops the UImanager
-    *
-    * This function should be called when the application is shutting down
-    *
-    * @return true if stopped succesfull
-    * @return false otherwise.
-    */
+     * @brief Stops the UIManager.
+     *
+     * @return true if stopped successfully.
+     */
     bool stop();
 
 private:
     /**
-     * @brief Variable to check if UIManager is running
+     * @brief LVGL callback used to read touch input.
      *
-     * Used to check if the UIManager is runnign to handle updating in services
+     * Reads raw touch data from the SoftTouch driver,
+     * converts it to display coordinates and provides
+     * the result to LVGL.
+     *
+     * @param indev Pointer to the LVGL input device.
+     * @param data Pointer to the LVGL input data structure.
+     */
+    static void readTouch(
+        lv_indev_t* indev,
+        lv_indev_data_t* data
+    );
+
+    /**
+     * @brief Variable to check if UIManager is running.
      */
     bool running = false;
 
@@ -77,9 +91,17 @@ private:
     uint32_t lastTick = 0;
 
     /**
-    * @brief Reference to the application's Logger instance.
-    *
-    * Used for logging messages related to web server operations.
-    */
+     * @brief Reference to the application's Logger instance.
+     */
     Logger& logger;
+
+    /**
+     * @brief Software SPI XPT2046 touch controller.
+     */
+    SoftTouch touch;
+
+    /**
+     * @brief LVGL touch input device.
+     */
+    lv_indev_t* touchInput = nullptr;
 };

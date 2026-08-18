@@ -115,7 +115,9 @@
       "'-D CDS=34'",
 
       "'-D BOARD_HAS_SPEAK'",
-      "'-D SPEAK=26'"
+      "'-D SPEAK=26'",
+
+      "-D SMARTDISPLAY_DISABLE_TOUCH"
     ],
 
     "f_cpu": "240000000L",
