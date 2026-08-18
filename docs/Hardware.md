@@ -67,13 +67,12 @@ On the ESP32-WROOM module:
 
 ```text
 Module pin 1 = GND
-Module pin 2 = 3.3V
+Module pin 2/15 = 3.3V
 ```
 
 With the ESP32-WROOM antenna facing upward, these are the upper two pads on the left side of the module:
 
 ```text
-Top left pad        = GND
 Second left pad     = 3.3V
 ```
 
