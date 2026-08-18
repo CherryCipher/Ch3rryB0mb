@@ -83,6 +83,19 @@ const WiFiAPConfig& APMode::getConfig() const
 }
 
 /**
+ * @brief Updates the Access Point configuration.
+ *
+ * Stores the supplied configuration for use the next time AP Mode
+ * starts the WiFi access point.
+ *
+ * @param newConfig New Access Point configuration.
+ */
+void APMode::setConfig(const WiFiAPConfig& newConfig)
+{
+    config = newConfig;
+}
+
+/**
  * @brief Returns the current Access Point IP address.
  *
  * Retrieves the IP address from the WiFiManager and converts it to

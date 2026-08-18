@@ -92,6 +92,31 @@ public:
     );
 
     /**
+     * @brief Creates a styled text input field.
+     *
+     * Creates an LVGL textarea using the default Ch3rryB0mb input styling.
+     * The field is configured as a single-line input and can optionally
+     * hide entered characters for password input.
+     *
+     * @param parent Parent LVGL object.
+     * @param x Horizontal position in pixels.
+     * @param y Vertical position in pixels.
+     * @param text Initial text displayed in the input field.
+     * @param width Input field width in pixels.
+     * @param passwordMode true to hide entered characters, otherwise false.
+     *
+     * @return Pointer to the created LVGL textarea object.
+     */
+    static lv_obj_t* addInput(
+        lv_obj_t* parent,
+        int x,
+        int y,
+        const char* text,
+        int width = 210,
+        bool passwordMode = false
+    );
+
+    /**
      * @brief Creates a default Ch3rryB0mb screen.
      *
      * Creates a new LVGL screen object using the default Ch3rryB0mb
@@ -100,4 +125,80 @@ public:
      * @return Pointer to the created LVGL screen object.
      */
     static lv_obj_t* createScreen();
+
+    /**
+     * @brief Creates a scrollable content container.
+     *
+     * Creates an LVGL container intended for vertically scrollable screen
+     * content. Widgets added to this container move together while fixed
+     * screen elements such as headers remain stationary.
+     *
+     * @param parent Parent LVGL object.
+     * @param x Horizontal position in pixels.
+     * @param y Vertical position in pixels.
+     * @param width Container width in pixels.
+     * @param height Container height in pixels.
+     *
+     * @return Pointer to the created scrollable LVGL container.
+     */
+    static lv_obj_t* createScrollContainer(
+        lv_obj_t* parent,
+        int x,
+        int y,
+        int width,
+        int height
+    );
+
+    /**
+     * @brief Creates a styled on-screen keyboard.
+     *
+     * Creates an LVGL keyboard using the default Ch3rryB0mb styling.
+     * The keyboard is hidden by default and can later be connected to
+     * a textarea using lv_keyboard_set_textarea().
+     *
+     * @param parent Parent LVGL object.
+     * @param width Keyboard width in pixels.
+     * @param height Keyboard height in pixels.
+     *
+     * @return Pointer to the created LVGL keyboard object.
+     */
+    static lv_obj_t* addKeyboard(
+        lv_obj_t* parent,
+        int width = 240,
+        int height = 140
+    );
+
+    /**
+     * @brief Creates a styled toggle switch.
+     *
+     * Creates an LVGL switch using the default Ch3rryB0mb styling.
+     * The initial checked state can be configured when the widget is created.
+     *
+     * @param parent Parent LVGL object.
+     * @param x Horizontal position in pixels.
+     * @param y Vertical position in pixels.
+     * @param checked true to create the toggle in the enabled state, otherwise false.
+     *
+     * @return Pointer to the created LVGL switch object.
+     */
+    static lv_obj_t* addToggle(lv_obj_t* parent, int x, int y, bool checked = false);
+
+    /**
+     * @brief Creates an invisible spacer object.
+     *
+     * Creates a transparent LVGL object that can be used to add empty
+     * vertical space inside layouts or scroll containers.
+     *
+     * This is especially useful for extending the scrollable content area
+     * so widgets can be moved above overlays such as an on-screen keyboard.
+     *
+     * @param parent Parent LVGL object.
+     * @param x Horizontal position in pixels.
+     * @param y Vertical position in pixels.
+     * @param width Spacer width in pixels.
+     * @param height Spacer height in pixels.
+     *
+     * @return Pointer to the created LVGL spacer object.
+     */
+    static lv_obj_t* addSpacer(lv_obj_t* parent, int x, int y, int width, int height);
 };

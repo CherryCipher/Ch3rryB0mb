@@ -35,6 +35,16 @@ public:
 
 private:
     /**
+     * @brief AP start button.
+     */
+    static lv_obj_t* startButton;
+
+    /**
+     * @brief AP stop button.
+     */
+    static lv_obj_t* stopButton;
+
+    /**
      * @brief Handles the AP Mode start button event.
      *
      * @param event Pointer to the LVGL event.
@@ -47,6 +57,14 @@ private:
      * @param event Pointer to the LVGL event.
      */
     static void stopClicked(lv_event_t* event);
+
+    /**
+     * @brief AP configuration button.
+     *
+     * The button is disabled while AP Mode is running to prevent
+     * configuration changes to an active access point.
+     */
+    static lv_obj_t* configButton;
 
     /**
      * @brief Handles the AP Mode config button event.
