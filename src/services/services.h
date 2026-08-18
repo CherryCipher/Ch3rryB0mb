@@ -124,4 +124,12 @@ public:
      * @brief Shared embedded NRFManager.
      */
     NRFManager nrf;
+
+private:
+
+    /**
+     * @brief Flag to check for down services
+     */
+    bool serviceDown = false;
+
 };

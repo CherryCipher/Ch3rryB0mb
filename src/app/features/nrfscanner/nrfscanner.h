@@ -160,6 +160,14 @@ public:
      */
     void clearPeaks();
 
+    /**
+     * @brief Returns whether NRF Scanner hardware is available.
+     *
+     * @return true if the NRF24 service is available.
+     * @return false otherwise.
+     */
+    bool isAvailable() const;
+
 private:
     /**
      * @brief Number of RPD samples taken during one incremental scan step.

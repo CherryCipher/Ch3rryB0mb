@@ -89,7 +89,7 @@ void ScreenManager::showInternal( Screen screen, bool addToHistory )
     switch (screen)
     {
         case Screen::MainMenu:
-            newScreen = ScreenMainMenu::create(*this);
+            newScreen = ScreenMainMenu::create(*this, features);
             break;
 
         case Screen::APMode:

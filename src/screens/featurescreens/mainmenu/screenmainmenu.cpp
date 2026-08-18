@@ -9,10 +9,11 @@
  * available application navigation options.
  *
  * @param screenManager Reference to the application ScreenManager.
+ * @param features Reference to features.
  *
  * @return Pointer to the created LVGL screen object.
  */
-lv_obj_t* ScreenMainMenu::create(ScreenManager& screenManager)
+lv_obj_t* ScreenMainMenu::create(ScreenManager& screenManager, Features& features)
 {
     // Screen background.
     lv_obj_t* screen = UIWidgets::createScreen();
@@ -42,16 +43,21 @@ lv_obj_t* ScreenMainMenu::create(ScreenManager& screenManager)
         &screenManager
     );
 
-    // NRF Scanner Button
-    lv_obj_t* nrfScannerButton = UIWidgets::addButton(screen, 15, 115, "> NRF Sc4n", 100, 45);
+    //Since we might not have an nrf scanner available check if it is
+    if(features.nrfScanner.isAvailable())
+    {
+        // NRF Scanner Button
+        lv_obj_t* nrfScannerButton = UIWidgets::addButton(screen, 15, 115, "> NRF Sc4n", 100, 45);
 
-    // AP Mode navigation event.
-    lv_obj_add_event_cb(
-        nrfScannerButton,
-        nrfScannerClicked,
-        LV_EVENT_CLICKED,
-        &screenManager
-    );
+        
+        // AP Mode navigation event.
+        lv_obj_add_event_cb(
+            nrfScannerButton,
+            nrfScannerClicked,
+            LV_EVENT_CLICKED,
+            &screenManager
+        );
+    }
 
     return screen;
 }

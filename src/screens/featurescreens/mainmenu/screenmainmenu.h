@@ -1,6 +1,7 @@
 #pragma once
 
 #include <lvgl.h>
+#include "app/features/features.h"
 
 class ScreenManager;
 
@@ -23,10 +24,11 @@ public:
      * connects its navigation events to the provided ScreenManager.
      *
      * @param screenManager Reference to the application ScreenManager.
+     * @param features Reference to features.
      *
      * @return Pointer to the created LVGL screen object.
      */
-    static lv_obj_t* create(ScreenManager& screenManager);
+    static lv_obj_t* create(ScreenManager& screenManager, Features& features);
 
 private:
     /**

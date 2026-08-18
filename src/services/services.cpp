@@ -64,12 +64,22 @@ bool Services::start()
 
     if (!nrf.start())
     {
-        logger.error("Failed to start NRFManager.");
-        return false;
+        logger.error("Failed to start NRFManager. It will be unavailable in the main menu");
+        serviceDown = true;
+
+        // Let's not crash the app, but make NRF unavailable
+        //return false;
     }
 
     logger.printBanner();
-    logger.info("All services started successfully.");
+
+    if(!serviceDown)
+        logger.info("All services started successfully.");
+    else
+    {
+        logger.warning("NOT all services started successfully.");
+        logger.info("These are non crucial services but some features may not be available.");
+    }
 
     return true;
 }

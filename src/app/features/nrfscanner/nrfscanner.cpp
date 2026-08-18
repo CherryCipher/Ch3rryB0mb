@@ -327,3 +327,14 @@ void NRFScanner::resetScanPosition()
         }
     }
 }
+
+/**
+ * @brief Returns whether NRF Scanner hardware is available.
+ *
+ * @return true if the NRF24 service is available.
+ * @return false otherwise.
+ */
+bool NRFScanner::isAvailable() const
+{
+    return services.nrf.isRunning();
+}
