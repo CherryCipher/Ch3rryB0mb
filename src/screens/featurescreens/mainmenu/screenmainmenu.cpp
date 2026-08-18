@@ -20,13 +20,24 @@ lv_obj_t* ScreenMainMenu::create(ScreenManager& screenManager)
     // Header.
     UIWidgets::addHeader(screen, 0, 0, "Ch3rryB0mb" );
 
-    // Start button.
-    lv_obj_t* apModeButton = UIWidgets::addButton(screen, 15, 75, "> AP Mode", 100, 45);
+    // Ap Mode Button
+    lv_obj_t* apModeButton = UIWidgets::addButton(screen, 15, 60, "> AP Mode", 100, 45);
 
     // AP Mode navigation event.
     lv_obj_add_event_cb(
         apModeButton,
         apModeClicked,
+        LV_EVENT_CLICKED,
+        &screenManager
+    );
+
+    // WifiLab Button
+    lv_obj_t* wifiLabButton = UIWidgets::addButton(screen, 125, 60, "> WifiL4b", 100, 45);
+
+    // AP Mode navigation event.
+    lv_obj_add_event_cb(
+        wifiLabButton,
+        wifiLabClicked,
         LV_EVENT_CLICKED,
         &screenManager
     );
@@ -50,4 +61,22 @@ void ScreenMainMenu::apModeClicked(lv_event_t* event)
         return;
 
     screenManager->show(Screen::APMode);
+}
+
+/**
+ * @brief Handles the WifiLab menu button event.
+ *
+ * Retrieves the ScreenManager from the LVGL event user data
+ * and requests navigation to the AP Mode screen.
+ *
+ * @param event Pointer to the LVGL event.
+ */
+void ScreenMainMenu::wifiLabClicked(lv_event_t* event)
+{
+    ScreenManager* screenManager = static_cast<ScreenManager*>( lv_event_get_user_data(event) );
+
+    if (screenManager == nullptr)
+        return;
+
+    screenManager->show(Screen::WifiLab);
 }
