@@ -1,6 +1,7 @@
 #pragma once
 
 #include "apmode/apmode.h"
+#include "wifilab/wifilab.h"
 
 class Services;
 
@@ -27,4 +28,9 @@ public:
      * @brief Access Point Mode feature.
      */
     APMode apMode;
+
+    /**
+     * @brief Wi-Fi Lab feature.
+     */
+    WiFiLab wifiLab;
 };

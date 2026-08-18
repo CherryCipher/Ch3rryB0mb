@@ -5,6 +5,24 @@
 #include "WiFiConfig.h"
 #include "../logger/logger.h"
 
+/**
+ * @struct WiFiNetwork
+ * @brief Contains information about a discovered Wi-Fi network.
+ *
+ * Represents a single Access Point discovered during a Wi-Fi scan.
+ * The structure contains the network information required by
+ * Ch3rryB0mb features without exposing the ESP32 WiFi scanning API.
+ */
+struct WiFiNetwork
+{
+    String ssid;
+    String bssid;
+    int32_t rssi;
+    uint8_t channel;
+    wifi_auth_mode_t encryption;
+};
+
+
 /******************************************************************************
  * WiFiManager
  *
@@ -81,12 +99,52 @@ public:
     IPAddress getAPIP() const;
 
     /**
+     * @brief Scans for nearby Wi-Fi networks.
+     *
+     * Performs a Wi-Fi network scan and stores the discovered access points
+     * internally for later retrieval.
+     *
+     * @return true if the scan completed successfully, otherwise false.
+     */
+    bool scanNetworks();
+
+    /**
+     * @brief Returns the number of stored Wi-Fi scan results.
+     *
+     * @return Number of networks discovered during the most recent scan.
+     */
+    int getNetworkCount() const;
+
+    /**
+     * @brief Returns a Wi-Fi network from the stored scan results.
+     *
+     * @param index Index of the requested network.
+     * @return Constant reference to the requested WiFiNetwork.
+     */
+    const WiFiNetwork& getNetwork(int index) const;
+
+    /**
      * @brief Stops the WiFiManager and disables all Wi-Fi functionality.
      *
      */
     bool stop();
 
 private:
+    /**
+     * @brief Maximum number of Wi-Fi scan results stored by the manager.
+     */
+    static constexpr int MAX_SCAN_RESULTS = 30;
+
+    /**
+     * @brief Networks discovered during the most recent Wi-Fi scan.
+     */
+    WiFiNetwork networks[MAX_SCAN_RESULTS];
+
+    /**
+     * @brief Number of valid networks currently stored.
+     */
+    int networkCount = 0;
+
     /**
      * @brief Reference to the application's Logger instance.
      *

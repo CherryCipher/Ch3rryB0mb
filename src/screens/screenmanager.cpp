@@ -6,9 +6,13 @@
 #include "screenmanager.h"
 
 #include "../app/features/features.h"
+
 #include "featurescreens/mainmenu/screenmainmenu.h"
+
 #include "featurescreens/apmode/screenapmode.h"
 #include "featurescreens/apmode/screenapmodeconfig.h"
+
+#include "featurescreens/wifilab/screenwifilab.h"
 
 /**
  * @brief Constructs a new ScreenManager.
@@ -92,6 +96,10 @@ void ScreenManager::showInternal( Screen screen, bool addToHistory )
 
         case Screen::ApModeConfig:
             newScreen = ScreenAPModeConfig::create(*this, features.apMode);
+            break;
+
+        case Screen::WifiLab:
+            newScreen = ScreenWifiLab::create(*this, features.wifiLab);
             break;
     }
 

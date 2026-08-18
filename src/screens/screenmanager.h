@@ -27,7 +27,8 @@ enum class Screen : uint8_t
 {
     MainMenu,
     APMode,
-    ApModeConfig
+    ApModeConfig,
+    WifiLab
 };
 
 /**

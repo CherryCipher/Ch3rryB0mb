@@ -38,4 +38,14 @@ private:
      * @param event Pointer to the LVGL event.
      */
     static void apModeClicked(lv_event_t* event);
+
+    /**
+     * @brief Handles the WifiLab menu button event.
+     *
+     * Retrieves the ScreenManager from the LVGL event user data
+     * and requests navigation to the Wifilab screen.
+     *
+     * @param event Pointer to the LVGL event.
+     */
+    static void wifiLabClicked(lv_event_t* event);
 };

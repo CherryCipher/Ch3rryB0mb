@@ -137,3 +137,78 @@
 
         return true;
     }
+
+    /**
+     * @brief Scans for nearby Wi-Fi networks.
+     *
+     * Enables Station mode when required and performs a synchronous Wi-Fi scan.
+     * Discovered Access Points are stored internally as WiFiNetwork objects.
+     *
+     * Existing scan results are cleared before starting a new scan.
+     *
+     * @return true if the scan completed successfully.
+     * @return false if the scan failed.
+     */
+    bool WiFiManager::scanNetworks()
+    {
+        networkCount = 0;
+
+        wifi_mode_t currentMode = WiFi.getMode();
+
+        if (currentMode == WIFI_OFF)
+        {
+            WiFi.mode(WIFI_STA);
+            logger.info("WiFi mode set to WIFI_STA for network scan.");
+        }
+        else if (currentMode == WIFI_AP)
+        {
+            WiFi.mode(WIFI_AP_STA);
+            logger.info("WiFi mode set to WIFI_AP_STA for network scan.");
+        }
+
+        int foundNetworks = WiFi.scanNetworks();
+
+        if (foundNetworks < 0)
+        {
+            logger.error("Wi-Fi network scan failed.");
+            return false;
+        }
+
+        networkCount = min(foundNetworks, MAX_SCAN_RESULTS);
+
+        for (int i = 0; i < networkCount; i++)
+        {
+            networks[i].ssid = WiFi.SSID(i);
+            networks[i].bssid = WiFi.BSSIDstr(i);
+            networks[i].rssi = WiFi.RSSI(i);
+            networks[i].channel = WiFi.channel(i);
+            networks[i].encryption = WiFi.encryptionType(i);
+        }
+
+        WiFi.scanDelete();
+
+        logger.info("Wi-Fi scan completed. Networks found: " + String(networkCount));
+
+        return true;
+    }
+
+    /**
+     * @brief Returns the number of stored Wi-Fi scan results.
+     *
+     * @return Number of networks discovered during the most recent scan.
+     */
+    int WiFiManager::getNetworkCount() const
+    {
+        return networkCount;
+    }
+
+    /**
+     * @brief Returns a Wi-Fi network from the stored scan results.
+     *
+     * @param index Index of the requested network.
+     * @return Constant reference to the requested WiFiNetwork.
+     */
+    const WiFiNetwork& WiFiManager::getNetwork(int index) const
+    {
+        return networks[index];
+    }

@@ -166,4 +166,22 @@ public:
      * @return Pointer to the created LVGL spacer object.
      */
     static lv_obj_t* addSpacer(lv_obj_t* parent, int x, int y, int width, int height);
+
+    /**
+     * @brief Creates a centered status box.
+     *
+     * Creates a temporary Ch3rryB0mb styled status box centered on
+     * the parent object. The box can be used to display short status
+     * messages while a blocking operation is being performed.
+     *
+     * The returned object can be removed using lv_obj_del().
+     *
+     * @param parent Parent LVGL object.
+     * @param text Text displayed inside the status box.
+     * @param width Width of the status box in pixels.
+     * @param height Height of the status box in pixels.
+     *
+     * @return Pointer to the created LVGL status box object.
+     */
+    static lv_obj_t* addStatusBox(lv_obj_t* parent, const char* text, int width = 160, int height = 60);
 }; 
