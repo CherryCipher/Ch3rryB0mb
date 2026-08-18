@@ -6,7 +6,10 @@
      * Initializes all shared services and prepares the application
      * for startup.
      */
-    Application::Application()
+    Application::Application()    
+        :   services(),
+            features(services),
+            screens(services.logger, features)
     {
     }
 
@@ -29,23 +32,12 @@
             return false;
         }
 
-        //
-        // Temporary startup behavior.
-        // Later this will become the BootManager/UI.
-        //
-        // First create a default WiFiAPConfig object with the default values. Then start the AP with the default config.
-        // Initialy I would love to check if any external modules are connected to the ESP32
-        // if no modules are connected, automatically start in AP mode and serve the captive portal 
-        if (!services.startAPMode())
+        if (!screens.start())
         {
-            Serial.println("========== FATAL ERROR ==========");
-            Serial.println("FATAL ERROR CAN'T AP MODE");
+            Serial.println("FATAL ERROR: Can't start ScreenManager");
             return false;
         }
-        else
-            Serial.println("========== AP MODE ACTIVATED ==========");
         
-
         return true;
     }
 
@@ -79,4 +71,5 @@
     void Application::stop()
     {
         services.stop();
+        screens.stop();
     }

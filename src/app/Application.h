@@ -1,6 +1,8 @@
 #pragma once
 
 #include "../services/services.h"
+#include "features/features.h"
+#include "../screens/screenmanager.h"
 
 /**
  * @class Application
@@ -64,4 +66,14 @@ private:
      * found in src/services/services.h.
      */
     Services services;
+
+    /**
+     * @brief Shared Features.
+     */
+    Features features;
+
+    /**
+     * @brief Shared ScreenManager.
+     */
+    ScreenManager screens;
 };

@@ -24,6 +24,7 @@ Services::Services()
     , storage(logger)
     , wifi(logger)
     , web(storage, logger)
+    , ui(logger)
 {
 }
 
@@ -63,6 +64,7 @@ bool Services::start()
 
     logger.info("Starting application services...");
 
+    //Storage is started first to prevent SPI bus conflicts with the touch and display!
     if (!storage.start())
     {
         logger.error("Failed to start StorageManager.");
@@ -70,6 +72,12 @@ bool Services::start()
     }
 
     logger.info("StorageManager started.");
+
+    if (!ui.start())
+    {
+        Serial.println("FATAL ERROR: Can't start UIManager");
+        return false;
+    }
 
     if (!wifi.start())
     {
@@ -98,12 +106,10 @@ void Services::update()
         web.handleClients();
     }
 
-    // Future services
-    //
-    // wifi.update();
-    // display.update();
-    // gps.update();
-    // packetLab.update();
+    if(ui.isRunning())
+    {
+        ui.update();
+    }
 }
 
 /**
@@ -125,40 +131,10 @@ void Services::stop()
     storage.stop();
     logger.info("StorageManager stopped.");
 
+    ui.stop();
+    logger.info("UIManager stopped.");
+
     logger.info("Logger stopped.");
 
     logger.stop();
-}
-
-/**
- * @brief Starts AP mode on the Ch3rryB0mb
- *
- * Automatically starts AP mode, and starts the webserver
- * 
- * @return true if all services started successfully.
- * @return false if one or more services failed.
- */
-bool Services::startAPMode()
-{
-    logger.info("AP Mode Activated: Starting Access Point");
-
-    WiFiAPConfig config;
-
-    if (!wifi.startAP(config))
-    {
-        logger.error("Failed to start Access Point.");
-        return false;
-    }
-
-    if (!web.start())
-    {
-        logger.error("Failed to start WebServerManager.");
-        wifi.stopAP();
-        return false;
-    }
-
-    logger.info("Success: Webserver started.");
-    logger.info("Connect and navigate to: http://192.168.4.1");
-
-    return true;
 }
