@@ -86,9 +86,6 @@ lv_obj_t* ScreenNrfScanner::create(ScreenManager& screenManager, NRFScanner& nrf
     UIWidgets::addText(screen, 125, 50, "CHANNEL", 100);
     channelDropdown = UIWidgets::addDropdown(screen, 125, 70, "0 - 125", 100);
 
-    lv_obj_t* clearButton = UIWidgets::addButton(screen, 175, 120, "CLR", 50, 25);
-    lv_obj_add_event_cb(clearButton, clearClicked, LV_EVENT_CLICKED, &nrfScanner);
-
     buildNrfChannelOptions();
     updateChannelDropdown(ScanMode::FullSpectrum);
 
@@ -143,6 +140,9 @@ lv_obj_t* ScreenNrfScanner::create(ScreenManager& screenManager, NRFScanner& nrf
 
     lv_obj_t* stopButton = UIWidgets::addButton(screen, 125, 265, "STOP", 100, 35);
     lv_obj_add_event_cb(stopButton, stopClicked, LV_EVENT_CLICKED, &nrfScanner);
+
+    lv_obj_t* clearButton = UIWidgets::addButton(screen, 175, 120, "CLR", 50, 25);
+    lv_obj_add_event_cb(clearButton, clearClicked, LV_EVENT_CLICKED, &nrfScanner);
 
     updateTimer = lv_timer_create(updateScanner, 20, &nrfScanner);
 
