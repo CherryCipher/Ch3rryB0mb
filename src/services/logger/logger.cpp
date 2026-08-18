@@ -3,16 +3,6 @@
 
     /**
     * @brief Starts the serial console for logging.
-    *
-    * Workflow
-    * --------
-    * @code
-    * Start serial console
-    *        │
-    *        ▼
-    * Logger is ready for use
-    * @endcode
-    *
     */
     bool Logger::start()
     {
@@ -25,19 +15,12 @@
         //Unfortunately, Serial.begin() does not provide a way to check if the serial console started successfully.
         loggerRunning = true;
 
-
         info("[INFO] Logger started.");
         return true;
     }
 
     /**
     * @brief Simple logger class for logging messages to the serial console.
-    *
-    * Workflow
-    * --------
-    * @code
-    * none yet, later logging to a file on the SD card will be implemented here.
-    * @endcode
     *
     * @param message The message to log.
     */
@@ -54,12 +37,6 @@
     /**
     * @brief Simple warning logger class for logging messages to the serial console.
     *
-    * Workflow
-    * --------
-    * @code
-    * none yet, later logging to a file on the SD card will be implemented here.
-    * @endcode
-    *
     * @param message The message to log.
     */
     void Logger::warning(const String& message)
@@ -68,19 +45,14 @@
             return;
 
         Serial.print("[WARNING] ");
+
         //Print the message to the serial console for debugging purposes.
         Serial.println(message);
     }
 
     /**
     * @brief Simple error logger class for logging messages to the serial console.
-    *
-    * Workflow
-    * --------
-    * @code
-    * none yet, later logging to a file on the SD card will be implemented here.
-    * @endcode
-    *
+    * 
     * @param message The message to log.
     */
     void Logger::error(const String& message)
@@ -89,17 +61,13 @@
             return;
 
         Serial.print("[ERROR] ");
+
         //Print the message to the serial console for debugging purposes.
         Serial.println(message);
     }
 
     /**
     * @brief Prints the application banner to the serial console.
-    *
-    * Example:
-    * @code
-    * logger.printBanner();
-    * @endcode
     */
     void Logger::printBanner()
     {

@@ -19,21 +19,11 @@ class Logger
 public:
     /**
     * @brief Starts the serial console for logging.
-    *
-    * Example:
-    * @code
-    * logger.start();
-    * @endcode
     */
     bool start();
 
     /**
     * @brief Logs a message to the serial console.
-    *
-    * Example:
-    * @code
-    * logger.info("Hello, world!");
-    * @endcode
     */
     void info(const String& message);
 
@@ -47,13 +37,8 @@ public:
     */
     void warning(const String& message);
 
-        /**
+    /**
     * @brief Logs an error message to the serial console.
-    *
-    * Example:
-    * @code
-    * logger.error("Error: Something went wrong!");
-    * @endcode
     */
     void error(const String& message);
 
@@ -61,34 +46,16 @@ public:
     * @brief Prints the application banner to the serial console.
     *
     * The actual banner content is defined in Banner.cpp namespace and can be modified there as needed.
-    * 
-    * Example:
-    * @code
-    * logger.printBanner();
-    * @endcode
     */
     void printBanner();
 
     /**
     * @brief Returns whether the logger is currently active.
-    *
-    * Example:
-    * @code
-    * if(logger.isRunning())
-    * {
-    *    //logger is running properly, we can log messages to the serial console.
-    * }
-    * @endcode
     */
     bool isRunning() const;
 
     /**
     * @brief Stops the serial console for logging.
-    *
-    * Example:
-    * @code
-    * logger.stop();
-    * @endcode
     */
     bool stop();
 

@@ -73,10 +73,7 @@ private:
      * @param indev Pointer to the LVGL input device.
      * @param data Pointer to the LVGL input data structure.
      */
-    static void readTouch(
-        lv_indev_t* indev,
-        lv_indev_data_t* data
-    );
+    static void readTouch( lv_indev_t* indev, lv_indev_data_t* data );
 
     /**
      * @brief Variable to check if UIManager is running.

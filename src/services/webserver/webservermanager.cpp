@@ -20,18 +20,6 @@ WebServerManager::WebServerManager(StorageManager& storage, Logger& logger)
  * Registers all HTTP routes and starts listening for incoming client
  * connections.
  *
- * Workflow
- * --------
- * @code
- * Register routes
- *         │
- *         ▼
- * Start HTTP server
- *         │
- *         ▼
- * Ready for incoming requests
- * @endcode
- *
  * @return true if the server started successfully.
  * @return false otherwise.
  */
@@ -131,10 +119,8 @@ void WebServerManager::handleStatus()
  */
 void WebServerManager::serveStaticFiles()
 {
-    //
     // Dashboard request
     // this opens the webserver page in /web/index.html
-    //
     if (server.uri() == "/")
     {
         File file;
@@ -153,9 +139,7 @@ void WebServerManager::serveStaticFiles()
         return;
     }
 
-    //
     // Static file request
-    //
     String path = "/web" + server.uri();
 
     File file;

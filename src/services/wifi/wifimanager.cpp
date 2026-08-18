@@ -39,10 +39,6 @@
      * Uses the ESP32 WiFi library to check if the device is currently in Access Point mode.
      * WIFI_AP is the mode for Access Point only, while WIFI_AP_STA is the mode for both Access Point and Station.
      *
-     * Example:
-     * @code
-     * Serial.println(services.wifi.isAPRunning());
-     * @endcode
      */
     bool WiFiManager::isAPRunning() const
     {
@@ -60,21 +56,6 @@
      * If you want the AP to serve a web page, you will need to set up a web server separately. 
      * This function only starts the AP and does not handle any web server functionality.
      * Webserver is started though webservermanager, which is a separate service that can be started after the AP is running.
-     *
-     * Workflow
-     * --------
-     * @code
-     * Configure Wi-Fi radio
-     *          │
-     *          ▼
-     * Set Wi-Fi mode to AP
-     *          │
-     *          ▼
-     * Start SoftAP
-     *          │
-     *          ▼
-     * Return success
-     * @endcode
      *
      * @param config The Access Point configuration.
      * @return true if the Access Point started successfully.
@@ -111,20 +92,6 @@
      * Disconnects all connected clients, stops the SoftAP and powers down
      * the Wi-Fi radio to return the ESP32 to an idle state.
      *
-     * Workflow
-     * --------
-     * @code
-     * Disconnect clients
-     *          │
-     *          ▼
-     * Stop SoftAP
-     *          │
-     *          ▼
-     * Disable Wi-Fi radio
-     *          │
-     *          ▼
-     * Reset AP state
-     * @endcode
      */
     void WiFiManager::stopAP()
     {
@@ -155,25 +122,6 @@
      * This function stops the Access Point if it is running and then disables
      * the Wi-Fi radio to return the ESP32 to an idle state.
      *
-     * Workflow
-     * --------
-     * @code
-     * Check if AP is running
-     *          │
-     *          ▼
-     * Stop AP if running
-     *          │
-     *          ▼
-     * Disable Wi-Fi radio
-     *          │
-     *          ▼
-     * Return success
-     * @endcode
-     *
-     * Example:
-     * @code
-     * services.wifi.stop();
-     * @endcode
      */
     bool WiFiManager::stop()
     {

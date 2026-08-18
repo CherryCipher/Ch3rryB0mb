@@ -18,18 +18,6 @@
      * Attempts to mount the SD card and prepares it for file access.
      * using the SD library (SD.h).
      *
-     * Workflow
-     * --------
-     * @code
-     * Mount SD card
-     *        │
-     *        ▼
-     * Update mount state
-     *        │
-     *        ▼
-     * Return success
-     * @endcode
-     *
      * @return true if the SD card was mounted successfully.
      * @return false otherwise.
      */
@@ -86,18 +74,6 @@
      * Attempts to open the specified file and stores the result in the supplied
      * File object.
      *
-     * Workflow
-     * --------
-     * @code
-     * Check storage
-     *        │
-     *        ▼
-     * Open file
-     *        │
-     *        ▼
-     * Return success
-     * @endcode
-     *
      * @param path Absolute file path.
      * @param file Reference to the File object.
      * @param mode File access mode.
@@ -127,31 +103,6 @@
      * we do this becasue we do not want other parts of the code to open and close files, 
      * we want to keep track of the files that are open and closed in the storage manager.
      *
-     * Workflow
-     * --------
-     * @code
-     * Check file validity
-     *         │
-     *         ▼
-     * Close file
-     *         │
-     *         ▼
-     * Return
-     * @endcode
-     *
-     * Example
-     * -------
-     * @code
-     * File file;
-     *
-     * if (services.storage.open("/web/index.html", file))
-     * {
-     *     // Use the file...
-     *
-     *     services.storage.close(file);
-     * }
-     * @endcode
-     *
      * @param file Reference to the File object to close.
      */
     void StorageManager::close(File& file)
@@ -168,21 +119,6 @@
      *
      * This function should be called when the application is shutting down or
      * when the storage device is no longer needed.
-     *
-     * Workflow
-     * --------
-     * @code
-     * Check mount state
-     *         │
-     *         ▼
-     * Unmount storage
-     *         │
-     *         ▼
-     * Update mount state
-     *         │
-     *         ▼
-     * Return success
-     * @endcode
      *
      * @return true if the storage device was unmounted successfully.
      * @return false otherwise.

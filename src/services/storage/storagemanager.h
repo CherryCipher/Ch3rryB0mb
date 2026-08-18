@@ -28,17 +28,6 @@
  * current implementation uses an SD card, it can later be replaced with
  * LittleFS, SPIFFS or another storage backend without changing the rest of
  * the firmware.
- *
- * Typical lifecycle
- * -----------------
- * @code
- * services.storage.start();
- *
- * if (services.storage.isMounted())
- * {
- *     File file = services.storage.open("/web/index.html");
- * }
- * @endcode
  */
 class StorageManager
 {
@@ -81,17 +70,6 @@ public:
      *
      * Attempts to open the specified file and stores the result in the supplied
      * File object.
-     *
-     * Example
-     * -------
-     * @code
-     * File file;
-     *
-     * if (services.storage.open("data/web/index.html", file))
-     * {
-     *     // File opened successfully.
-     * }
-     * @endcode
      *
      * @param path Absolute file path.
      * @param file Reference to the File object that will receive the opened file.

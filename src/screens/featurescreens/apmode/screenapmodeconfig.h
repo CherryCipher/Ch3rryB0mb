@@ -40,10 +40,7 @@ public:
      *
      * @return Pointer to the created LVGL screen object.
      */
-    static lv_obj_t* create(
-        ScreenManager& screenManager,
-        APMode& apMode
-    );
+    static lv_obj_t* create( ScreenManager& screenManager, APMode& apMode );
 
 private:
     /**

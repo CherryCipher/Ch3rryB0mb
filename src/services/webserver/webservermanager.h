@@ -65,18 +65,6 @@ public:
      * Registers all routes and begins listening for incoming HTTP
      * connections on port 80.
      *
-     * Workflow
-     * --------
-     * @code
-     * Register routes
-     *        │
-     *        ▼
-     * Start HTTP server
-     *        │
-     *        ▼
-     * Ready for incoming requests
-     * @endcode
-     *
      * @return true if the server started successfully.
      * @return false otherwise.
      */
@@ -95,14 +83,6 @@ public:
      * This function should be called continuously from the application's
      * main loop.
      *
-     * Example
-     * -------
-     * @code
-     * void loop()
-     * {
-     *     services.web.handleClients();
-     * }
-     * @endcode
      */
     void handleClients();
 

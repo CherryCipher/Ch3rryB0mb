@@ -24,13 +24,7 @@ public:
      * @param cs Chip-select pin used by the touch controller.
      * @param irq Interrupt pin used by the touch controller.
      */
-    SoftTouch(
-        uint8_t mosi,
-        uint8_t miso,
-        uint8_t clock,
-        uint8_t cs,
-        uint8_t irq
-    );
+    SoftTouch( uint8_t mosi, uint8_t miso, uint8_t clock, uint8_t cs, uint8_t irq );
 
     /**
      * @brief Initializes the touch controller pins.

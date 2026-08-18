@@ -61,10 +61,7 @@ public:
      * @param logger Reference to the application's Logger.
      * @param features Reference to the application's feature container.
      */
-    ScreenManager(
-        Logger& logger,
-        Features& features
-    );
+    ScreenManager( Logger& logger, Features& features );
 
     /**
      * @brief Starts the ScreenManager.
@@ -125,10 +122,7 @@ private:
      * @param addToHistory true to add the current screen to navigation
      * history, false when navigating backwards.
      */
-    void showInternal(
-        Screen screen,
-        bool addToHistory
-    );
+    void showInternal( Screen screen, bool addToHistory );
 
     /**
      * @brief Replaces the currently active LVGL screen.

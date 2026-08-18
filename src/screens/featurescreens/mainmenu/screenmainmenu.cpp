@@ -44,19 +44,10 @@ lv_obj_t* ScreenMainMenu::create(ScreenManager& screenManager)
  */
 void ScreenMainMenu::apModeClicked(lv_event_t* event)
 {
-    Serial.println("AP MODE CLICKED");
-
-    ScreenManager* screenManager =
-        static_cast<ScreenManager*>(
-            lv_event_get_user_data(event)
-        );
+    ScreenManager* screenManager = static_cast<ScreenManager*>( lv_event_get_user_data(event) );
 
     if (screenManager == nullptr)
-    {
-        Serial.println("ScreenManager is null");
         return;
-    }
 
-    Serial.println("Showing AP MODE screen");
     screenManager->show(Screen::APMode);
 }

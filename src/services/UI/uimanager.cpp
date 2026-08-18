@@ -46,55 +46,36 @@ UIManager::UIManager(Logger& logger)
 bool UIManager::start()
 {
     if (running)
-    {
         return true;
-    }
 
-    //
     // Initialize display and LVGL.
     //
     // The esp32-smartdisplay hardware touch initialization
     // must be disabled separately to prevent SPI conflicts.
-    //
     smartdisplay_init();
 
-    //
     // Initialize software SPI touch controller.
-    //
     if (!touch.start())
     {
         logger.error("Failed to start software touch.");
-
         return false;
     }
 
-    //
     // Register the software touch controller as an
     // LVGL pointer input device.
-    //
     touchInput = lv_indev_create();
 
     if (touchInput == nullptr)
     {
         logger.error("Failed to create LVGL touch input device.");
-
         return false;
     }
 
-    lv_indev_set_type(
-        touchInput,
-        LV_INDEV_TYPE_POINTER
-    );
+    lv_indev_set_type( touchInput, LV_INDEV_TYPE_POINTER );
 
-    lv_indev_set_read_cb(
-        touchInput,
-        readTouch
-    );
+    lv_indev_set_read_cb( touchInput, readTouch );
 
-    lv_indev_set_user_data(
-        touchInput,
-        this
-    );
+    lv_indev_set_user_data( touchInput, this );
 
     lastTick = millis();
 
@@ -111,7 +92,6 @@ bool UIManager::start()
 bool UIManager::stop()
 {
     running = false;
-
     return true;
 }
 
@@ -125,9 +105,7 @@ bool UIManager::stop()
 void UIManager::update()
 {
     if (!running)
-    {
         return;
-    }
 
     uint32_t currentTick = millis();
 
@@ -158,20 +136,13 @@ bool UIManager::isRunning() const
  * @param indev Pointer to the LVGL input device.
  * @param data Pointer to the LVGL input data structure.
  */
-void UIManager::readTouch(
-    lv_indev_t* indev,
-    lv_indev_data_t* data
-)
+void UIManager::readTouch( lv_indev_t* indev, lv_indev_data_t* data )
 {
-    auto* ui =
-        static_cast<UIManager*>(
-            lv_indev_get_user_data(indev)
-        );
+    auto* ui = static_cast<UIManager*>( lv_indev_get_user_data(indev) );
 
     if (ui == nullptr)
     {
         data->state = LV_INDEV_STATE_RELEASED;
-
         return;
     }
 
@@ -181,11 +152,9 @@ void UIManager::readTouch(
     if (!ui->touch.read(rawX, rawY))
     {
         data->state = LV_INDEV_STATE_RELEASED;
-
         return;
     }
 
-    //
     // Convert raw XPT2046 values to display coordinates.
     //
     // The current board configuration uses:
@@ -195,26 +164,11 @@ void UIManager::readTouch(
     // TOUCH_MIRROR_Y  = false
     //
     // so X is mirrored here as well.
-    //
-    int32_t x = map(
-        rawX,
-        TOUCH_RAW_X_MIN,
-        TOUCH_RAW_X_MAX,
-        239,
-        0
-    );
+    int32_t x = map( rawX, TOUCH_RAW_X_MIN, TOUCH_RAW_X_MAX, 239, 0 );
 
-    int32_t y = map(
-        rawY,
-        TOUCH_RAW_Y_MIN,
-        TOUCH_RAW_Y_MAX,
-        0,
-        319
-    );
+    int32_t y = map( rawY, TOUCH_RAW_Y_MIN, TOUCH_RAW_Y_MAX, 0, 319 );
 
-    //
     // Keep coordinates inside the display bounds.
-    //
     x = constrain(x, 0, 239);
     y = constrain(y, 0, 319);
 

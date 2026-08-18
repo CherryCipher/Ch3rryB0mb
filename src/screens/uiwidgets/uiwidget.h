@@ -38,12 +38,7 @@ public:
      *
      * @return Pointer to the created LVGL label object.
      */
-    static lv_obj_t* addHeader(
-        lv_obj_t* parent,
-        int x,
-        int y,
-        const char* text
-    );
+    static lv_obj_t* addHeader( lv_obj_t* parent, int x, int y, const char* text );
 
     /**
      * @brief Creates a styled button.
@@ -60,14 +55,7 @@ public:
      *
      * @return Pointer to the created LVGL button object.
      */
-    static lv_obj_t* addButton(
-        lv_obj_t* parent,
-        int x,
-        int y,
-        const char* text,
-        int width = 100,
-        int height = 40
-    );
+    static lv_obj_t* addButton(lv_obj_t* parent, int x, int y, const char* text, int width = 100, int height = 40 );
 
     /**
      * @brief Creates a styled text label.
@@ -83,13 +71,7 @@ public:
      *
      * @return Pointer to the created LVGL label object.
      */
-    static lv_obj_t* addText(
-        lv_obj_t* parent,
-        int x,
-        int y,
-        const char* text,
-        int width = 220
-    );
+    static lv_obj_t* addText( lv_obj_t* parent, int x, int y, const char* text, int width = 220 );
 
     /**
      * @brief Creates a styled text input field.
@@ -107,14 +89,7 @@ public:
      *
      * @return Pointer to the created LVGL textarea object.
      */
-    static lv_obj_t* addInput(
-        lv_obj_t* parent,
-        int x,
-        int y,
-        const char* text,
-        int width = 210,
-        bool passwordMode = false
-    );
+    static lv_obj_t* addInput( lv_obj_t* parent, int x, int y, const char* text, int width = 210, bool passwordMode = false );
 
     /**
      * @brief Creates a default Ch3rryB0mb screen.
@@ -141,13 +116,7 @@ public:
      *
      * @return Pointer to the created scrollable LVGL container.
      */
-    static lv_obj_t* createScrollContainer(
-        lv_obj_t* parent,
-        int x,
-        int y,
-        int width,
-        int height
-    );
+    static lv_obj_t* createScrollContainer( lv_obj_t* parent, int x, int y, int width, int height );
 
     /**
      * @brief Creates a styled on-screen keyboard.
@@ -162,11 +131,7 @@ public:
      *
      * @return Pointer to the created LVGL keyboard object.
      */
-    static lv_obj_t* addKeyboard(
-        lv_obj_t* parent,
-        int width = 240,
-        int height = 140
-    );
+    static lv_obj_t* addKeyboard( lv_obj_t* parent, int width = 240, int height = 140 );
 
     /**
      * @brief Creates a styled toggle switch.
@@ -201,4 +166,4 @@ public:
      * @return Pointer to the created LVGL spacer object.
      */
     static lv_obj_t* addSpacer(lv_obj_t* parent, int x, int y, int width, int height);
-};
+}; 

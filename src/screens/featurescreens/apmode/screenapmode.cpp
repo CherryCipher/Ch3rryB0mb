@@ -108,9 +108,7 @@ lv_obj_t* ScreenAPMode::create(ScreenManager& screenManager, APMode& apMode)
 void ScreenAPMode::updateStatus(APMode& apMode)
 {
     if (statusText == nullptr)
-    {
         return;
-    }
 
     if (apMode.isRunning())
     {
@@ -123,35 +121,17 @@ void ScreenAPMode::updateStatus(APMode& apMode)
             "Connect and navigate to:\n"
             "http://" + apMode.getIP();
 
-        lv_label_set_text(
-            statusText,
-            status.c_str()
-        );
+        lv_label_set_text( statusText, status.c_str() );
 
         //right away if the ap is running disable the start and config button and enable the stop button
         if (configButton != nullptr)
-        {
-            lv_obj_add_state(
-                configButton,
-                LV_STATE_DISABLED
-            );
-        }
+            lv_obj_add_state( configButton, LV_STATE_DISABLED );
 
         if (startButton != nullptr)
-        {
-            lv_obj_add_state(
-                startButton,
-                LV_STATE_DISABLED
-            );
-        }
+            lv_obj_add_state( startButton, LV_STATE_DISABLED );
 
         if (stopButton != nullptr)
-        {
-            lv_obj_clear_state(
-                stopButton,
-                LV_STATE_DISABLED
-            );
-        }
+            lv_obj_clear_state( stopButton, LV_STATE_DISABLED );
 
         return;
     }
@@ -166,28 +146,13 @@ void ScreenAPMode::updateStatus(APMode& apMode)
 
     //if the ap is not ruinning enable the start and config button, and disable the stop button
     if (startButton != nullptr)
-    {
-        lv_obj_clear_state(
-            startButton,
-            LV_STATE_DISABLED
-        );
-    }
+        lv_obj_clear_state( startButton, LV_STATE_DISABLED );
 
     if (stopButton != nullptr)
-    {
-        lv_obj_add_state(
-            stopButton,
-            LV_STATE_DISABLED
-        );
-    }
+        lv_obj_add_state( stopButton, LV_STATE_DISABLED );
 
     if (configButton != nullptr)
-    {
-        lv_obj_clear_state(
-            configButton,
-            LV_STATE_DISABLED
-        );
-    }
+        lv_obj_clear_state( configButton, LV_STATE_DISABLED );
 }
 
 /**
@@ -199,13 +164,10 @@ void ScreenAPMode::updateStatus(APMode& apMode)
  */
 void ScreenAPMode::startClicked(lv_event_t* event)
 {
-    auto* apMode =
-        static_cast<APMode*>(lv_event_get_user_data(event));
+    auto* apMode = static_cast<APMode*>(lv_event_get_user_data(event));
 
     if (apMode == nullptr)
-    {
         return;
-    }
 
     apMode->start();
 
@@ -222,13 +184,10 @@ void ScreenAPMode::startClicked(lv_event_t* event)
  */
 void ScreenAPMode::stopClicked(lv_event_t* event)
 {
-    auto* apMode =
-        static_cast<APMode*>(lv_event_get_user_data(event));
+    auto* apMode = static_cast<APMode*>(lv_event_get_user_data(event));
 
     if (apMode == nullptr)
-    {
         return;
-    }
 
     apMode->stop();
 
@@ -244,15 +203,10 @@ void ScreenAPMode::stopClicked(lv_event_t* event)
  */
 void ScreenAPMode::configClicked(lv_event_t* event)
 {
-    ScreenManager* screenManager =
-        static_cast<ScreenManager*>(
-            lv_event_get_user_data(event)
-        );
+    ScreenManager* screenManager = static_cast<ScreenManager*>( lv_event_get_user_data(event) );
 
     if (screenManager == nullptr)
-    {
         return;
-    }
 
     screenManager->show(Screen::ApModeConfig);
 }
@@ -267,15 +221,10 @@ void ScreenAPMode::configClicked(lv_event_t* event)
  */
 void ScreenAPMode::backClicked(lv_event_t* event)
 {
-    ScreenManager* screenManager =
-        static_cast<ScreenManager*>(
-            lv_event_get_user_data(event)
-        );
+    ScreenManager* screenManager = static_cast<ScreenManager*>( lv_event_get_user_data(event) );
 
     if (screenManager == nullptr)
-    {
         return;
-    }
 
     screenManager->back();
 }

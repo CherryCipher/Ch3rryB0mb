@@ -5,19 +5,6 @@
  *
  * Every shared service is constructed exactly once and receives the
  * dependencies it requires.
- *
- * Construction order
- * ------------------
- * Logger
- *      │
- *      ▼
- * StorageManager
- *      │
- *      ▼
- * WiFiManager
- *      │
- *      ▼
- * WebServerManager
  */
 Services::Services()
     : logger()
@@ -33,21 +20,6 @@ Services::Services()
  *
  * Services are started in dependency order. If one service fails to
  * initialize, startup is aborted and false is returned.
- *
- * Startup order
- * -------------
- * @code
- * Logger
- *      │
- *      ▼
- * Storage
- *      │
- *      ▼
- * WiFi
- *      │
- *      ▼
- * Web Server
- * @endcode
  *
  * @return true if all services started successfully.
  * @return false if one or more services failed.

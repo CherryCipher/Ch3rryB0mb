@@ -56,18 +56,6 @@ public:
      *
      * Creates every shared service and injects the required dependencies.
      *
-     * Construction order
-     * ------------------
-     * Logger
-     *      │
-     *      ▼
-     * StorageManager
-     *      │
-     *      ▼
-     * WiFiManager
-     *      │
-     *      ▼
-     * WebServerManager
      */
     Services();
 
@@ -75,21 +63,6 @@ public:
      * @brief Starts every application service.
      *
      * Services are started in dependency order.
-     *
-     * Startup order
-     * -------------
-     * @code
-     * Logger
-     *      │
-     *      ▼
-     * Storage
-     *      │
-     *      ▼
-     * WiFi
-     *      │
-     *      ▼
-     * Web Server
-     * @endcode
      *
      * @return true if all services started successfully.
      * @return false if one or more services failed.
@@ -102,14 +75,6 @@ public:
      * This function should be called continuously from the application's
      * main loop.
      *
-     * Example
-     * -------
-     * @code
-     * void loop()
-     * {
-     *     services.update();
-     * }
-     * @endcode
      */
     void update();
 
