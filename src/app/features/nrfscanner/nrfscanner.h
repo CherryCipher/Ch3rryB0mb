@@ -167,7 +167,7 @@ private:
      * Keeping the sample count relatively small prevents scanning from
      * blocking UI and touch processing for noticeable periods.
      */
-    static constexpr uint16_t SAMPLES_PER_STEP = 10;
+    static constexpr uint16_t SAMPLES_PER_STEP = 50;
 
     /**
      * @brief Minimum interval between scan steps in milliseconds.

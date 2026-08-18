@@ -113,7 +113,7 @@ lv_obj_t* ScreenNrfScanner::create(ScreenManager& screenManager, NRFScanner& nrf
 
     lv_chart_set_type(signalChart, LV_CHART_TYPE_LINE);
     lv_chart_set_point_count(signalChart, NRFManager::NRF_CHANNEL_COUNT);
-    lv_chart_set_range(signalChart, LV_CHART_AXIS_PRIMARY_Y, 0, 100);
+    lv_chart_set_range(signalChart, LV_CHART_AXIS_PRIMARY_Y, 0, 25);
 
     lv_obj_set_style_line_color(signalChart, lv_color_hex(0x404040), LV_PART_MAIN);
 
