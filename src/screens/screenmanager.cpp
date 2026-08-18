@@ -114,9 +114,7 @@ void ScreenManager::showInternal( Screen screen, bool addToHistory )
             logger.error("Screen navigation history is full.");
     }
 
-    //
     // Store the newly active application screen.
-    //
     currentScreen = screen;
 
     switchScreen(newScreen);
