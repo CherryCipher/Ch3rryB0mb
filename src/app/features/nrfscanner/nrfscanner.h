@@ -145,6 +145,21 @@ public:
      */
     uint8_t getWifiStartChannel() const;
 
+    /**
+     * @brief Returns the peak values for the full spectrum scan.
+     *
+     * The returned array contains the highest recently observed activity
+     * value for each NRF24 channel.
+     *
+     * @return Pointer to the full spectrum peak array.
+     */
+    const uint8_t* getSpectrumPeaks() const;
+
+    /**
+     * @brief Clears all stored peak values.
+     */
+    void clearPeaks();
+
 private:
     /**
      * @brief Number of RPD samples taken during one incremental scan step.
@@ -229,4 +244,17 @@ private:
      * currently selected scan mode.
      */
     void resetScanPosition();
+
+    /**
+     * @brief Peak values for each NRF24 spectrum channel.
+     *
+     * Peaks slowly decay over time so short RF activity remains visible
+     * without permanently filling the spectrum display.
+     */
+    uint8_t spectrumPeaks[NRFManager::NRF_CHANNEL_COUNT] = {0};
+
+    /**
+     * @brief Amount removed from peak values after each full spectrum sweep.
+     */
+    static constexpr uint8_t PEAK_DECAY = 2;
 };

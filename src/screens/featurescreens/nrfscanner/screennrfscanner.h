@@ -84,6 +84,11 @@ private:
     static lv_chart_series_t* signalSeries;
 
     /**
+     * @brief Chart series used to display peak RF activity.
+     */
+    static lv_chart_series_t* peakSeries;
+
+    /**
      * @brief Timer used to update scanning and visualization.
      */
     static lv_timer_t* updateTimer;
@@ -125,6 +130,15 @@ private:
      * @param event Pointer to the LVGL event.
      */
     static void stopClicked(lv_event_t* event);
+
+    /**
+     * @brief Handles the peak clear button event.
+     *
+     * Clears all stored spectrum peak values.
+     *
+     * @param event Pointer to the LVGL event.
+     */
+    static void clearClicked(lv_event_t* event);
 
     /**
      * @brief Periodically updates the scanner and chart.

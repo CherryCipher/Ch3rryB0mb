@@ -38,6 +38,11 @@ lv_obj_t* ScreenNrfScanner::signalChart = nullptr;
 lv_chart_series_t* ScreenNrfScanner::signalSeries = nullptr;
 
 /**
+ * @brief Chart series used to draw peak RF activity for peak holding.
+ */
+lv_chart_series_t* ScreenNrfScanner::peakSeries = nullptr;
+
+/**
  * @brief Timer used to update scanner state and visualization.
  */
 lv_timer_t* ScreenNrfScanner::updateTimer = nullptr;
@@ -81,6 +86,9 @@ lv_obj_t* ScreenNrfScanner::create(ScreenManager& screenManager, NRFScanner& nrf
     UIWidgets::addText(screen, 125, 50, "CHANNEL", 100);
     channelDropdown = UIWidgets::addDropdown(screen, 125, 70, "0 - 125", 100);
 
+    lv_obj_t* clearButton = UIWidgets::addButton(screen, 175, 120, "CLR", 50, 25);
+    lv_obj_add_event_cb(clearButton, clearClicked, LV_EVENT_CLICKED, &nrfScanner);
+
     buildNrfChannelOptions();
     updateChannelDropdown(ScanMode::FullSpectrum);
 
@@ -120,6 +128,13 @@ lv_obj_t* ScreenNrfScanner::create(ScreenManager& screenManager, NRFScanner& nrf
     signalSeries = lv_chart_add_series(
         signalChart,
         lv_color_hex(0xFF8C00),
+        LV_CHART_AXIS_PRIMARY_Y
+    );
+
+    //peakhold series in grey
+        peakSeries = lv_chart_add_series(
+        signalChart,
+        lv_color_hex(0x808080),
         LV_CHART_AXIS_PRIMARY_Y
     );
 
@@ -329,18 +344,26 @@ void ScreenNrfScanner::renderResults(NRFScanner& nrfScanner)
     {
         case NRFScanner::ScanMode::FullSpectrum:
         {
+            lv_chart_hide_series(signalChart, peakSeries, false);
+
             const uint8_t* results = nrfScanner.getSpectrumResults();
+            const uint8_t* peaks = nrfScanner.getSpectrumPeaks();
 
             lv_chart_set_point_count(signalChart, NRFManager::NRF_CHANNEL_COUNT);
 
             for (uint16_t i = 0; i < NRFManager::NRF_CHANNEL_COUNT; i++)
+            {
                 lv_chart_set_next_value(signalChart, signalSeries, results[i]);
+                lv_chart_set_next_value(signalChart, peakSeries, peaks[i]);
+            }
 
             break;
         }
 
         case NRFScanner::ScanMode::NrfChannel:
         {
+            lv_chart_hide_series(signalChart, peakSeries, true);
+
             lv_chart_set_point_count(signalChart, 64);
 
             lv_chart_set_next_value(
@@ -354,6 +377,8 @@ void ScreenNrfScanner::renderResults(NRFScanner& nrfScanner)
 
         case NRFScanner::ScanMode::WifiBand:
         {
+            lv_chart_hide_series(signalChart, peakSeries, true);
+
             const uint8_t* results = nrfScanner.getWifiResults();
 
             lv_chart_set_point_count(signalChart, NRFManager::WIFI_SCAN_WIDTH);
@@ -366,6 +391,23 @@ void ScreenNrfScanner::renderResults(NRFScanner& nrfScanner)
     }
 
     lv_chart_refresh(signalChart);
+}
+
+/**
+ * @brief Handles the peak clear button event.
+ *
+ * Clears all stored spectrum peak values.
+ *
+ * @param event Pointer to the LVGL event.
+ */
+void ScreenNrfScanner::clearClicked(lv_event_t* event)
+{
+    NRFScanner* nrfScanner = static_cast<NRFScanner*>(lv_event_get_user_data(event));
+
+    if (nrfScanner == nullptr)
+        return;
+
+    nrfScanner->clearPeaks();
 }
 
 /**

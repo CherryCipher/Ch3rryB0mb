@@ -203,6 +203,25 @@ uint8_t NRFScanner::getWifiStartChannel() const
 }
 
 /**
+ * @brief Returns the peak values for the full spectrum scan.
+ *
+ * @return Pointer to the full spectrum peak array.
+ */
+const uint8_t* NRFScanner::getSpectrumPeaks() const
+{
+    return spectrumPeaks;
+}
+
+/**
+ * @brief Clears all stored peak values.
+ */
+void NRFScanner::clearPeaks()
+{
+    for (uint16_t channel = 0; channel < NRFManager::NRF_CHANNEL_COUNT; channel++)
+        spectrumPeaks[channel] = 0;
+}
+
+/**
  * @brief Performs one incremental RF scan step.
  *
  * Full spectrum and Wi-Fi scans process one NRF24 channel per call.
@@ -224,10 +243,24 @@ bool NRFScanner::scanStep()
 
             spectrumResults[currentScanChannel] = activity;
 
+            //added peak hold to show peaks for 2 seconds
+            if (activity > spectrumPeaks[currentScanChannel])
+                spectrumPeaks[currentScanChannel] = activity;
+
             currentScanChannel++;
 
             if (currentScanChannel >= NRFManager::NRF_CHANNEL_COUNT)
+            {
                 currentScanChannel = 0;
+
+                for (uint16_t channel = 0; channel < NRFManager::NRF_CHANNEL_COUNT; channel++)
+                {
+                    if (spectrumPeaks[channel] > PEAK_DECAY)
+                        spectrumPeaks[channel] -= PEAK_DECAY;
+                    else
+                        spectrumPeaks[channel] = 0;
+                }
+            }
 
             return true;
         }
