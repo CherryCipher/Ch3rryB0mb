@@ -5,6 +5,7 @@
 #include "wifi/WiFiManager.h"
 #include "webserver/WebServerManager.h"
 #include "UI/uimanager.h"
+#include "nrf/nrfmanager.h"
 
 /**
  * @class Services
@@ -112,4 +113,9 @@ public:
      * @brief Shared embedded UIManager.
      */
     UIManager ui;
+
+    /**
+     * @brief Shared embedded NRFManager.
+     */
+    NRFManager nrf;
 };

@@ -12,6 +12,7 @@ Services::Services()
     , wifi(logger)
     , web(storage, logger)
     , ui(logger)
+    , nrf(logger)
 {
 }
 
@@ -43,8 +44,6 @@ bool Services::start()
         return false;
     }
 
-    logger.info("StorageManager started.");
-
     if (!ui.start())
     {
         Serial.println("FATAL ERROR: Can't start UIManager");
@@ -57,7 +56,12 @@ bool Services::start()
         return false;
     }
 
-    logger.info("WiFiManager started.");
+    if (!nrf.start())
+    {
+        logger.error("Failed to start NRFManager.");
+        return false;
+    }
+
 
     logger.printBanner();
     logger.info("All services started successfully.");
@@ -74,14 +78,10 @@ bool Services::start()
 void Services::update()
 {
     if (web.isRunning())
-    {
         web.handleClients();
-    }
 
     if(ui.isRunning())
-    {
         ui.update();
-    }
 }
 
 /**
@@ -105,6 +105,9 @@ void Services::stop()
 
     ui.stop();
     logger.info("UIManager stopped.");
+
+    nrf.stop();
+    logger.info("NRFManager stopped.");
 
     logger.info("Logger stopped.");
 
