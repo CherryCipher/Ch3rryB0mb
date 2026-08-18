@@ -1,5 +1,7 @@
 #pragma once
 
+#include "../../../services/wifi/wificonfig.h"
+
 class Services;
 
 /**
@@ -47,9 +49,42 @@ public:
      */
     void stop();
 
+        /**
+     * @brief Returns whether AP Mode is currently running.
+     *
+     * @return true if the WiFi access point is active.
+     * @return false otherwise.
+     */
+    bool isRunning() const;
+
+    /**
+     * @brief Returns the current Access Point configuration.
+     *
+     * Provides read-only access to the configuration currently used
+     * by AP Mode.
+     *
+     * @return Constant reference to the current WiFiAPConfig.
+     */
+    const WiFiAPConfig& getConfig() const;
+
+    /**
+     * @brief Returns the current Access Point IP address.
+     *
+     * @return Access Point IP address as a String.
+     */
+    String getIP() const;
+
 private:
     /**
      * @brief Reference to the shared application services.
      */
     Services& services;
+
+    /**
+     * @brief Current Access Point configuration.
+     *
+     * Contains the SSID, password, channel, visibility and maximum
+     * number of connected clients used when starting AP Mode.
+     */
+    WiFiAPConfig config;
 };

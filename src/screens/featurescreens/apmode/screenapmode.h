@@ -49,9 +49,34 @@ private:
     static void stopClicked(lv_event_t* event);
 
     /**
+     * @brief Handles the AP Mode config button event.
+     *
+     * @param event Pointer to the LVGL event.
+     */
+    static void configClicked(lv_event_t* event);
+
+    /**
      * @brief Handles the AP Mode back button event.
      *
      * @param event Pointer to the LVGL event.
      */
     static void backClicked(lv_event_t* event);
+
+    /**
+     * @brief Label used to display the current AP status.
+     *
+     * The label is created when the screen is constructed and updated
+     * whenever the access point is started or stopped.
+     */
+    static lv_obj_t* statusText;
+
+    /**
+     * @brief Updates the AP status information shown on the screen.
+     *
+     * Displays either the access point connection information or a
+     * message indicating that AP Mode is currently stopped.
+     *
+     * @param apMode Reference to the AP Mode feature.
+     */
+    static void updateStatus(APMode& apMode);
 };

@@ -70,6 +70,28 @@ public:
     );
 
     /**
+     * @brief Creates a styled text label.
+     *
+     * Creates an LVGL label using the default Ch3rryB0mb text styling.
+     * The returned label can later be updated using lv_label_set_text().
+     *
+     * @param parent Parent LVGL object.
+     * @param x Horizontal position in pixels.
+     * @param y Vertical position in pixels.
+     * @param text Initial text displayed by the label.
+     * @param width Maximum width of the text area in pixels.
+     *
+     * @return Pointer to the created LVGL label object.
+     */
+    static lv_obj_t* addText(
+        lv_obj_t* parent,
+        int x,
+        int y,
+        const char* text,
+        int width = 220
+    );
+
+    /**
      * @brief Creates a default Ch3rryB0mb screen.
      *
      * Creates a new LVGL screen object using the default Ch3rryB0mb

@@ -192,6 +192,66 @@ lv_obj_t* UIWidgets::addButton(
 }
 
 /**
+ * @brief Creates a styled text label.
+ *
+ * Creates an LVGL label using the default Ch3rryB0mb text styling.
+ * Long text automatically wraps within the configured width.
+ *
+ * @param parent Parent LVGL object.
+ * @param x Horizontal position in pixels.
+ * @param y Vertical position in pixels.
+ * @param text Initial text displayed by the label.
+ * @param width Maximum width of the text area in pixels.
+ *
+ * @return Pointer to the created LVGL label object.
+ */
+lv_obj_t* UIWidgets::addText(
+    lv_obj_t* parent,
+    int x,
+    int y,
+    const char* text,
+    int width
+)
+{
+    lv_obj_t* label = lv_label_create(parent);
+
+    lv_obj_set_pos(
+        label,
+        x,
+        y
+    );
+
+    lv_obj_set_width(
+        label,
+        width
+    );
+
+    lv_label_set_text(
+        label,
+        text
+    );
+
+    //
+    // Allow long text to wrap.
+    //
+    lv_label_set_long_mode(
+        label,
+        LV_LABEL_LONG_WRAP
+    );
+
+    //
+    // Text styling.
+    //
+    lv_obj_set_style_text_color(
+        label,
+        lv_color_hex(0xFFFFFF),
+        LV_PART_MAIN
+    );
+
+    return label;
+}
+
+/**
  * @brief Creates a default Ch3rryB0mb screen.
  *
  * Creates a new LVGL screen object and applies the default

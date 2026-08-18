@@ -1,6 +1,12 @@
 #include "screenapmode.h"
 #include "screens/screenmanager.h"
 #include "../../uiwidgets/uiwidget.h"
+#include "app/features/apmode/apmode.h"
+
+/**
+ * @brief Status label used by the AP Mode screen.
+ */
+lv_obj_t* ScreenAPMode::statusText = nullptr;
 
 /**
  * @brief Creates the AP Mode screen.
@@ -20,8 +26,18 @@ lv_obj_t* ScreenAPMode::create(ScreenManager& screenManager, APMode& apMode)
     // Header.
     UIWidgets::addHeader(screen, 0, 0, "AP MODE" );
 
+    // Back button.
+    lv_obj_t* backButton = UIWidgets::addButton( screen, 150, 5, "< BACK", 80, 30 );
+
+    lv_obj_add_event_cb(
+        backButton,
+        backClicked,
+        LV_EVENT_CLICKED,
+        &screenManager
+    );
+
     // Start button.
-    lv_obj_t* startButton = UIWidgets::addButton(screen, 15, 75, "START", 100, 45);
+    lv_obj_t* startButton = UIWidgets::addButton(screen, 15, 50, "START", 100, 40);
 
     lv_obj_add_event_cb(
         startButton,
@@ -31,7 +47,7 @@ lv_obj_t* ScreenAPMode::create(ScreenManager& screenManager, APMode& apMode)
     );
 
     // Stop button.
-    lv_obj_t* stopButton = UIWidgets::addButton(screen, 125, 75, "STOP", 100, 45);
+    lv_obj_t* stopButton = UIWidgets::addButton(screen, 125, 50, "STOP", 100, 40);
 
     lv_obj_add_event_cb(
         stopButton,
@@ -40,17 +56,68 @@ lv_obj_t* ScreenAPMode::create(ScreenManager& screenManager, APMode& apMode)
         &apMode
     );
 
-    // Back button.
-    lv_obj_t* backButton = UIWidgets::addButton( screen, 10, 270, "< BACK", 100, 40 );
+    // AP status information stored in statusText. Empty for now filled dynamically
+    statusText = UIWidgets::addText( screen, 15, 115, "initializing...", 210);
+
+    // Stop button.
+    lv_obj_t* configButton = UIWidgets::addButton(screen, 15, 220, "Config AP", 100, 40);
 
     lv_obj_add_event_cb(
-        backButton,
-        backClicked,
+        configButton,
+        configClicked,
         LV_EVENT_CLICKED,
-        &screenManager
+        &apMode
     );
 
+
+    //update the status
+    updateStatus(apMode);
+
     return screen;
+}
+
+/**
+ * @brief Updates the AP status information shown on the screen.
+ *
+ * When AP Mode is running, the SSID, password and connection address
+ * are displayed. When AP Mode is stopped, an instruction is shown
+ * explaining how to start the access point.
+ *
+ * @param apMode Reference to the AP Mode feature.
+ */
+void ScreenAPMode::updateStatus(APMode& apMode)
+{
+    if (statusText == nullptr)
+    {
+        return;
+    }
+
+    if (apMode.isRunning())
+    {
+        const WiFiAPConfig& config = apMode.getConfig();
+
+        String status =
+            "AP Mode running...\n"
+            "SSID: " + config.ssid + "\n"
+            "PW: " + config.password + "\n"
+            "Connect and navigate to:\n"
+            "http://" + apMode.getIP();
+
+        lv_label_set_text(
+            statusText,
+            status.c_str()
+        );
+
+        return;
+    }
+
+    lv_label_set_text(
+        statusText,
+        "AP Mode stopped.\n"
+        "\n"
+        "Press START to enable the\n"
+        "Ch3rryB0mb access point."
+    );
 }
 
 /**
@@ -71,6 +138,9 @@ void ScreenAPMode::startClicked(lv_event_t* event)
     }
 
     apMode->start();
+
+    //update the status text
+    updateStatus(*apMode);
 }
 
 /**
@@ -91,6 +161,30 @@ void ScreenAPMode::stopClicked(lv_event_t* event)
     }
 
     apMode->stop();
+
+    //update the status text
+    updateStatus(*apMode);
+}
+
+/**
+ * @brief Handles the Config button event.
+ *
+ *
+ * @param event Pointer to the LVGL event.
+ */
+void ScreenAPMode::configClicked(lv_event_t* event)
+{
+    ScreenManager* screenManager =
+        static_cast<ScreenManager*>(
+            lv_event_get_user_data(event)
+        );
+
+    if (screenManager == nullptr)
+    {
+        return;
+    }
+
+    //implementation to set config
 }
 
 /**

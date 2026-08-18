@@ -23,8 +23,6 @@ bool APMode::start()
 {
     services.logger.info("AP Mode Activated: Starting Access Point");
 
-    WiFiAPConfig config;
-
     if (!services.wifi.startAP(config))
     {
         services.logger.error("Failed to start Access Point.");
@@ -57,4 +55,42 @@ void APMode::stop()
     services.wifi.stopAP();
 
     services.logger.info("AP Mode stopped.");
+}
+
+/**
+ * @brief Returns whether AP Mode is currently running.
+ *
+ * Queries the WiFiManager through the shared Services container.
+ *
+ * @return true if the Access Point is currently active.
+ * @return false otherwise.
+ */
+bool APMode::isRunning() const
+{
+    return services.wifi.isAPRunning();
+}
+
+/**
+ * @brief Returns the current Access Point configuration.
+ *
+ * Provides read-only access to the WiFiAPConfig owned by APMode.
+ *
+ * @return Constant reference to the current WiFiAPConfig.
+ */
+const WiFiAPConfig& APMode::getConfig() const
+{
+    return config;
+}
+
+/**
+ * @brief Returns the current Access Point IP address.
+ *
+ * Retrieves the IP address from the WiFiManager and converts it to
+ * an Arduino String for display purposes.
+ *
+ * @return Access Point IP address as a String.
+ */
+String APMode::getIP() const
+{
+    return services.wifi.getAPIP().toString();
 }
