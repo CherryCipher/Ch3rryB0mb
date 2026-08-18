@@ -1,26 +1,26 @@
 #pragma once
 
 #include "../logger/logger.h"
+#include "../spi/spimanager.h"
 
-/******************************************************************************
- * NRFManager
+/**
+ * @class NRFManager
+ * @brief Manages NRF24 radio functionality.
  *
- * Responsible for all NRF24 radio functionality within Ch3rryB0mb.
+ * The NRFManager is responsible for all communication with the NRF24 radio.
+ * It uses the shared SPI bus provided by SPIManager.
  *
- * Features
- * --------
- * - NRF24 radio initialization
- * - 2.4 GHz channel scanning
- * - RF activity detection
- * - Packet transmission and reception
- * - Future NRF24 extensions
+ * Applications and features should never communicate directly with the
+ * NRF24 library. All NRF24 operations should be performed through this manager.
  *
- * Design
- * ------
- * Applications should NEVER communicate directly with the NRF24 radio
- * library. All NRF24 operations should be performed through the NRFManager.
- *
- ******************************************************************************/
+ * Responsibilities
+ * ----------------
+ * - Initialize the NRF24 radio.
+ * - Manage NRF24 radio state.
+ * - Perform 2.4 GHz channel scanning.
+ * - Detect RF activity.
+ * - Support future packet transmission and reception.
+ */
 class NRFManager
 {
 public:
@@ -28,24 +28,27 @@ public:
      * @brief Constructs a new NRFManager.
      *
      * @param logger Reference to the application's Logger.
+     * @param spiManager Reference to the shared SPIManager.
      */
-    explicit NRFManager(Logger& logger);
+    NRFManager(Logger& logger, SPIManager& spiManager);
 
     /**
      * @brief Initializes the NRFManager.
      *
-     * Prepares the manager for use but does not yet initialize
-     * or enable the physical NRF24 radio.
+     * Verifies that the shared SPI bus is available and prepares the
+     * NRFManager for use.
+     *
+     * The physical NRF24 radio is not initialized yet.
      *
      * @return true if initialization succeeded.
+     * @return false otherwise.
      */
     bool start();
 
     /**
      * @brief Stops the NRFManager.
      *
-     * Stops all NRF24 functionality and returns the manager
-     * to an inactive state.
+     * Stops NRF24 functionality and returns the manager to an inactive state.
      *
      * @return true if the manager stopped successfully.
      */
@@ -54,7 +57,7 @@ public:
     /**
      * @brief Returns whether the NRFManager is currently running.
      *
-     * @return true if the manager is running.
+     * @return true if the NRFManager is running.
      * @return false otherwise.
      */
     bool isRunning() const;
@@ -63,12 +66,19 @@ private:
     /**
      * @brief Reference to the application's Logger instance.
      *
-     * Used for logging messages related to NRF24 operations.
+     * Used for logging NRF24 related operations.
      */
     Logger& logger;
 
     /**
-     * @brief Indicates whether the NRFManager has been started.
+     * @brief Reference to the shared SPIManager.
+     *
+     * Provides access to the SPI bus used by the NRF24 radio.
+     */
+    SPIManager& spiManager;
+
+    /**
+     * @brief Indicates whether the NRFManager is currently running.
      */
     bool running = false;
 };

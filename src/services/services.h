@@ -1,6 +1,7 @@
 #pragma once
 
 #include "logger/Logger.h"
+#include "spi/spimanager.h"
 #include "storage/StorageManager.h"
 #include "wifi/WiFiManager.h"
 #include "webserver/WebServerManager.h"
@@ -93,6 +94,11 @@ public:
      * @brief Shared application logger.
      */
     Logger logger;
+
+    /**
+     * @brief Shared embedded NRFManager.
+     */
+    SPIManager spi;
 
     /**
      * @brief Shared storage service.

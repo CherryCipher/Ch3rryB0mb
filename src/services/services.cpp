@@ -8,11 +8,12 @@
  */
 Services::Services()
     : logger()
-    , storage(logger)
+    , spi(logger)
+    , storage(logger, spi)
     , wifi(logger)
     , web(storage, logger)
     , ui(logger)
-    , nrf(logger)
+    , nrf(logger, spi)
 {
 }
 
@@ -37,7 +38,12 @@ bool Services::start()
 
     logger.info("Starting application services...");
 
-    //Storage is started first to prevent SPI bus conflicts with the touch and display!
+    if (!spi.start())
+    {
+        logger.error("Failed to start SPI Manager.");
+        return false;
+    }
+
     if (!storage.start())
     {
         logger.error("Failed to start StorageManager.");

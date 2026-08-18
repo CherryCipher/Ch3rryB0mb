@@ -4,6 +4,7 @@
 #include <SD.h>
 
 #include "../logger/logger.h"
+#include "../spi/spimanager.h"
 
 /**
  * @class StorageManager
@@ -36,17 +37,18 @@ public:
      * @brief Constructs a new StorageManager.
      *
      * @param logger Reference to the application's Logger.
+     * @param spiManager Reference to the shared SPIManager.
      */
-    explicit StorageManager(Logger& logger);
+    StorageManager(Logger& logger, SPIManager& spiManager);
 
     /**
      * @brief Initializes the storage device.
      *
-     * Attempts to mount the SD card and prepares it for file access.
+     * Attempts to mount the SD card using the shared SPI bus and prepares
+     * it for file access.
      *
      * @return true if the storage device was mounted successfully.
      * @return false otherwise.
-     *
      */
     bool start();
 
@@ -61,6 +63,7 @@ public:
      * @brief Checks whether a file exists.
      *
      * @param path Absolute file path.
+     *
      * @return true if the file exists.
      */
     bool exists(const String& path) const;
@@ -90,27 +93,35 @@ public:
     void close(File& file);
 
     /**
-    * @brief Stops the storage manager and unmounts the storage device.
-    *
-    * This function should be called when the application is shutting down or
-    * when the storage device is no longer needed.
-    *
-    * @return true if the storage device was unmounted successfully.
-    * @return false otherwise.
-    */
+     * @brief Stops the storage manager and unmounts the storage device.
+     *
+     * @return true if the storage device was unmounted successfully.
+     * @return false otherwise.
+     */
     bool stop();
 
 private:
+    /**
+     * @brief SD card chip-select pin.
+     */
+    static constexpr uint8_t SD_CS = 5;
 
     /**
-    * Indicates whether the storage device is currently mounted.
-    */
-    bool mounted = false;
-
-    /**
-    * @brief Reference to the application's Logger instance.
-    *
-    * Used for logging messages related to web server operations.
-    */
+     * @brief Reference to the application's Logger instance.
+     *
+     * Used for logging messages related to storage operations.
+     */
     Logger& logger;
+
+    /**
+     * @brief Reference to the shared SPIManager.
+     *
+     * Provides access to the SPI bus used by the SD card.
+     */
+    SPIManager& spiManager;
+
+    /**
+     * @brief Indicates whether the storage device is currently mounted.
+     */
+    bool mounted = false;
 };

@@ -3,28 +3,41 @@
 /**
  * @brief Constructs a new NRFManager.
  *
- * Stores a reference to the application's Logger.
+ * Stores references to the application's Logger and shared SPIManager.
  *
  * @param logger Reference to the application's Logger.
+ * @param spiManager Reference to the shared SPIManager.
  */
-NRFManager::NRFManager(Logger& logger)
-    : logger(logger)
+NRFManager::NRFManager(Logger& logger, SPIManager& spiManager)
+    : logger(logger), spiManager(spiManager)
 {
 }
 
 /**
  * @brief Initializes the NRFManager.
  *
- * Prepares the NRFManager for use. The physical NRF24 radio
- * is not initialized yet.
+ * Verifies that the shared SPI bus is available and prepares the
+ * NRFManager for use.
+ *
+ * The physical NRF24 radio is not initialized yet.
  *
  * @return true if initialization succeeded.
+ * @return false otherwise.
  */
 bool NRFManager::start()
 {
-    running = true;
+    if (running)
+        return true;
 
     logger.info("NRFManager started.");
+
+    if (!spiManager.isRunning())
+    {
+        logger.error("SPIManager is not running.");
+        return false;
+    }
+
+    running = true;
 
     return true;
 }
@@ -38,6 +51,9 @@ bool NRFManager::start()
  */
 bool NRFManager::stop()
 {
+    if (!running)
+        return true;
+
     running = false;
 
     logger.info("NRFManager stopped.");
@@ -48,7 +64,7 @@ bool NRFManager::stop()
 /**
  * @brief Returns whether the NRFManager is currently running.
  *
- * @return true if the manager is running.
+ * @return true if the NRFManager is running.
  * @return false otherwise.
  */
 bool NRFManager::isRunning() const
