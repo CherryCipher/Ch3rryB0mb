@@ -143,9 +143,15 @@ void ScreenWifiLab::renderNetworks(WiFiLab& wifiLab)
         String text =
             ssid + "\n"
             "CH " + String(network.channel) +
-            "   " + String(network.rssi) + " dBm";
+            "   " + String(network.rssi) + " dBm" +
+            "   " + getSecurityName(network.encryption);
 
-        UIWidgets::addText(networkContainer, 5, 5 + (i * 42), text.c_str(), 195);
+        //42 height for 2 lines, 58 for 3
+        lv_obj_t* networkLabel = UIWidgets::addText(networkContainer, 5, 5 + (i * 58), text.c_str(), 195);
+
+        //if the network is open color it red!
+        if (network.encryption == WIFI_AUTH_OPEN)
+            lv_obj_set_style_text_color(networkLabel, lv_color_hex(0xFF1744), LV_PART_MAIN);
     }
 }
 
@@ -189,4 +195,29 @@ void ScreenWifiLab::backClicked(lv_event_t* event)
         return;
 
     screenManager->back();
+}
+
+/**
+ * @brief Returns a readable name for a Wi-Fi authentication mode.
+ *
+ * Converts the ESP32 Wi-Fi authentication mode to a short
+ * human-readable string for display in the Wi-Fi network list.
+ *
+ * @param security ESP32 Wi-Fi authentication mode.
+ *
+ * @return Human-readable security name.
+ */
+const char* ScreenWifiLab::getSecurityName(wifi_auth_mode_t security)
+{
+    switch (security)
+    {
+        case WIFI_AUTH_OPEN: return "OPEN";
+        case WIFI_AUTH_WEP: return "WEP";
+        case WIFI_AUTH_WPA_PSK: return "WPA";
+        case WIFI_AUTH_WPA2_PSK: return "WPA2";
+        case WIFI_AUTH_WPA_WPA2_PSK: return "WPA/WPA2";
+        case WIFI_AUTH_WPA3_PSK: return "WPA3";
+        case WIFI_AUTH_WPA2_WPA3_PSK: return "WPA2/WPA3";
+        default: return "UNKNOWN";
+    }
 }

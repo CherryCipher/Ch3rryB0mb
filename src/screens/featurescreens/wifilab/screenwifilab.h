@@ -9,6 +9,7 @@
 #pragma once
 
 #include <lvgl.h>
+#include <WiFi.h>
 
 class ScreenManager;
 class WiFiLab;
@@ -92,4 +93,16 @@ private:
      * @param event Pointer to the LVGL event.
      */
     static void backClicked(lv_event_t* event);
+
+    /**
+     * @brief Returns a readable name for a Wi-Fi authentication mode.
+     *
+     * Converts the ESP32 Wi-Fi authentication mode to a short
+     * human-readable string for display in the Wi-Fi network list.
+     *
+     * @param security ESP32 Wi-Fi authentication mode.
+     *
+     * @return Human-readable security name.
+     */
+    static const char* getSecurityName(wifi_auth_mode_t security);
 };
