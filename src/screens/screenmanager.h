@@ -58,16 +58,20 @@ public:
      * @return true if the screen manager was started successfully.
      */
     bool start();
-
+    
     /**
      * @brief Shows an application screen.
      *
-     * Creates the requested screen through its corresponding screen
-     * class and makes it the active LVGL screen.
+     * Creates the requested screen and makes it the active LVGL screen.
      *
      * @param screen Screen that should be displayed.
+     * @param addToHistory true to store the current screen as the previous
+     * screen, false when navigating backwards.
      */
-    void show(Screen screen);
+    void show(
+    Screen screen,
+    bool addToHistory = true
+);
 
     /**
      * @brief Returns to the previously active screen.

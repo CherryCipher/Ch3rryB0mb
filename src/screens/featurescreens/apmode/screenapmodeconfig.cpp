@@ -13,14 +13,27 @@
 #include "app/features/apmode/apmode.h"
 
 /**
- * @brief SSID input field used by the configuration screen.
- */
+* @brief Savecontext holds the references for the save feature
+*/
+ScreenAPModeConfig::SaveContext ScreenAPModeConfig::saveContext = {
+    nullptr,
+    nullptr
+};
+
+/**
+* @brief SSID input field used by the configuration screen.
+*/
 lv_obj_t* ScreenAPModeConfig::ssidInput = nullptr;
 
 /**
- * @brief Password input field used by the configuration screen.
- */
+* @brief Password input field used by the configuration screen.
+*/
 lv_obj_t* ScreenAPModeConfig::passwordInput = nullptr;
+
+/**
+* @brief Onscreen touch Keyboard used by the configuration screen.
+*/
+lv_obj_t* ScreenAPModeConfig::keyboard = nullptr;
 
 /**
  * @brief Creates the AP Mode configuration screen.
@@ -84,42 +97,58 @@ lv_obj_t* ScreenAPModeConfig::create(
     UIWidgets::addText(content, 15, 265, "MAX CLIENTS", 210);
 
     // Save button.
-    lv_obj_t* saveButton = UIWidgets::addButton(content, 15, 320, "SAVE & APPLY", 210, 40);
+    lv_obj_t* saveButton = UIWidgets::addButton(content, 15, 320, "SAVE", 210, 40);
+
+    //create savecontext, so we can save and Back
+    saveContext.apMode = &apMode;
+    saveContext.screenManager = &screenManager;
 
     lv_obj_add_event_cb(
         saveButton,
         saveClicked,
         LV_EVENT_CLICKED,
-        &apMode
+        &saveContext
+    );
+
+    //Create the onscreen keyboard
+    keyboard = UIWidgets::addKeyboard(screen);
+
+    lv_obj_add_flag(
+        keyboard,
+        LV_OBJ_FLAG_HIDDEN
+    );
+
+    lv_obj_add_event_cb(
+        keyboard,
+        keyboardFinished,
+        LV_EVENT_READY,
+        nullptr
+    );
+
+    lv_obj_add_event_cb(
+        keyboard,
+        keyboardFinished,
+        LV_EVENT_CANCEL,
+        nullptr
+    );
+
+    //SSID focus event
+    lv_obj_add_event_cb(
+        ssidInput,
+        inputFocused,
+        LV_EVENT_FOCUSED,
+        nullptr
+    );
+
+    //password focus event
+    lv_obj_add_event_cb(
+        passwordInput,
+        inputFocused,
+        LV_EVENT_FOCUSED,
+        nullptr
     );
 
     return screen;
-}
-
-/**
- * @brief Handles the SAVE button event.
- *
- * Retrieves the APMode instance associated with the screen.
- * Reading and applying the edited configuration will be implemented
- * when APMode configuration update support is added.
- *
- * @param event Pointer to the LVGL event.
- */
-void ScreenAPModeConfig::saveClicked(lv_event_t* event)
-{
-    APMode* apMode =
-        static_cast<APMode*>(
-            lv_event_get_user_data(event)
-        );
-
-    if (apMode == nullptr)
-    {
-        return;
-    }
-
-    //
-    // Configuration save/apply functionality will be added here.
-    //
 }
 
 /**
@@ -143,4 +172,107 @@ void ScreenAPModeConfig::backClicked(lv_event_t* event)
     }
 
     screenManager->back();
+}
+
+/**
+ * @brief Handles focus events for text input fields.
+ *
+ * Connects the on-screen keyboard to the focused textarea, shows
+ * the keyboard and scrolls the selected input into view.
+ *
+ * @param event Pointer to the LVGL event.
+ */
+void ScreenAPModeConfig::inputFocused(lv_event_t* event)
+{
+    if (keyboard == nullptr)
+    {
+        return;
+    }
+
+    lv_obj_t* input =
+    static_cast<lv_obj_t*>(
+        lv_event_get_target(event)
+    );
+
+    lv_keyboard_set_textarea(
+        keyboard,
+        input
+    );
+
+    lv_obj_clear_flag(
+        keyboard,
+        LV_OBJ_FLAG_HIDDEN
+    );
+
+    lv_obj_scroll_to_view(
+        input,
+        LV_ANIM_ON
+    );
+}
+
+/**
+ * @brief Handles completion of on-screen keyboard input.
+ *
+ * Disconnects the keyboard from the active textarea and hides it.
+ *
+ * @param event Pointer to the LVGL event.
+ */
+void ScreenAPModeConfig::keyboardFinished(lv_event_t* event)
+{
+    if (keyboard == nullptr)
+    {
+        return;
+    }
+
+    lv_keyboard_set_textarea(
+        keyboard,
+        nullptr
+    );
+
+    lv_obj_add_flag(
+        keyboard,
+        LV_OBJ_FLAG_HIDDEN
+    );
+}
+
+/**
+ * @brief Handles the SAVE button event.
+ *
+ * Reads the edited configuration values, stores the updated
+ * configuration in APMode and returns to the previous screen.
+ *
+ * @param event Pointer to the LVGL event.
+ */
+void ScreenAPModeConfig::saveClicked(lv_event_t* event)
+{
+    SaveContext* context =
+        static_cast<SaveContext*>(
+            lv_event_get_user_data(event)
+        );
+
+    if (context == nullptr ||
+        context->apMode == nullptr ||
+        context->screenManager == nullptr ||
+        ssidInput == nullptr ||
+        passwordInput == nullptr)
+    {
+        return;
+    }
+
+    // Create an editable copy of the current configuration.
+    WiFiAPConfig newConfig =
+        context->apMode->getConfig();
+
+    // Read the edited values.
+    newConfig.ssid =
+        lv_textarea_get_text(ssidInput);
+
+    newConfig.password =
+        lv_textarea_get_text(passwordInput);
+
+    // Store the new configuration.
+    context->apMode->setConfig(newConfig);
+
+    // Return to AP Mode.
+    context->screenManager->back();
 }

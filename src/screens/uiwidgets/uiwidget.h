@@ -148,4 +148,23 @@ public:
         int width,
         int height
     );
+
+    /**
+     * @brief Creates a styled on-screen keyboard.
+     *
+     * Creates an LVGL keyboard using the default Ch3rryB0mb styling.
+     * The keyboard is hidden by default and can later be connected to
+     * a textarea using lv_keyboard_set_textarea().
+     *
+     * @param parent Parent LVGL object.
+     * @param width Keyboard width in pixels.
+     * @param height Keyboard height in pixels.
+     *
+     * @return Pointer to the created LVGL keyboard object.
+     */
+    static lv_obj_t* addKeyboard(
+        lv_obj_t* parent,
+        int width = 240,
+        int height = 140
+    );
 };

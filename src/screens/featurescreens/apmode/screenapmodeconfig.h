@@ -74,4 +74,45 @@ private:
      * @param event Pointer to the LVGL event.
      */
     static void backClicked(lv_event_t* event);
+
+    /**
+     * @brief On-screen keyboard used to edit text input fields.
+     */
+    static lv_obj_t* keyboard;
+
+    /**
+     * @brief Handles focus events for text input fields.
+     *
+     * Connects the on-screen keyboard to the selected textarea and
+     * makes the keyboard visible.
+     *
+     * @param event Pointer to the LVGL event.
+     */
+    static void inputFocused(lv_event_t* event);
+
+    /**
+     * @brief Handles keyboard READY and CANCEL events.
+     *
+     * Disconnects and hides the keyboard when text entry is finished.
+     *
+     * @param event Pointer to the LVGL event.
+     */
+    static void keyboardFinished(lv_event_t* event);
+
+    /**
+     * @struct SaveContext
+     * @brief Context required by the SAVE button callback.
+     * 
+     * we do this so we can call config AP AND back at the sametime
+     */
+    struct SaveContext
+    {
+        APMode* apMode;
+        ScreenManager* screenManager;
+    };
+
+    /**
+     * @brief Context used by the SAVE button.
+     */
+    static SaveContext saveContext;
 };

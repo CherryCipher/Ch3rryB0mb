@@ -68,6 +68,16 @@ public:
     const WiFiAPConfig& getConfig() const;
 
     /**
+     * @brief Updates the Access Point configuration.
+     *
+     * Replaces the configuration used by AP Mode. The new configuration
+     * will be used the next time the Access Point is started.
+     *
+     * @param newConfig New Access Point configuration.
+     */
+    void setConfig(const WiFiAPConfig& newConfig);
+
+    /**
      * @brief Returns the current Access Point IP address.
      *
      * @return Access Point IP address as a String.

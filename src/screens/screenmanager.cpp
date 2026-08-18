@@ -46,12 +46,17 @@ void ScreenManager::stop()
  * @brief Shows an application screen.
  *
  * Creates the requested screen using its corresponding screen class.
- * The current screen is stored as the previous screen before the newly
- * created screen is loaded.
+ * When requested, the current screen is stored as the previous screen
+ * before the new screen is loaded.
  *
  * @param screen Screen that should be displayed.
+ * @param addToHistory true to add the current screen to navigation
+ * history, false when navigating backwards.
  */
-void ScreenManager::show(Screen screen)
+void ScreenManager::show(
+    Screen screen,
+    bool addToHistory
+)
 {
     lv_obj_t* newScreen = nullptr;
 
@@ -62,11 +67,17 @@ void ScreenManager::show(Screen screen)
             break;
 
         case Screen::APMode:
-            newScreen = ScreenAPMode::create(*this, features.apMode);
+            newScreen = ScreenAPMode::create(
+                *this,
+                features.apMode
+            );
             break;
 
         case Screen::ApModeConfig:
-            newScreen = ScreenAPModeConfig::create(*this, features.apMode);
+            newScreen = ScreenAPModeConfig::create(
+                *this,
+                features.apMode
+            );
             break;
     }
 
@@ -75,7 +86,8 @@ void ScreenManager::show(Screen screen)
         return;
     }
 
-    if (currentScreenObject != nullptr)
+    // Store navigation history only when moving forward.
+    if (addToHistory && currentScreenObject != nullptr)
     {
         previousScreen = currentScreen;
         hasPreviousScreen = true;
@@ -89,7 +101,8 @@ void ScreenManager::show(Screen screen)
 /**
  * @brief Returns to the previously active screen.
  *
- * Displays the previously active application screen if one exists.
+ * Displays the previously active screen without adding the current
+ * screen back into the navigation history.
  */
 void ScreenManager::back()
 {
@@ -100,13 +113,12 @@ void ScreenManager::back()
 
     Screen targetScreen = previousScreen;
 
-    //
-    // Prevent show() from treating the current screen as a new
-    // navigation history entry when navigating backwards.
-    //
     hasPreviousScreen = false;
 
-    show(targetScreen);
+    show(
+        targetScreen,
+        false
+    );
 }
 
 /**

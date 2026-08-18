@@ -311,9 +311,7 @@ lv_obj_t* UIWidgets::addInput(
         40
     );
 
-    //
     // Input behavior.
-    //
     lv_textarea_set_one_line(
         input,
         true
@@ -329,9 +327,7 @@ lv_obj_t* UIWidgets::addInput(
         passwordMode
     );
 
-    //
     // Input styling.
-    //
     lv_obj_set_style_bg_color(
         input,
         lv_color_hex(0x080808),
@@ -352,7 +348,7 @@ lv_obj_t* UIWidgets::addInput(
 
     lv_obj_set_style_border_color(
         input,
-        lv_color_hex(0xFF1744),
+        lv_color_hex(0xFF7A00),
         LV_PART_MAIN
     );
 
@@ -392,10 +388,8 @@ lv_obj_t* UIWidgets::addInput(
         LV_PART_MAIN
     );
 
-    //
-    // Cursor styling.
-    //
-    lv_obj_set_style_border_color(
+    // Cursor styling possible
+    /*lv_obj_set_style_border_color(
         input,
         lv_color_hex(0xFFFFFF),
         LV_PART_CURSOR
@@ -405,7 +399,7 @@ lv_obj_t* UIWidgets::addInput(
         input,
         2,
         LV_PART_CURSOR
-    );
+    ); */
 
     return input;
 }
@@ -535,4 +529,121 @@ lv_obj_t* UIWidgets::createScrollContainer(
     );
 
     return container;
+}
+
+/**
+ * @brief Creates a styled on-screen keyboard.
+ *
+ * Creates an LVGL keyboard aligned to the bottom of its parent.
+ * The keyboard uses the default Ch3rryB0mb styling and is hidden
+ * when initially created.
+ *
+ * The keyboard can be connected to a textarea using
+ * lv_keyboard_set_textarea().
+ *
+ * @param parent Parent LVGL object.
+ * @param width Keyboard width in pixels.
+ * @param height Keyboard height in pixels.
+ *
+ * @return Pointer to the created LVGL keyboard object.
+ */
+lv_obj_t* UIWidgets::addKeyboard(
+    lv_obj_t* parent,
+    int width,
+    int height
+)
+{
+    lv_obj_t* keyboard = lv_keyboard_create(parent);
+
+    lv_obj_set_size(
+        keyboard,
+        width,
+        height
+    );
+
+    lv_obj_align(
+        keyboard,
+        LV_ALIGN_BOTTOM_MID,
+        0,
+        0
+    );
+
+    //
+    // Keyboard styling.
+    //
+    lv_obj_set_style_bg_color(
+        keyboard,
+        lv_color_hex(0x080808),
+        LV_PART_MAIN
+    );
+
+    lv_obj_set_style_bg_opa(
+        keyboard,
+        LV_OPA_COVER,
+        LV_PART_MAIN
+    );
+
+    lv_obj_set_style_border_width(
+        keyboard,
+        1,
+        LV_PART_MAIN
+    );
+
+    lv_obj_set_style_border_color(
+        keyboard,
+        lv_color_hex(0xFF1744),
+        LV_PART_MAIN
+    );
+
+    lv_obj_set_style_radius(
+        keyboard,
+        0,
+        LV_PART_MAIN
+    );
+
+    //
+    // Keyboard key styling.
+    //
+    lv_obj_set_style_bg_color(
+        keyboard,
+        lv_color_hex(0x080808),
+        LV_PART_ITEMS
+    );
+
+    lv_obj_set_style_border_width(
+        keyboard,
+        1,
+        LV_PART_ITEMS
+    );
+
+    lv_obj_set_style_border_color(
+        keyboard,
+        lv_color_hex(0x7A0019),
+        LV_PART_ITEMS
+    );
+
+    lv_obj_set_style_text_color(
+        keyboard,
+        lv_color_hex(0xFFFFFF),
+        LV_PART_ITEMS
+    );
+
+    //
+    // Pressed key styling.
+    //
+    lv_obj_set_style_bg_color(
+        keyboard,
+        lv_color_hex(0x7A0019),
+        LV_PART_ITEMS | LV_STATE_PRESSED
+    );
+
+    //
+    // Keyboard starts hidden.
+    //
+    lv_obj_add_flag(
+        keyboard,
+        LV_OBJ_FLAG_HIDDEN
+    );
+
+    return keyboard;
 }

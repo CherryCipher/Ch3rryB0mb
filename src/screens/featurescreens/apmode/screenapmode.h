@@ -35,6 +35,16 @@ public:
 
 private:
     /**
+     * @brief AP start button.
+     */
+    static lv_obj_t* startButton;
+
+    /**
+     * @brief AP stop button.
+     */
+    static lv_obj_t* stopButton;
+
+    /**
      * @brief Handles the AP Mode start button event.
      *
      * @param event Pointer to the LVGL event.

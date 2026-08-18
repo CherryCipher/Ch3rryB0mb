@@ -15,6 +15,20 @@ lv_obj_t* ScreenAPMode::statusText = nullptr;
 lv_obj_t* ScreenAPMode::configButton = nullptr;
 
 /**
+ * @brief Start button used by the AP Mode screen.
+ * 
+ * its a member so we can enable and disable the button (and in extension functions) when the ap is running
+ */
+lv_obj_t* ScreenAPMode::startButton = nullptr;
+
+/**
+ * @brief Stop button used by the AP Mode screen.
+ * 
+ * its a member so we can enable and disable the button (and in extension functions) when the ap is NOT running
+ */
+lv_obj_t* ScreenAPMode::stopButton = nullptr;
+
+/**
  * @brief Creates the AP Mode screen.
  *
  * Creates the AP Mode interface with START, STOP and BACK controls.
@@ -43,7 +57,7 @@ lv_obj_t* ScreenAPMode::create(ScreenManager& screenManager, APMode& apMode)
     );
 
     // Start button.
-    lv_obj_t* startButton = UIWidgets::addButton(screen, 15, 50, "START", 100, 40);
+    startButton = UIWidgets::addButton(screen, 15, 60, "START", 100, 40);
 
     lv_obj_add_event_cb(
         startButton,
@@ -53,7 +67,7 @@ lv_obj_t* ScreenAPMode::create(ScreenManager& screenManager, APMode& apMode)
     );
 
     // Stop button.
-    lv_obj_t* stopButton = UIWidgets::addButton(screen, 125, 50, "STOP", 100, 40);
+    stopButton = UIWidgets::addButton(screen, 125, 60, "STOP", 100, 40);
 
     lv_obj_add_event_cb(
         stopButton,
@@ -114,11 +128,27 @@ void ScreenAPMode::updateStatus(APMode& apMode)
             status.c_str()
         );
 
-        //right away if the ap is running disable the config button
+        //right away if the ap is running disable the start and config button and enable the stop button
         if (configButton != nullptr)
         {
             lv_obj_add_state(
                 configButton,
+                LV_STATE_DISABLED
+            );
+        }
+
+        if (startButton != nullptr)
+        {
+            lv_obj_add_state(
+                startButton,
+                LV_STATE_DISABLED
+            );
+        }
+
+        if (stopButton != nullptr)
+        {
+            lv_obj_clear_state(
+                stopButton,
                 LV_STATE_DISABLED
             );
         }
@@ -134,7 +164,23 @@ void ScreenAPMode::updateStatus(APMode& apMode)
         "Ch3rryB0mb access point."
     );
 
-    //if the ap is not ruinning enable the config button
+    //if the ap is not ruinning enable the start and config button, and disable the stop button
+    if (startButton != nullptr)
+    {
+        lv_obj_clear_state(
+            startButton,
+            LV_STATE_DISABLED
+        );
+    }
+
+    if (stopButton != nullptr)
+    {
+        lv_obj_add_state(
+            stopButton,
+            LV_STATE_DISABLED
+        );
+    }
+
     if (configButton != nullptr)
     {
         lv_obj_clear_state(
