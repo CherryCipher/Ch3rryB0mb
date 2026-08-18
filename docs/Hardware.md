@@ -47,7 +47,7 @@ Main controller:
 
 ---
 
-![Wiring Diagram](wiring/Ch3rryB0mb.svg?v=2)
+<!-- ![Wiring Diagram](wiring/Ch3rryB0mb.svg?v=2) -->
 
 ## NRF24 Hardware Connection
 
