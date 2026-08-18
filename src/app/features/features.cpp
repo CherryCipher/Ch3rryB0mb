@@ -8,5 +8,6 @@
  */
 Features::Features(Services& services)
     : apMode(services)
+    , wifiLab(services)
 {
 }

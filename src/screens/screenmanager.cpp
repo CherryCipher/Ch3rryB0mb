@@ -99,7 +99,7 @@ void ScreenManager::showInternal( Screen screen, bool addToHistory )
             break;
 
         case Screen::WifiLab:
-            newScreen = ScreenWifiLab::create(*this);
+            newScreen = ScreenWifiLab::create(*this, features.wifiLab);
             break;
     }
 

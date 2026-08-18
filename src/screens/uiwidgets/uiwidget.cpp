@@ -346,3 +346,47 @@ lv_obj_t* UIWidgets::addSpacer(lv_obj_t* parent, int x, int y, int width, int he
 
     return spacer;
 }
+
+/**
+ * @brief Creates a centered status box.
+ *
+ * Creates a temporary centered container using the Ch3rryB0mb
+ * header styling and displays the supplied status text inside it.
+ *
+ * @param parent Parent LVGL object.
+ * @param text Text displayed inside the status box.
+ * @param width Width of the status box in pixels.
+ * @param height Height of the status box in pixels.
+ *
+ * @return Pointer to the created LVGL status box object.
+ */
+lv_obj_t* UIWidgets::addStatusBox(lv_obj_t* parent, const char* text, int width, int height)
+{
+    // Status container.
+    lv_obj_t* statusBox = lv_obj_create(parent);
+
+    lv_obj_set_size(statusBox, width, height);
+    lv_obj_align(statusBox, LV_ALIGN_CENTER, 0, 0);
+
+    // Status box styling.
+    lv_obj_set_style_bg_color(statusBox, lv_color_hex(0x7A0019), LV_PART_MAIN);
+    lv_obj_set_style_bg_opa(statusBox, LV_OPA_COVER, LV_PART_MAIN);
+    lv_obj_set_style_border_width(statusBox, 1, LV_PART_MAIN);
+    lv_obj_set_style_border_color(statusBox, lv_color_hex(0xFF1744), LV_PART_MAIN);
+    lv_obj_set_style_radius(statusBox, 3, LV_PART_MAIN);
+    lv_obj_set_style_pad_all(statusBox, 0, LV_PART_MAIN);
+
+    lv_obj_clear_flag(statusBox, LV_OBJ_FLAG_SCROLLABLE);
+
+    // Status text.
+    lv_obj_t* label = lv_label_create(statusBox);
+
+    lv_label_set_text(label, text);
+    lv_obj_set_style_text_color(label, lv_color_hex(0xFFFFFF), LV_PART_MAIN);
+    lv_obj_center(label);
+
+    // Keep the status box above other screen content.
+    lv_obj_move_foreground(statusBox);
+
+    return statusBox;
+}
