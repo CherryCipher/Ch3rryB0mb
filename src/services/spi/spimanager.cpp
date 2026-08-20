@@ -8,14 +8,15 @@
  * @param logger Reference to the application's Logger.
  */
 SPIManager::SPIManager(Logger& logger)
-    : logger(logger), hardwareBus(VSPI)
+    : logger(logger),
+      hardwareBus(VSPI)
 {
 }
 
 /**
- * @brief Initializes the SPI infrastructure.
+ * @brief Initializes the shared hardware SPI bus.
  *
- * Initializes the shared hardware SPI bus using the configured
+ * Initializes the hardware SPI bus using the configured
  * SCK, MISO and MOSI pins.
  *
  * @return true if initialization succeeded.
@@ -27,7 +28,11 @@ bool SPIManager::start()
 
     logger.info("Starting SPIManager.");
 
-    hardwareBus.begin(HARDWARE_SPI_SCK, HARDWARE_SPI_MISO, HARDWARE_SPI_MOSI);
+    hardwareBus.begin(
+        HARDWARE_SPI_SCK,
+        HARDWARE_SPI_MISO,
+        HARDWARE_SPI_MOSI
+    );
 
     running = true;
 
@@ -49,6 +54,7 @@ bool SPIManager::stop()
         return true;
 
     hardwareBus.end();
+
     running = false;
 
     logger.info("SPIManager stopped.");
@@ -75,34 +81,4 @@ bool SPIManager::isRunning() const
 SPIClass& SPIManager::getHardwareBus()
 {
     return hardwareBus;
-}
-
-/**
- * @brief Returns the radio software SPI clock pin.
- *
- * @return GPIO number used for SCK.
- */
-uint8_t SPIManager::getRadioSckPin() const
-{
-    return RADIO_SPI_SCK;
-}
-
-/**
- * @brief Returns the radio software SPI MISO pin.
- *
- * @return GPIO number used for MISO.
- */
-uint8_t SPIManager::getRadioMisoPin() const
-{
-    return RADIO_SPI_MISO;
-}
-
-/**
- * @brief Returns the radio software SPI MOSI pin.
- *
- * @return GPIO number used for MOSI.
- */
-uint8_t SPIManager::getRadioMosiPin() const
-{
-    return RADIO_SPI_MOSI;
 }
