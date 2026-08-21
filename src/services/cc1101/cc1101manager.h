@@ -8,22 +8,28 @@
 #include <Arduino.h>
 #include <RadioLib.h>
 
-#include "../logger/Logger.h"
+#include "../logger/logger.h"
 #include "../spi/spimanager.h"
 
 /**
  * @class CC1101Manager
- * @brief Manages the CC1101 Sub-GHz radio.
+ * @brief Manages CC1101 Sub-GHz radio functionality.
  *
- * The CC1101Manager initializes and controls the CC1101 radio using the
- * shared hardware SPI bus provided by SPIManager.
+ * The CC1101Manager is responsible for initializing and controlling the
+ * CC1101 radio used by Ch3rryB0mb.
  *
- * The CC1101 shares SCK, MISO and MOSI with other SPI peripherals while
- * using its own CSN pin.
+ * Spectrum scanning is implemented incrementally. Each scan update
+ * measures only one frequency so control can quickly return to the
+ * application and UI.
  */
 class CC1101Manager
 {
 public:
+    /**
+     * @brief Number of measurement points used for a frequency range scan.
+     */
+    static constexpr uint8_t SCAN_POINT_COUNT = 100;
+
     /**
      * @brief Constructs a new CC1101Manager.
      *
@@ -35,50 +41,116 @@ public:
     /**
      * @brief Initializes the CC1101 radio.
      *
-     * Verifies that the shared SPI infrastructure is running and attempts
-     * to initialize communication with the CC1101.
-     *
-     * @return true if the CC1101 was initialized successfully.
-     * @return false if initialization failed.
+     * @return true if initialization succeeded.
+     * @return false otherwise.
      */
     bool start();
 
     /**
      * @brief Stops the CC1101Manager.
      *
-     * Places the CC1101 into sleep mode and marks the manager as inactive.
-     *
-     * @return true if the manager stopped successfully.
+     * @return true when the manager has stopped.
      */
     bool stop();
 
     /**
-     * @brief Returns whether the CC1101Manager is currently running.
+     * @brief Returns whether the CC1101Manager is running.
      *
-     * @return true if the CC1101Manager is running.
+     * @return true if running.
      * @return false otherwise.
      */
     bool isRunning() const;
 
+    /**
+     * @brief Starts an incremental frequency range scan.
+     *
+     * Initializes the scan state but does not perform any measurements.
+     * Measurements are performed individually through updateScan().
+     *
+     * @param startMHz Start frequency in MHz.
+     * @param endMHz End frequency in MHz.
+     *
+     * @return true if the scan was initialized successfully.
+     * @return false if the manager is unavailable or the range is invalid.
+     */
+    bool startScan(float startMHz, float endMHz);
+
+    /**
+     * @brief Performs one step of the active frequency scan.
+     *
+     * Measures exactly one frequency and stores its RSSI value in the
+     * supplied result array.
+     *
+     * @param results Array receiving RSSI measurements in dBm.
+     *
+     * @return true if a complete sweep has just been completed.
+     * @return false if the sweep is still in progress or no scan is active.
+     */
+    bool updateScan(int16_t results[SCAN_POINT_COUNT]);
+
+    /**
+     * @brief Stops the active frequency scan.
+     */
+    void stopScan();
+
+    /**
+     * @brief Returns whether a frequency scan is active.
+     *
+     * @return true if scanning.
+     * @return false otherwise.
+     */
+    bool isScanning() const;
+
 private:
-    /** @brief Logger used by the CC1101Manager. */
-    Logger& logger;
-
-    /** @brief Shared SPI infrastructure used by the CC1101. */
-    SPIManager& spiManager;
-
-    /** @brief RadioLib module configuration for the CC1101. */
-    Module module;
-
-    /** @brief RadioLib CC1101 radio instance. */
-    CC1101 radio;
-
-    /** @brief Indicates whether the CC1101Manager is currently running. */
-    bool running = false;
-
-    /** @brief CC1101 SPI chip-select pin. */
+    /** @brief GPIO pin connected to the CC1101 Chip Select pin. */
     static constexpr uint8_t CC1101_CSN = 16;
 
-    /** @brief CC1101 GDO0 interrupt/data pin. */
+    /** @brief GPIO pin connected to the CC1101 GDO0 pin. */
     static constexpr uint8_t CC1101_GDO0 = 35;
+
+    /**
+     * @brief Receiver settling time before reading live RSSI.
+     */
+    static constexpr uint16_t RSSI_SETTLE_US = 1000;
+
+    /** @brief Reference to the application's Logger. */
+    Logger& logger;
+
+    /** @brief Reference to the shared SPI manager. */
+    SPIManager& spiManager;
+
+    /** @brief RadioLib module configuration. */
+    Module module;
+
+    /** @brief RadioLib CC1101 instance. */
+    CC1101 radio;
+
+    /** @brief Indicates whether the manager is running. */
+    bool running = false;
+
+    /** @brief Indicates whether an incremental scan is active. */
+    bool scanning = false;
+
+    /** @brief Current measurement index in the active scan. */
+    uint8_t scanIndex = 0;
+
+    /** @brief Start frequency of the active scan in MHz. */
+    float scanStartMHz = 0.0f;
+
+    /** @brief End frequency of the active scan in MHz. */
+    float scanEndMHz = 0.0f;
+
+    /** @brief Frequency step between scan points in MHz. */
+    float scanStepMHz = 0.0f;
+
+    /**
+     * @brief Measures live RSSI at a single frequency.
+     *
+     * @param frequencyMHz Frequency to measure in MHz.
+     * @param rssi Reference receiving RSSI in dBm.
+     *
+     * @return true if the measurement succeeded.
+     * @return false otherwise.
+     */
+    bool measureFrequency(float frequencyMHz, int16_t& rssi);
 };

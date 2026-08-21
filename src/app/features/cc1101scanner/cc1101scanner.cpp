@@ -8,8 +8,6 @@
 /**
  * @brief Constructs a new CC1101Scanner.
  *
- * Stores a reference to the application's Services container.
- *
  * @param services Reference to the application's Services container.
  */
 CC1101Scanner::CC1101Scanner(Services& services)
@@ -18,13 +16,13 @@ CC1101Scanner::CC1101Scanner(Services& services)
 }
 
 /**
- * @brief Starts the CC1101 scanner feature.
+ * @brief Starts continuous Sub-GHz scanning.
  *
- * Verifies that the CC1101 radio is available before marking the
- * scanner as running.
+ * Configures the CC1101Manager with the current frequency range and
+ * starts an incremental spectrum scan.
  *
- * @return true if the scanner started successfully.
- * @return false if the CC1101 radio is unavailable.
+ * @return true if scanning started successfully.
+ * @return false otherwise.
  */
 bool CC1101Scanner::start()
 {
@@ -32,11 +30,18 @@ bool CC1101Scanner::start()
 
     if (!isAvailable())
     {
-        services.logger.error("CC1101Scanner unavailable: CC1101Manager is not running.");
+        services.logger.error("CC1101Scanner unavailable.");
         return false;
     }
 
-    services.logger.info("Starting CC1101Scanner.");
+    if (!services.cc1101.startScan(
+        getStartFrequency(),
+        getEndFrequency()
+    ))
+    {
+        services.logger.error("Failed to start CC1101 scan.");
+        return false;
+    }
 
     running = true;
 
@@ -46,15 +51,15 @@ bool CC1101Scanner::start()
 }
 
 /**
- * @brief Stops the CC1101 scanner feature.
+ * @brief Stops continuous Sub-GHz scanning.
  *
- * Marks the scanner feature as inactive.
- *
- * @return true if the scanner stopped successfully.
+ * @return true when scanning has stopped.
  */
 bool CC1101Scanner::stop()
 {
     if (!running) return true;
+
+    services.cc1101.stopScan();
 
     running = false;
 
@@ -64,12 +69,26 @@ bool CC1101Scanner::stop()
 }
 
 /**
- * @brief Returns whether the CC1101 scanner feature is available.
+ * @brief Updates the active spectrum scan.
  *
- * The scanner is available when the CC1101Manager has successfully
- * initialized the CC1101 radio.
+ * Performs one frequency measurement. A true return value indicates
+ * that all scan points have been measured and a complete graph can
+ * be rendered.
  *
- * @return true if the CC1101 radio is available.
+ * @return true when a complete sweep has finished.
+ * @return false otherwise.
+ */
+bool CC1101Scanner::update()
+{
+    if (!running || !isAvailable()) return false;
+
+    return services.cc1101.updateScan(results);
+}
+
+/**
+ * @brief Returns whether the scanner feature is available.
+ *
+ * @return true if the CC1101Manager is running.
  * @return false otherwise.
  */
 bool CC1101Scanner::isAvailable() const
@@ -78,12 +97,92 @@ bool CC1101Scanner::isAvailable() const
 }
 
 /**
- * @brief Returns whether the scanner feature is currently running.
+ * @brief Returns whether scanning is active.
  *
- * @return true if the scanner is running.
+ * @return true if scanning.
  * @return false otherwise.
  */
 bool CC1101Scanner::isRunning() const
 {
     return running;
+}
+
+/**
+ * @brief Sets the center frequency.
+ *
+ * @param frequencyMHz Center frequency in MHz.
+ */
+void CC1101Scanner::setCenterFrequency(float frequencyMHz)
+{
+    centerFrequencyMHz = frequencyMHz;
+}
+
+/**
+ * @brief Returns the center frequency.
+ *
+ * @return Center frequency in MHz.
+ */
+float CC1101Scanner::getCenterFrequency() const
+{
+    return centerFrequencyMHz;
+}
+
+/**
+ * @brief Sets the scan range.
+ *
+ * @param rangeMHz Range on either side of the center frequency in MHz.
+ */
+void CC1101Scanner::setRange(float rangeMHz)
+{
+    this->rangeMHz = rangeMHz;
+}
+
+/**
+ * @brief Returns the configured scan range.
+ *
+ * @return Range in MHz.
+ */
+float CC1101Scanner::getRange() const
+{
+    return rangeMHz;
+}
+
+/**
+ * @brief Returns the scan start frequency.
+ *
+ * @return Start frequency in MHz.
+ */
+float CC1101Scanner::getStartFrequency() const
+{
+    return centerFrequencyMHz - rangeMHz;
+}
+
+/**
+ * @brief Returns the scan end frequency.
+ *
+ * @return End frequency in MHz.
+ */
+float CC1101Scanner::getEndFrequency() const
+{
+    return centerFrequencyMHz + rangeMHz;
+}
+
+/**
+ * @brief Returns the latest RSSI results.
+ *
+ * @return Pointer to the RSSI result array.
+ */
+const int16_t* CC1101Scanner::getResults() const
+{
+    return results;
+}
+
+/**
+ * @brief Returns the number of scan points.
+ *
+ * @return Number of RSSI measurements.
+ */
+uint8_t CC1101Scanner::getResultCount() const
+{
+    return CC1101Manager::SCAN_POINT_COUNT;
 }

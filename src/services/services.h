@@ -97,7 +97,7 @@ public:
     Logger logger;
 
     /**
-     * @brief Shared embedded NRFManager.
+     * @brief Shared SPI manager.
      */
     SPIManager spi;
 
