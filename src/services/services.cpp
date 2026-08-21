@@ -14,6 +14,7 @@ Services::Services()
     , web(storage, logger)
     , ui(logger)
     , nrf(logger, spi)
+    , cc1101(logger, spi)
 {
 }
 
@@ -66,9 +67,12 @@ bool Services::start()
     {
         logger.error("Failed to start NRFManager. It will be unavailable in the main menu");
         serviceDown = true;
+    }
 
-        // Let's not crash the app, but make NRF unavailable
-        //return false;
+    if (!cc1101.start())
+    {
+        logger.error("Failed to start CC1101Manager.");
+        serviceDown = true;
     }
 
     logger.printBanner();

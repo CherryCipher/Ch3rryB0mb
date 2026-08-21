@@ -7,6 +7,7 @@
 #include "webserver/WebServerManager.h"
 #include "UI/uimanager.h"
 #include "nrf/nrfmanager.h"
+#include "cc1101/cc1101manager.h"
 
 /**
  * @class Services
@@ -124,6 +125,11 @@ public:
      * @brief Shared embedded NRFManager.
      */
     NRFManager nrf;
+
+    /**
+     * @brief Shared CC1101 Sub-GHz radio manager.
+     */
+    CC1101Manager cc1101;
 
 private:
 
