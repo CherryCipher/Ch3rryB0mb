@@ -1,25 +1,27 @@
+/**
+ * @file spimanager.h
+ * @brief Declaration of the shared SPI manager.
+ *
+ * The SPIManager initializes and manages the shared hardware SPI bus used
+ * by SPI peripherals such as the NRF24L01+ and CC1101.
+ */
+
 #pragma once
 
 #include <Arduino.h>
 #include <SPI.h>
 
-#include "../logger/logger.h"
+#include "services/logger/logger.h"
 
 /**
  * @class SPIManager
- * @brief Manages the shared hardware SPI bus used by Ch3rryB0mb.
+ * @brief Manages the shared hardware SPI bus.
  *
- * The SPIManager owns and initializes the ESP32 hardware SPI bus used
- * by peripherals such as the microSD card, NRF24 and CC1101.
+ * The SPIManager initializes the hardware SPI bus and ensures that all
+ * connected SPI peripherals are deselected before the bus is started.
  *
- * All SPI peripherals share the same SCK, MISO and MOSI lines and use
- * their own chip-select and control pins.
- *
- * Hardware SPI
- * ------------
- * SCK  : GPIO18
- * MISO : GPIO19
- * MOSI : GPIO23
+ * SPI peripherals share the SCK, MISO and MOSI lines while each peripheral
+ * uses its own chip-select pin.
  */
 class SPIManager
 {
@@ -34,17 +36,18 @@ public:
     /**
      * @brief Initializes the shared hardware SPI bus.
      *
-     * Configures the hardware SPI bus using the configured SCK,
-     * MISO and MOSI pins.
+     * Configures all known chip-select pins as outputs and drives them HIGH
+     * before initializing the shared SPI bus. This prevents multiple SPI
+     * peripherals from accessing the bus simultaneously during startup.
      *
      * @return true if initialization succeeded.
      */
     bool start();
 
     /**
-     * @brief Stops the SPI infrastructure.
+     * @brief Stops the shared SPI infrastructure.
      *
-     * Stops the shared hardware SPI bus and marks the manager as inactive.
+     * Deselects all known SPI peripherals before stopping the hardware SPI bus.
      *
      * @return true if the SPIManager stopped successfully.
      */
@@ -61,44 +64,42 @@ public:
     /**
      * @brief Returns the shared hardware SPI bus.
      *
-     * The returned SPI bus is shared between peripherals such as
-     * the microSD card, NRF24 and CC1101. Each peripheral must use
-     * its own chip-select pin.
-     *
      * @return Reference to the hardware SPIClass instance.
      */
     SPIClass& getHardwareBus();
 
 private:
-    /**
-     * @brief Reference to the application's Logger instance.
-     *
-     * Used for logging SPI initialization and state changes.
-     */
+    /** @brief Logger used by the SPIManager. */
     Logger& logger;
 
-    /**
-     * @brief Shared hardware SPI bus instance.
-     */
+    /** @brief Shared VSPI hardware bus instance. */
     SPIClass hardwareBus;
 
-    /**
-     * @brief Indicates whether the SPIManager is currently running.
-     */
+    /** @brief Indicates whether the SPIManager is currently running. 
+     * 
+    */
     bool running = false;
 
-    /**
-     * @brief GPIO pin used for hardware SPI clock.
-     */
+    /** @brief Hardware SPI clock pin. */
     static constexpr uint8_t HARDWARE_SPI_SCK = 18;
 
-    /**
-     * @brief GPIO pin used for hardware SPI MISO.
-     */
+    /** @brief Hardware SPI MISO pin shared by all SPI peripherals. 
+     * 
+    */
     static constexpr uint8_t HARDWARE_SPI_MISO = 19;
 
-    /**
-     * @brief GPIO pin used for hardware SPI MOSI.
-     */
+    /** @brief Hardware SPI MOSI pin shared by all SPI peripherals. 
+     * 
+    */
     static constexpr uint8_t HARDWARE_SPI_MOSI = 23;
+
+    /** @brief NRF24L01+ SPI chip-select pin. 
+     * 
+    */
+    static constexpr uint8_t NRF_CSN_PIN = 22;
+
+    /** @brief CC1101 SPI chip-select pin. 
+     * 
+    */
+    static constexpr uint8_t CC1101_CSN_PIN = 16;
 };
