@@ -125,19 +125,20 @@
      */
     bool WiFiManager::stop()
     {
-        // Stop the Access Point if it is running.
         if (isAPRunning())
-        {
             stopAP();
-        }
 
-        // Disable the Wi-Fi radio.
+        delete[] networks;
+        networks = nullptr;
+        networkCount = 0;
+
         WiFi.mode(WIFI_OFF);
+
         logger.info("WiFiManager stopped. Wi-Fi radio disabled.");
 
         return true;
     }
-
+    
     /**
      * @brief Scans for nearby Wi-Fi networks.
      *
@@ -152,6 +153,9 @@
     bool WiFiManager::scanNetworks()
     {
         networkCount = 0;
+
+        delete[] networks;
+        networks = nullptr;
 
         wifi_mode_t currentMode = WiFi.getMode();
 
@@ -175,6 +179,20 @@
         }
 
         networkCount = min(foundNetworks, MAX_SCAN_RESULTS);
+
+        if (networkCount > 0)
+        {
+            networks = new WiFiNetwork[networkCount];
+
+            if (networks == nullptr)
+            {
+                WiFi.scanDelete();
+                networkCount = 0;
+
+                logger.error("Failed to allocate Wi-Fi scan result cache.");
+                return false;
+            }
+        }
 
         for (int i = 0; i < networkCount; i++)
         {

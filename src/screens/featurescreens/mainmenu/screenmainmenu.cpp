@@ -43,11 +43,25 @@ lv_obj_t* ScreenMainMenu::create(ScreenManager& screenManager, Features& feature
         &screenManager
     );
 
+    // BLE scan Button
+    lv_obj_t* bleScanButton = UIWidgets::addButton(screen, 15, 115, "> BLE Sc4n", 100, 45);
+
+    // AP Mode navigation event.
+    lv_obj_add_event_cb(
+        bleScanButton,
+        BLEScannerClicked,
+        LV_EVENT_CLICKED,
+        &screenManager
+    );
+
+    //Modules Label
+    UIWidgets::addText(screen, 15, 170, "MODULES:", 210); 
+
     //Since we might not have an nrf module available check if it is
     if(features.nrfScanner.isAvailable())
     {
         // NRF Scanner Button
-        lv_obj_t* nrfScannerButton = UIWidgets::addButton(screen, 15, 115, "> NRF Sc4n", 100, 45);
+        lv_obj_t* nrfScannerButton = UIWidgets::addButton(screen, 15, 190, "> NRF Sc4n", 100, 45);
 
         
         // AP Mode navigation event.
@@ -63,7 +77,7 @@ lv_obj_t* ScreenMainMenu::create(ScreenManager& screenManager, Features& feature
     if(features.cc1101Scanner.isAvailable())
     {
         // NRF Scanner Button
-        lv_obj_t* cc1101ScannerButton = UIWidgets::addButton(screen, 125, 115, "> Sub Sc4n", 100, 45);
+        lv_obj_t* cc1101ScannerButton = UIWidgets::addButton(screen, 125, 190, "> Sub Sc4n", 100, 45);
 
         
         // AP Mode navigation event.
@@ -148,4 +162,23 @@ void ScreenMainMenu::cc1101ScannerClicked(lv_event_t* event)
         return;
 
     screenManager->show(Screen::CC1101Scanner);
+}
+
+
+/**
+ * @brief Handles the BLE Scanner/Foxhunt menu button event.
+ *
+ * Retrieves the ScreenManager from the LVGL event user data
+ * and requests navigation to the BLE Scanner/Foxhunt screen.
+ *
+ * @param event Pointer to the LVGL event.
+ */
+void ScreenMainMenu::BLEScannerClicked(lv_event_t* event)
+{
+    ScreenManager* screenManager = static_cast<ScreenManager*>( lv_event_get_user_data(event) );
+
+    if (screenManager == nullptr)
+        return;
+
+    //screenManager->show(Screen::BLEScanner);
 }

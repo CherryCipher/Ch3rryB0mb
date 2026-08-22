@@ -137,8 +137,11 @@ private:
 
     /**
      * @brief Networks discovered during the most recent Wi-Fi scan.
+     *
+     * Allocated dynamically when a scan is performed to prevent the scan
+     * cache from permanently consuming static DRAM.
      */
-    WiFiNetwork networks[MAX_SCAN_RESULTS];
+    WiFiNetwork* networks = nullptr;
 
     /**
      * @brief Number of valid networks currently stored.

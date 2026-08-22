@@ -70,4 +70,14 @@ private:
      * @param event Pointer to the LVGL event.
      */
     static void cc1101ScannerClicked(lv_event_t* event);
+
+    /**
+     * @brief Handles the BLE Scanner/Foxhunt menu button event.
+     *
+     * Retrieves the ScreenManager from the LVGL event user data
+     * and requests navigation to the BLE Scanner screen.
+     *
+     * @param event Pointer to the LVGL event.
+     */
+    static void BLEScannerClicked(lv_event_t* event);
 };
