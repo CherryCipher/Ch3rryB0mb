@@ -17,6 +17,10 @@ class BLEFoxHunt;
  *
  * The BLE Explorer screen provides controls for starting and stopping
  * BLE discovery and displays discovered BLE devices with live RSSI.
+ *
+ * Device rows are created only when new devices are discovered.
+ * Existing rows are updated in place to avoid repeatedly allocating
+ * and destroying LVGL objects while scanning.
  */
 class ScreenBLEExplorer
 {
@@ -26,6 +30,7 @@ public:
      *
      * @param screenManager Reference to the application ScreenManager.
      * @param bleExplorer Reference to the BLE Explorer feature.
+     * @param bleFoxHunt Reference to the BLE Fox Hunt feature.
      *
      * @return Pointer to the created LVGL screen.
      */
@@ -33,20 +38,8 @@ public:
 
 private:
     /**
-     * @struct DeviceClickContext
-     * @brief Context passed to BLE device button callbacks.
-     */
-    struct DeviceClickContext
-    {
-        ScreenManager* screenManager = nullptr;
-        BLEExplorer* bleExplorer = nullptr;
-        BLEFoxHunt* bleFoxHunt = nullptr;
-        uint8_t index = 0;
-    };
-
-    /**
      * @struct RefreshContext
-     * @brief Context used by the BLE Explorer refresh timer.
+     * @brief Context shared by BLE Explorer callbacks.
      */
     struct RefreshContext
     {
@@ -71,47 +64,57 @@ private:
     static lv_obj_t* statusLabel;
 
     /**
+     * @brief Placeholder displayed while no devices are available.
+     */
+    static lv_obj_t* emptyLabel;
+
+    /**
      * @brief Timer used to refresh BLE scan results.
      */
     static lv_timer_t* refreshTimer;
 
     /**
-     * @brief Context used by the refresh timer.
+     * @brief Context shared by the refresh timer and device callbacks.
      */
     static RefreshContext refreshContext;
 
     /**
-     * @brief Last rendered number of BLE devices.
+     * @brief Number of BLE device rows currently created.
      */
-    static uint8_t lastDeviceCount;
+    static uint8_t renderedDeviceCount;
 
     /**
      * @brief Starts BLE scanning.
      *
-     * @param screenManager Reference to the ScreenManager.
      * @param bleExplorer Reference to the BLE Explorer feature.
      */
-    static void startScan(ScreenManager& screenManager, BLEExplorer& bleExplorer);
+    static void startScan(BLEExplorer& bleExplorer);
 
     /**
      * @brief Stops BLE scanning.
      *
-     * Stops the active BLE scan and refreshes the displayed device list
-     * while preserving the Fox Hunt context for selectable device rows.
-     *
-     * @param screenManager Reference to the ScreenManager.
      * @param bleExplorer Reference to the BLE Explorer feature.
-     * @param bleFoxHunt Reference to the BLE Fox Hunt feature.
      */
-    static void stopScan( ScreenManager& screenManager, BLEExplorer& bleExplorer, BLEFoxHunt& bleFoxHunt );
+    static void stopScan(BLEExplorer& bleExplorer);
 
     /**
-     * @brief Rebuilds the displayed BLE device list.
+     * @brief Updates the displayed BLE device rows.
      *
-     * @param screenManager Reference to the ScreenManager.
+     * Creates rows only for newly discovered devices and updates the
+     * label text of existing rows in place.
+     *
      * @param bleExplorer Reference to the BLE Explorer feature.
      */
-    static void renderDevices( ScreenManager& screenManager, BLEExplorer& bleExplorer, BLEFoxHunt& bleFoxHunt );
+    static void updateDevices(BLEExplorer& bleExplorer);
+
+    /**
+     * @brief Updates a single BLE device row.
+     *
+     * @param row BLE device button.
+     * @param bleExplorer Reference to the BLE Explorer feature.
+     * @param index Device index represented by the row.
+     */
+    static void updateDeviceRow( lv_obj_t* row, BLEExplorer& bleExplorer, uint8_t index );
 
     /**
      * @brief Updates the BLE Explorer status label.
@@ -135,13 +138,6 @@ private:
     static void deviceClicked(lv_event_t* event);
 
     /**
-     * @brief Releases a BLE device click context.
-     *
-     * @param event Pointer to the LVGL event.
-     */
-    static void deviceDeleted(lv_event_t* event);
-
-    /**
      * @brief Handles the BLE Explorer back button.
      *
      * @param event Pointer to the LVGL event.
@@ -158,7 +154,7 @@ private:
     /**
      * @brief Cleans up resources when the screen is deleted.
      *
-     * @param event Pointer to the LVGL event.
+     * @param event Pointer to the LVGL delete event.
      */
     static void screenDeleted(lv_event_t* event);
 };

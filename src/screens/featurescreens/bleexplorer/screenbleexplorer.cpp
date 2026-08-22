@@ -13,9 +13,12 @@
 lv_obj_t* ScreenBLEExplorer::deviceContainer = nullptr;
 lv_obj_t* ScreenBLEExplorer::scanButton = nullptr;
 lv_obj_t* ScreenBLEExplorer::statusLabel = nullptr;
+lv_obj_t* ScreenBLEExplorer::emptyLabel = nullptr;
 lv_timer_t* ScreenBLEExplorer::refreshTimer = nullptr;
+
 ScreenBLEExplorer::RefreshContext ScreenBLEExplorer::refreshContext;
-uint8_t ScreenBLEExplorer::lastDeviceCount = 0;
+
+uint8_t ScreenBLEExplorer::renderedDeviceCount = 0;
 
 /**
  * @brief Creates the BLE Explorer screen.
@@ -40,11 +43,13 @@ lv_obj_t* ScreenBLEExplorer::create( ScreenManager& screenManager, BLEExplorer& 
     refreshContext.bleExplorer = &bleExplorer;
     refreshContext.bleFoxHunt = &bleFoxHunt;
 
-    lastDeviceCount = 0;
+    renderedDeviceCount = 0;
 
-    refreshTimer = lv_timer_create(refreshTimerCallback, 1000, &refreshContext);
+    emptyLabel = UIWidgets::addText( deviceContainer, 5, 5, "Press SCAN to discover BLE devices.", 195 );
 
-    lv_obj_add_event_cb(screen, screenDeleted, LV_EVENT_DELETE, &bleExplorer);
+    refreshTimer = lv_timer_create( refreshTimerCallback, 500, &refreshContext );
+
+    lv_obj_add_event_cb( screen, screenDeleted, LV_EVENT_DELETE, &bleExplorer );
 
     updateStatus(bleExplorer);
 
@@ -53,53 +58,55 @@ lv_obj_t* ScreenBLEExplorer::create( ScreenManager& screenManager, BLEExplorer& 
 
 /**
  * @brief Starts BLE scanning.
+ *
+ * Clears the previous device rows once and prepares the container for
+ * a new scan. Device rows are subsequently appended as devices appear.
+ *
+ * @param bleExplorer Reference to the BLE Explorer feature.
  */
-void ScreenBLEExplorer::startScan(ScreenManager& screenManager, BLEExplorer& bleExplorer)
+void ScreenBLEExplorer::startScan(BLEExplorer& bleExplorer)
 {
     if (!bleExplorer.startScan())
     {
         if (deviceContainer != nullptr)
         {
             lv_obj_clean(deviceContainer);
-            UIWidgets::addText(deviceContainer, 5, 5, "BLE scan failed.", 195);
+            emptyLabel = UIWidgets::addText( deviceContainer, 5, 5, "BLE scan failed.", 195 );
         }
+
+        renderedDeviceCount = 0;
 
         updateStatus(bleExplorer);
         return;
     }
 
-    lastDeviceCount = 0;
-
     if (deviceContainer != nullptr)
     {
         lv_obj_clean(deviceContainer);
-        UIWidgets::addText(deviceContainer, 5, 5, "Scanning for BLE devices...", 195);
+        emptyLabel = UIWidgets::addText(  deviceContainer, 5, 5, "Scanning for BLE devices...", 195 );
     }
+
+    renderedDeviceCount = 0;
 
     if (scanButton != nullptr)
     {
         lv_obj_t* label = lv_obj_get_child(scanButton, 0);
-
         if (label != nullptr)
             lv_label_set_text(label, "STOP");
     }
 
     updateStatus(bleExplorer);
-
-    (void)screenManager;
 }
 
 /**
  * @brief Stops BLE scanning.
  *
- * Stops the active BLE scan, updates the scan button and rebuilds the
- * device list so discovered devices remain selectable for Fox Hunt.
+ * Stops the active scan while keeping the currently displayed device
+ * rows available for selection.
  *
- * @param screenManager Reference to the ScreenManager.
  * @param bleExplorer Reference to the BLE Explorer feature.
- * @param bleFoxHunt Reference to the BLE Fox Hunt feature.
  */
-void ScreenBLEExplorer::stopScan( ScreenManager& screenManager, BLEExplorer& bleExplorer, BLEFoxHunt& bleFoxHunt )
+void ScreenBLEExplorer::stopScan(BLEExplorer& bleExplorer)
 {
     bleExplorer.stopScan();
 
@@ -111,30 +118,56 @@ void ScreenBLEExplorer::stopScan( ScreenManager& screenManager, BLEExplorer& ble
             lv_label_set_text(label, "SCAN");
     }
 
-    renderDevices(screenManager, bleExplorer, bleFoxHunt);
+    updateDevices(bleExplorer);
     updateStatus(bleExplorer);
 }
 
 /**
- * @brief Rebuilds the displayed BLE device list.
+ * @brief Updates the displayed BLE device rows.
+ *
+ * Existing rows are updated in place. New LVGL buttons are created only
+ * when additional BLE devices are discovered.
+ *
+ * This avoids repeatedly destroying and recreating the complete list
+ * while scanning, reducing heap churn and UI processing overhead.
+ *
+ * @param bleExplorer Reference to the BLE Explorer feature.
  */
-void ScreenBLEExplorer::renderDevices(ScreenManager& screenManager, BLEExplorer& bleExplorer, BLEFoxHunt& bleFoxHunt)
+void ScreenBLEExplorer::updateDevices(BLEExplorer& bleExplorer)
 {
     if (deviceContainer == nullptr)
         return;
-
-    lv_obj_clean(deviceContainer);
 
     uint8_t deviceCount = bleExplorer.getDeviceCount();
 
     if (deviceCount == 0)
     {
-        UIWidgets::addText( deviceContainer, 5, 5, bleExplorer.isScanning() ? "Scanning for BLE devices..." : "No BLE devices found.", 195 );
-
+        if (emptyLabel == nullptr)
+            emptyLabel = UIWidgets::addText( deviceContainer, 5, 5, bleExplorer.isScanning() ? "Scanning for BLE devices..." : "No BLE devices found.", 195 );
         return;
     }
 
-    for (uint8_t i = 0; i < deviceCount; i++)
+    if (emptyLabel != nullptr)
+    {
+        lv_obj_delete(emptyLabel);
+        emptyLabel = nullptr;
+    }
+
+    /*
+     * Update rows that already exist.
+     */
+    for (uint8_t i = 0; i < renderedDeviceCount && i < deviceCount; i++)
+    {
+        lv_obj_t* row = lv_obj_get_child(deviceContainer, i);
+
+        if (row != nullptr)
+            updateDeviceRow(row, bleExplorer, i);
+    }
+
+    /*
+     * Create rows only for newly discovered devices.
+     */
+    for (uint8_t i = renderedDeviceCount; i < deviceCount; i++)
     {
         const BLEDeviceInfo& device = bleExplorer.getDevice(i);
 
@@ -148,82 +181,121 @@ void ScreenBLEExplorer::renderDevices(ScreenManager& screenManager, BLEExplorer&
 
         String text = name + "\n" + String(device.rssi) + " dBm | " + device.address;
 
-        lv_obj_t* deviceButton = UIWidgets::addButton( deviceContainer, 5, 5 + (i * 58), text.c_str(), 195, 52 );
+        lv_obj_t* row = UIWidgets::addButton( deviceContainer, 5, 5 + (i * 58), text.c_str(), 195, 52 );
 
-        DeviceClickContext* context = new DeviceClickContext();
-
-        if (context == nullptr)
-            continue;
-
-        context->screenManager = &screenManager;
-        context->bleExplorer = &bleExplorer;
-        context->bleFoxHunt = &bleFoxHunt;
-        context->index = i;
-
-        lv_obj_add_event_cb(deviceButton, deviceClicked, LV_EVENT_CLICKED, context);
-        lv_obj_add_event_cb(deviceButton, deviceDeleted, LV_EVENT_DELETE, context);
+        /*
+         * Only the device index is stored in the callback.
+         *
+         * The feature and ScreenManager references already live in the
+         * shared refreshContext, so no per-row heap allocation is needed.
+         */
+        lv_obj_add_event_cb( row, deviceClicked, LV_EVENT_CLICKED, reinterpret_cast<void*>(static_cast<uintptr_t>(i)) );
     }
+
+    renderedDeviceCount = deviceCount;
+}
+
+/**
+ * @brief Updates a single BLE device row.
+ *
+ * Only the existing label text is changed. No LVGL objects are destroyed
+ * or allocated while refreshing live RSSI values.
+ *
+ * @param row BLE device button.
+ * @param bleExplorer Reference to the BLE Explorer feature.
+ * @param index Device index represented by the row.
+ */
+void ScreenBLEExplorer::updateDeviceRow(
+    lv_obj_t* row,
+    BLEExplorer& bleExplorer,
+    uint8_t index
+)
+{
+    const BLEDeviceInfo& device = bleExplorer.getDevice(index);
+
+    String name = device.name;
+
+    if (name.length() == 0)
+        name = "< unknown >";
+
+    if (name.length() > 20)
+        name = name.substring(0, 17) + "...";
+
+    String text = name + "\n" + String(device.rssi) + " dBm | " + device.address;
+
+    lv_obj_t* label = lv_obj_get_child(row, 0);
+
+    if (label != nullptr)
+        lv_label_set_text(label, text.c_str());
 }
 
 /**
  * @brief Updates the BLE Explorer status label.
+ *
+ * @param bleExplorer Reference to the BLE Explorer feature.
  */
 void ScreenBLEExplorer::updateStatus(BLEExplorer& bleExplorer)
 {
     if (statusLabel == nullptr)
         return;
 
-    String text = String(bleExplorer.isScanning() ? "SCAN" : "IDLE") + " | " + String(bleExplorer.getDeviceCount());
+    char buffer[24];
 
-    lv_label_set_text(statusLabel, text.c_str());
+    snprintf( buffer, sizeof(buffer), "%s | %u", bleExplorer.isScanning() ? "SCAN" : "IDLE", bleExplorer.getDeviceCount());
+
+    lv_label_set_text(statusLabel, buffer);
 }
 
 /**
  * @brief Handles the SCAN/STOP button.
+ *
+ * @param event Pointer to the LVGL event.
  */
 void ScreenBLEExplorer::scanClicked(lv_event_t* event)
 {
-    RefreshContext* context = static_cast<RefreshContext*>(lv_event_get_user_data(event));
+    RefreshContext* context =
+        static_cast<RefreshContext*>(lv_event_get_user_data(event));
 
-    if (context == nullptr || context->screenManager == nullptr || context->bleExplorer == nullptr || context->bleFoxHunt == nullptr)
+    if (context == nullptr ||
+        context->bleExplorer == nullptr)
         return;
 
     if (context->bleExplorer->isScanning())
-        stopScan( *context->screenManager, *context->bleExplorer, *context->bleFoxHunt );
+        stopScan(*context->bleExplorer);
     else
-        startScan( *context->screenManager, *context->bleExplorer );
+        startScan(*context->bleExplorer);
 }
 
 /**
  * @brief Handles selection of a discovered BLE device.
- */
-/**
- * @brief Handles selection of a discovered BLE device.
  *
- * Copies the selected BLE device identity into BLEFoxHunt and navigates
- * to the Fox Hunt screen. The Explorer scan is stopped before navigation;
- * its screen cleanup subsequently releases the BLE subsystem.
+ * Copies the selected BLE device identity into BLEFoxHunt before
+ * navigating away from the Explorer.
  *
  * @param event Pointer to the LVGL event.
  */
 void ScreenBLEExplorer::deviceClicked(lv_event_t* event)
 {
-    DeviceClickContext* context =
-        static_cast<DeviceClickContext*>(lv_event_get_user_data(event));
-
-    if (context == nullptr || context->screenManager == nullptr || context->bleExplorer == nullptr || context->bleFoxHunt == nullptr)
+    if (refreshContext.screenManager == nullptr || refreshContext.bleExplorer == nullptr || refreshContext.bleFoxHunt == nullptr)
         return;
 
-    BLEExplorer& bleExplorer = *context->bleExplorer;
+    uint8_t index = static_cast<uint8_t>(
+        reinterpret_cast<uintptr_t>(lv_event_get_user_data(event))
+    );
 
-    if (!bleExplorer.selectDevice(context->index))
+    BLEExplorer& bleExplorer = *refreshContext.bleExplorer;
+
+    if (index >= bleExplorer.getDeviceCount())
         return;
 
-    const BLEDeviceInfo& device = bleExplorer.getDevice(context->index);
+    if (!bleExplorer.selectDevice(index))
+        return;
+
+    const BLEDeviceInfo& device = bleExplorer.getDevice(index);
 
     /*
-     * Copy target information before leaving Explorer because its delete
-     * callback releases the BLE scan cache.
+     * Copy target information before leaving Explorer because its screen
+     * cleanup releases the BLE scan cache.
      */
     String address = device.address;
     String name = device.name;
@@ -231,29 +303,22 @@ void ScreenBLEExplorer::deviceClicked(lv_event_t* event)
     if (name.length() == 0)
         name = "< unknown >";
 
-    context->bleFoxHunt->setTarget(address, name);
+    refreshContext.bleFoxHunt->setTarget(address, name);
 
     bleExplorer.stopScan();
 
-    context->screenManager->show(Screen::BLEFoxHunt);
-}
-
-/**
- * @brief Releases a BLE device click context.
- */
-void ScreenBLEExplorer::deviceDeleted(lv_event_t* event)
-{
-    DeviceClickContext* context = static_cast<DeviceClickContext*>(lv_event_get_user_data(event));
-
-    delete context;
+    refreshContext.screenManager->show(Screen::BLEFoxHunt);
 }
 
 /**
  * @brief Handles the BLE Explorer back button.
+ *
+ * @param event Pointer to the LVGL event.
  */
 void ScreenBLEExplorer::backClicked(lv_event_t* event)
 {
-    ScreenManager* screenManager = static_cast<ScreenManager*>(lv_event_get_user_data(event));
+    ScreenManager* screenManager =
+        static_cast<ScreenManager*>(lv_event_get_user_data(event));
 
     if (screenManager == nullptr)
         return;
@@ -263,40 +328,36 @@ void ScreenBLEExplorer::backClicked(lv_event_t* event)
 
 /**
  * @brief Periodically refreshes BLE scan results.
+ *
+ * Existing rows only receive updated label text. New rows are appended
+ * when additional devices are discovered.
+ *
+ * @param timer Pointer to the LVGL timer.
  */
 void ScreenBLEExplorer::refreshTimerCallback(lv_timer_t* timer)
 {
     RefreshContext* context =
         static_cast<RefreshContext*>(lv_timer_get_user_data(timer));
 
-    if (context == nullptr || context->screenManager == nullptr || context->bleExplorer == nullptr || context->bleFoxHunt == nullptr)
+    if (context == nullptr || context->bleExplorer == nullptr)
         return;
 
-    uint8_t deviceCount = context->bleExplorer->getDeviceCount();
-
-    if (context->bleExplorer->isScanning() || deviceCount != lastDeviceCount)
-    {
-        renderDevices( *context->screenManager, *context->bleExplorer, *context->bleFoxHunt );
-        lastDeviceCount = deviceCount;
-    }
-
+    updateDevices(*context->bleExplorer);
     updateStatus(*context->bleExplorer);
 }
 
 /**
  * @brief Cleans up BLE Explorer resources when the screen is deleted.
  *
- * Shuts down the BLE subsystem, removes the refresh timer and clears
- * all stored UI references associated with the BLE Explorer screen.
- *
- * This ensures BLE runtime memory is released when leaving the screen
- * and prevents callbacks from referencing deleted LVGL objects.
+ * Shuts down the BLE subsystem, removes the refresh timer and clears all
+ * stored UI references associated with the BLE Explorer screen.
  *
  * @param event Pointer to the LVGL delete event.
  */
 void ScreenBLEExplorer::screenDeleted(lv_event_t* event)
 {
-    BLEExplorer* bleExplorer = static_cast<BLEExplorer*>(lv_event_get_user_data(event));
+    BLEExplorer* bleExplorer =
+        static_cast<BLEExplorer*>(lv_event_get_user_data(event));
 
     if (bleExplorer != nullptr)
         bleExplorer->shutdown();
@@ -314,5 +375,7 @@ void ScreenBLEExplorer::screenDeleted(lv_event_t* event)
     deviceContainer = nullptr;
     scanButton = nullptr;
     statusLabel = nullptr;
-    lastDeviceCount = 0;
+    emptyLabel = nullptr;
+
+    renderedDeviceCount = 0;
 }
