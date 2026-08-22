@@ -20,11 +20,7 @@ uint8_t ScreenBLEExplorer::lastDeviceCount = 0;
 /**
  * @brief Creates the BLE Explorer screen.
  */
-lv_obj_t* ScreenBLEExplorer::create(
-    ScreenManager& screenManager,
-    BLEExplorer& bleExplorer,
-    BLEFoxHunt& bleFoxHunt
-)
+lv_obj_t* ScreenBLEExplorer::create( ScreenManager& screenManager, BLEExplorer& bleExplorer, BLEFoxHunt& bleFoxHunt )
 {
     lv_obj_t* screen = UIWidgets::createScreen();
 
@@ -103,11 +99,7 @@ void ScreenBLEExplorer::startScan(ScreenManager& screenManager, BLEExplorer& ble
  * @param bleExplorer Reference to the BLE Explorer feature.
  * @param bleFoxHunt Reference to the BLE Fox Hunt feature.
  */
-void ScreenBLEExplorer::stopScan(
-    ScreenManager& screenManager,
-    BLEExplorer& bleExplorer,
-    BLEFoxHunt& bleFoxHunt
-)
+void ScreenBLEExplorer::stopScan( ScreenManager& screenManager, BLEExplorer& bleExplorer, BLEFoxHunt& bleFoxHunt )
 {
     bleExplorer.stopScan();
 
@@ -137,13 +129,7 @@ void ScreenBLEExplorer::renderDevices(ScreenManager& screenManager, BLEExplorer&
 
     if (deviceCount == 0)
     {
-        UIWidgets::addText(
-            deviceContainer,
-            5,
-            5,
-            bleExplorer.isScanning() ? "Scanning for BLE devices..." : "No BLE devices found.",
-            195
-        );
+        UIWidgets::addText( deviceContainer, 5, 5, bleExplorer.isScanning() ? "Scanning for BLE devices..." : "No BLE devices found.", 195 );
 
         return;
     }
@@ -160,19 +146,9 @@ void ScreenBLEExplorer::renderDevices(ScreenManager& screenManager, BLEExplorer&
         if (name.length() > 20)
             name = name.substring(0, 17) + "...";
 
-        String text =
-            name + "\n" +
-            String(device.rssi) + " dBm | " +
-            device.address;
+        String text = name + "\n" + String(device.rssi) + " dBm | " + device.address;
 
-        lv_obj_t* deviceButton = UIWidgets::addButton(
-            deviceContainer,
-            5,
-            5 + (i * 58),
-            text.c_str(),
-            195,
-            52
-        );
+        lv_obj_t* deviceButton = UIWidgets::addButton( deviceContainer, 5, 5 + (i * 58), text.c_str(), 195, 52 );
 
         DeviceClickContext* context = new DeviceClickContext();
 
@@ -197,10 +173,7 @@ void ScreenBLEExplorer::updateStatus(BLEExplorer& bleExplorer)
     if (statusLabel == nullptr)
         return;
 
-    String text =
-        String(bleExplorer.isScanning() ? "SCAN" : "IDLE") +
-        " | " +
-        String(bleExplorer.getDeviceCount());
+    String text = String(bleExplorer.isScanning() ? "SCAN" : "IDLE") + " | " + String(bleExplorer.getDeviceCount());
 
     lv_label_set_text(statusLabel, text.c_str());
 }
@@ -212,27 +185,13 @@ void ScreenBLEExplorer::scanClicked(lv_event_t* event)
 {
     RefreshContext* context = static_cast<RefreshContext*>(lv_event_get_user_data(event));
 
-    if (context == nullptr ||
-    context->screenManager == nullptr ||
-    context->bleExplorer == nullptr ||
-    context->bleFoxHunt == nullptr)
-    return;
+    if (context == nullptr || context->screenManager == nullptr || context->bleExplorer == nullptr || context->bleFoxHunt == nullptr)
+        return;
 
     if (context->bleExplorer->isScanning())
-    {
-        stopScan(
-            *context->screenManager,
-            *context->bleExplorer,
-            *context->bleFoxHunt
-        );
-    }
+        stopScan( *context->screenManager, *context->bleExplorer, *context->bleFoxHunt );
     else
-    {
-        startScan(
-            *context->screenManager,
-            *context->bleExplorer
-        );
-    }
+        startScan( *context->screenManager, *context->bleExplorer );
 }
 
 /**
@@ -252,10 +211,7 @@ void ScreenBLEExplorer::deviceClicked(lv_event_t* event)
     DeviceClickContext* context =
         static_cast<DeviceClickContext*>(lv_event_get_user_data(event));
 
-    if (context == nullptr ||
-        context->screenManager == nullptr ||
-        context->bleExplorer == nullptr ||
-        context->bleFoxHunt == nullptr)
+    if (context == nullptr || context->screenManager == nullptr || context->bleExplorer == nullptr || context->bleFoxHunt == nullptr)
         return;
 
     BLEExplorer& bleExplorer = *context->bleExplorer;
@@ -313,22 +269,14 @@ void ScreenBLEExplorer::refreshTimerCallback(lv_timer_t* timer)
     RefreshContext* context =
         static_cast<RefreshContext*>(lv_timer_get_user_data(timer));
 
-    if (context == nullptr ||
-        context->screenManager == nullptr ||
-        context->bleExplorer == nullptr ||
-        context->bleFoxHunt == nullptr)
+    if (context == nullptr || context->screenManager == nullptr || context->bleExplorer == nullptr || context->bleFoxHunt == nullptr)
         return;
 
     uint8_t deviceCount = context->bleExplorer->getDeviceCount();
 
     if (context->bleExplorer->isScanning() || deviceCount != lastDeviceCount)
     {
-        renderDevices(
-            *context->screenManager,
-            *context->bleExplorer,
-            *context->bleFoxHunt
-        );
-
+        renderDevices( *context->screenManager, *context->bleExplorer, *context->bleFoxHunt );
         lastDeviceCount = deviceCount;
     }
 

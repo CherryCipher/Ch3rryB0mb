@@ -103,11 +103,7 @@ private:
      * @param bleExplorer Reference to the BLE Explorer feature.
      * @param bleFoxHunt Reference to the BLE Fox Hunt feature.
      */
-    static void stopScan(
-        ScreenManager& screenManager,
-        BLEExplorer& bleExplorer,
-        BLEFoxHunt& bleFoxHunt
-    );
+    static void stopScan( ScreenManager& screenManager, BLEExplorer& bleExplorer, BLEFoxHunt& bleFoxHunt );
 
     /**
      * @brief Rebuilds the displayed BLE device list.
@@ -115,11 +111,7 @@ private:
      * @param screenManager Reference to the ScreenManager.
      * @param bleExplorer Reference to the BLE Explorer feature.
      */
-    static void renderDevices(
-    ScreenManager& screenManager,
-    BLEExplorer& bleExplorer,
-    BLEFoxHunt& bleFoxHunt
-    );
+    static void renderDevices( ScreenManager& screenManager, BLEExplorer& bleExplorer, BLEFoxHunt& bleFoxHunt );
 
     /**
      * @brief Updates the BLE Explorer status label.

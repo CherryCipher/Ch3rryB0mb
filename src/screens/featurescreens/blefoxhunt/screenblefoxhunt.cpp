@@ -37,21 +37,9 @@ lv_obj_t* ScreenBLEFoxHunt::create(ScreenManager& screenManager, BLEFoxHunt& ble
     lv_obj_t* backButton = UIWidgets::addButton(screen, 150, 5, "< BACK", 80, 30);
     lv_obj_add_event_cb(backButton, backClicked, LV_EVENT_CLICKED, &screenContext);
 
-    targetNameLabel = UIWidgets::addText(
-        screen,
-        15,
-        50,
-        bleFoxHunt.getTargetName().c_str(),
-        210
-    );
+    targetNameLabel = UIWidgets::addText( screen, 15, 50, bleFoxHunt.getTargetName().c_str(), 210 );
 
-    targetAddressLabel = UIWidgets::addText(
-        screen,
-        15,
-        72,
-        bleFoxHunt.getTargetAddress().c_str(),
-        210
-    );
+    targetAddressLabel = UIWidgets::addText( screen, 15, 72, bleFoxHunt.getTargetAddress().c_str(), 210 );
 
     UIWidgets::addText(screen, 15, 110, "SIGNAL", 80);
 
@@ -78,13 +66,7 @@ lv_obj_t* ScreenBLEFoxHunt::create(ScreenManager& screenManager, BLEFoxHunt& ble
 
     lastSeenLabel = UIWidgets::addText(screen, 15, 215, "LAST SEEN: searching...", 210);
 
-    UIWidgets::addText(
-        screen,
-        15,
-        250,
-        "Move toward the target and watch\nRSSI increase toward 0 dBm.",
-        210
-    );
+    UIWidgets::addText( screen, 15, 250, "Go find the target\nRSSI 0 dBm == found!", 210 );
 
     huntStarted = false;
 
@@ -139,11 +121,7 @@ void ScreenBLEFoxHunt::render(BLEFoxHunt& bleFoxHunt)
 
     lv_label_set_text(signalLabel, bleFoxHunt.getSignalText());
 
-    lv_bar_set_value(
-        signalBar,
-        bleFoxHunt.getSignalPercent(),
-        LV_ANIM_OFF
-    );
+    lv_bar_set_value( signalBar, bleFoxHunt.getSignalPercent(), LV_ANIM_OFF );
 
     uint32_t lastSeen = bleFoxHunt.getLastSeen();
 
@@ -159,14 +137,7 @@ void ScreenBLEFoxHunt::render(BLEFoxHunt& bleFoxHunt)
         lv_label_set_text(lastSeenLabel, "LAST SEEN: now");
     else
     {
-        snprintf(
-            buffer,
-            sizeof(buffer),
-            "LAST SEEN: %lu.%lus ago",
-            static_cast<unsigned long>(ageMs / 1000),
-            static_cast<unsigned long>((ageMs % 1000) / 100)
-        );
-
+        snprintf( buffer, sizeof(buffer), "LAST SEEN: %lu.%lus ago", static_cast<unsigned long>(ageMs / 1000), static_cast<unsigned long>((ageMs % 1000) / 100) );
         lv_label_set_text(lastSeenLabel, buffer);
     }
 }
@@ -213,9 +184,7 @@ void ScreenBLEFoxHunt::backClicked(lv_event_t* event)
     ScreenContext* context =
         static_cast<ScreenContext*>(lv_event_get_user_data(event));
 
-    if (context == nullptr ||
-        context->screenManager == nullptr ||
-        context->bleFoxHunt == nullptr)
+    if (context == nullptr || context->screenManager == nullptr || context->bleFoxHunt == nullptr)
         return;
 
     context->bleFoxHunt->stop();
