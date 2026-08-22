@@ -54,3 +54,15 @@ const WiFiNetwork& WiFiLab::getNetwork(int index) const
 {
     return services.wifi.getNetwork(index);
 }
+
+/**
+ * @brief Shuts down Wi-Fi resources used by WiFi Lab.
+ *
+ * Stops Wi-Fi activity and releases the Wi-Fi subsystem when leaving
+ * the feature.
+ */
+void WiFiLab::shutdown()
+{
+    services.wifi.stop();
+    services.logger.info("WiFi Lab: Wi-Fi subsystem released.");
+}

@@ -82,6 +82,13 @@ void ScreenWifiLab::scanNetworks(WiFiLab& wifiLab)
 
     lv_obj_t* statusBox = UIWidgets::addStatusBox(screen, "SCANNING...");
 
+    lv_obj_add_event_cb(
+        screen,
+        screenDeleted,
+        LV_EVENT_DELETE,
+        &wifiLab
+    );
+
     // Force LVGL to draw the status box before starting the blocking scan.
     lv_refr_now(nullptr);
 
@@ -220,4 +227,23 @@ const char* ScreenWifiLab::getSecurityName(wifi_auth_mode_t security)
         case WIFI_AUTH_WPA2_WPA3_PSK: return "WPA2/WPA3";
         default: return "UNKNOWN";
     }
+}
+
+/**
+ * @brief Cleans up WiFi Lab resources when the screen is deleted.
+ *
+ * Shuts down the Wi-Fi subsystem and clears stored UI references when
+ * leaving the WiFi Lab screen.
+ *
+ * @param event Pointer to the LVGL delete event.
+ */
+void ScreenWifiLab::screenDeleted(lv_event_t* event)
+{
+    WiFiLab* wifiLab = static_cast<WiFiLab*>(lv_event_get_user_data(event));
+
+    if (wifiLab != nullptr)
+        wifiLab->shutdown();
+
+    networkContainer = nullptr;
+    scanButton = nullptr;
 }

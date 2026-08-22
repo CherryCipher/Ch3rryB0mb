@@ -44,12 +44,12 @@ lv_obj_t* ScreenMainMenu::create(ScreenManager& screenManager, Features& feature
     );
 
     // BLE scan Button
-    lv_obj_t* bleScanButton = UIWidgets::addButton(screen, 15, 115, "> BLE Sc4n", 100, 45);
+    lv_obj_t* bleEXPButton = UIWidgets::addButton(screen, 15, 115, "> BLE Exp", 100, 45);
 
     // AP Mode navigation event.
     lv_obj_add_event_cb(
-        bleScanButton,
-        BLEScannerClicked,
+        bleEXPButton,
+        bleExplorerClicked,
         LV_EVENT_CLICKED,
         &screenManager
     );
@@ -173,12 +173,12 @@ void ScreenMainMenu::cc1101ScannerClicked(lv_event_t* event)
  *
  * @param event Pointer to the LVGL event.
  */
-void ScreenMainMenu::BLEScannerClicked(lv_event_t* event)
+void ScreenMainMenu::bleExplorerClicked(lv_event_t* event)
 {
-    ScreenManager* screenManager = static_cast<ScreenManager*>( lv_event_get_user_data(event) );
+    ScreenManager* screenManager = static_cast<ScreenManager*>(lv_event_get_user_data(event));
 
     if (screenManager == nullptr)
         return;
 
-    //screenManager->show(Screen::BLEScanner);
+    screenManager->show(Screen::BLEExplorer);
 }

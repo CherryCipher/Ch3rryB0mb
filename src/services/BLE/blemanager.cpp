@@ -38,29 +38,51 @@ bool BLEManager::start()
 }
 
 /**
- * @brief Stops the BLEManager.
+ * @brief Stops the active BLE scan.
  *
- * Stops any active scan. NimBLE itself remains initialized so the BLE
- * subsystem can safely be reused later without rebuilding the BLE stack.
- *
- * @return true when stopped.
+ * Stops BLE advertisement scanning without deinitializing the BLE
+ * subsystem. The BLE stack and discovered device cache remain available
+ * so scanning can be resumed or another BLE feature can reuse them.
  */
-bool BLEManager::stop()
+void BLEManager::stopScan()
 {
-    if (!running)
-        return true;
+    if (scanner != nullptr && scanner->isScanning())
+        scanner->stop();
 
-    stopScan();
+    logger.info("BLE scan stopped.");
+}
+
+/**
+ * @brief Completely shuts down the BLE subsystem.
+ *
+ * Stops any active BLE scan, releases the dynamically allocated
+ * device cache and deinitializes NimBLE.
+ *
+ * Deinitializing NimBLE releases runtime memory used by the BLE stack,
+ * allowing other ESP32 subsystems such as Wi-Fi to initialize reliably.
+ *
+ * After shutdown, BLE can be initialized again by calling startScan().
+ */
+void BLEManager::shutdown()
+{
+    if (scanner != nullptr && scanner->isScanning())
+        scanner->stop();
 
     delete[] devices;
     devices = nullptr;
-
     deviceCount = 0;
-    running = false;
 
-    logger.info("BLEManager stopped.");
+    if (initialized)
+    {
+        logger.info("Deinitializing NimBLE.");
 
-    return true;
+        NimBLEDevice::deinit(true);
+
+        scanner = nullptr;
+        initialized = false;
+
+        logger.info("NimBLE deinitialized.");
+    }
 }
 
 /**
@@ -137,21 +159,6 @@ bool BLEManager::startScan()
     }
 
     return true;
-}
-
-/**
- * @brief Stops the active BLE scan.
- */
-void BLEManager::stopScan()
-{
-    if (scanner != nullptr && scanner->isScanning())
-        scanner->stop();
-
-    delete[] devices;
-    devices = nullptr;
-    deviceCount = 0;
-
-    logger.info("BLE scan stopped.");
 }
 
 /**

@@ -133,6 +133,15 @@ public:
      */
     int findDevice(const String& address) const;
 
+    /**
+     * @brief Completely shuts down the BLE subsystem.
+     *
+     * Stops scanning, releases the BLE device cache and deinitializes
+     * NimBLE so its runtime memory becomes available to other subsystems
+     * such as Wi-Fi.
+     */
+    void shutdown();
+
 private:
     /**
      * @brief BLE scan interval in milliseconds.

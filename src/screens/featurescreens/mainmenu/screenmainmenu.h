@@ -79,5 +79,5 @@ private:
      *
      * @param event Pointer to the LVGL event.
      */
-    static void BLEScannerClicked(lv_event_t* event);
+    static void bleExplorerClicked(lv_event_t* event);
 };
