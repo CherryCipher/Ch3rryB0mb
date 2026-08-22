@@ -123,6 +123,23 @@ public:
      */
     uint8_t getResultCount() const;
 
+    /**
+     * @brief Returns the frequency of the strongest measured signal.
+     *
+     * Searches the latest completed spectrum sweep for the highest RSSI
+     * value and converts its scan index into the corresponding frequency.
+     *
+     * @return Frequency of the strongest measured signal in MHz.
+     */
+    float getPeakFrequency() const;
+
+    /**
+     * @brief Returns the RSSI of the strongest measured signal.
+     *
+     * @return Strongest RSSI value from the latest spectrum sweep in dBm.
+     */
+    int16_t getPeakRSSI() const;
+
 private:
     /** @brief Application services used by the scanner. */
     Services& services;

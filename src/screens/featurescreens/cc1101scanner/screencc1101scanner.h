@@ -89,6 +89,11 @@ private:
     static BackContext backContext;
 
     /**
+     * @brief Label used to display the strongest detected frequency.
+     */
+    static lv_obj_t* peakLabel;
+
+    /**
      * @brief Handles the scanner start button event.
      *
      * Reads the selected center frequency and scan range, starts the
@@ -158,4 +163,14 @@ private:
      * @param event Pointer to the LVGL event.
      */
     static void backClicked(lv_event_t* event);
+
+    /**
+     * @brief Updates the displayed peak frequency.
+     *
+     * Displays the frequency containing the strongest RSSI measurement
+     * from the latest completed spectrum sweep.
+     *
+     * @param cc1101Scanner Reference to the CC1101Scanner feature.
+     */
+    static void renderPeak(CC1101Scanner& cc1101Scanner);
 };

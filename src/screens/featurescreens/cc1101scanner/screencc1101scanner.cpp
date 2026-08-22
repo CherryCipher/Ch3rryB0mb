@@ -56,6 +56,11 @@ lv_timer_t* ScreenCC1101Scanner::updateTimer = nullptr;
 ScreenCC1101Scanner::BackContext ScreenCC1101Scanner::backContext = {nullptr, nullptr};
 
 /**
+ * @brief Label used to display the strongest detected frequency.
+ */
+lv_obj_t* ScreenCC1101Scanner::peakLabel = nullptr;
+
+/**
  * @brief Creates the Sub-GHz Scanner screen.
  *
  * Creates center frequency and scan range controls, RSSI visualization,
@@ -96,6 +101,13 @@ lv_obj_t* ScreenCC1101Scanner::create(ScreenManager& screenManager, CC1101Scanne
     lv_dropdown_set_selected(rangeDropdown, 1);
 
     UIWidgets::addText(screen, 15, 115, "SIGNAL", 210);
+
+    peakLabel = UIWidgets::addText(screen, 105, 115, "PEAK: ---.--", 120);
+    lv_obj_set_style_text_color(
+        peakLabel,
+        lv_color_hex(0xFF8C00),
+        LV_PART_MAIN
+    );
 
     // The signal visualization is specific to this screen and is created
     // directly with LVGL instead of using a generic UIWidget.
@@ -225,7 +237,10 @@ void ScreenCC1101Scanner::updateTimerCallback(lv_timer_t* timer)
     if (cc1101Scanner == nullptr || !cc1101Scanner->isRunning()) return;
 
     if (cc1101Scanner->update())
+    {
         renderResults(*cc1101Scanner);
+        renderPeak(*cc1101Scanner);
+    }
 }
 
 /**
@@ -329,4 +344,28 @@ void ScreenCC1101Scanner::backClicked(lv_event_t* event)
         lv_timer_pause(updateTimer);
 
     context->screenManager->back();
+}
+
+/**
+ * @brief Updates the displayed peak frequency.
+ *
+ * Reads the strongest frequency from the latest completed spectrum
+ * sweep and displays it next to the signal graph label.
+ *
+ * @param cc1101Scanner Reference to the CC1101Scanner feature.
+ */
+void ScreenCC1101Scanner::renderPeak(CC1101Scanner& cc1101Scanner)
+{
+    if (peakLabel == nullptr) return;
+
+    char buffer[32];
+
+    snprintf(
+        buffer,
+        sizeof(buffer),
+        "PEAK: %.2f",
+        cc1101Scanner.getPeakFrequency()
+    );
+
+    lv_label_set_text(peakLabel, buffer);
 }

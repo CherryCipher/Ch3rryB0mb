@@ -186,3 +186,48 @@ uint8_t CC1101Scanner::getResultCount() const
 {
     return CC1101Manager::SCAN_POINT_COUNT;
 }
+
+/**
+ * @brief Returns the frequency of the strongest measured signal.
+ *
+ * Searches the latest spectrum sweep for the highest RSSI value and
+ * calculates the frequency represented by that measurement point.
+ *
+ * @return Frequency of the strongest measured signal in MHz.
+ */
+float CC1101Scanner::getPeakFrequency() const
+{
+    uint8_t peakIndex = 0;
+
+    for (uint8_t i = 1; i < CC1101Manager::SCAN_POINT_COUNT; i++)
+    {
+        if (results[i] > results[peakIndex])
+            peakIndex = i;
+    }
+
+    const float stepMHz =
+        (getEndFrequency() - getStartFrequency()) /
+        static_cast<float>(CC1101Manager::SCAN_POINT_COUNT - 1);
+
+    return getStartFrequency() + (stepMHz * peakIndex);
+}
+
+/**
+ * @brief Returns the RSSI of the strongest measured signal.
+ *
+ * Searches the latest spectrum sweep for the highest RSSI value.
+ *
+ * @return Strongest RSSI value in dBm.
+ */
+int16_t CC1101Scanner::getPeakRSSI() const
+{
+    int16_t peakRSSI = results[0];
+
+    for (uint8_t i = 1; i < CC1101Manager::SCAN_POINT_COUNT; i++)
+    {
+        if (results[i] > peakRSSI)
+            peakRSSI = results[i];
+    }
+
+    return peakRSSI;
+}
