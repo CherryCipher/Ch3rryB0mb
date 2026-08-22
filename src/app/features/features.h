@@ -5,6 +5,7 @@
 #include "nrfscanner/nrfscanner.h"
 #include "cc1101scanner/cc1101scanner.h"
 #include "bleexplorer/bleexplorer.h"
+#include "blefoxhunt/blefoxhunt.h"
 
 class Services;
 
@@ -48,7 +49,12 @@ public:
     CC1101Scanner cc1101Scanner;
 
     /**
-     * @brief Bluetooth Low Energy Explorer feature.
+     * @brief BLE Explorer feature.
      */
     BLEExplorer bleExplorer;
+
+    /**
+     * @brief BLE Fox Hunt feature.
+     */
+    BLEFoxHunt bleFoxHunt;
 };

@@ -8,6 +8,7 @@
 #include "screens/screenmanager.h"
 #include "../../uiwidgets/uiwidget.h"
 #include "app/features/bleexplorer/bleexplorer.h"
+#include "app/features/blefoxhunt/blefoxhunt.h"
 
 lv_obj_t* ScreenBLEExplorer::deviceContainer = nullptr;
 lv_obj_t* ScreenBLEExplorer::scanButton = nullptr;
@@ -19,7 +20,11 @@ uint8_t ScreenBLEExplorer::lastDeviceCount = 0;
 /**
  * @brief Creates the BLE Explorer screen.
  */
-lv_obj_t* ScreenBLEExplorer::create(ScreenManager& screenManager, BLEExplorer& bleExplorer)
+lv_obj_t* ScreenBLEExplorer::create(
+    ScreenManager& screenManager,
+    BLEExplorer& bleExplorer,
+    BLEFoxHunt& bleFoxHunt
+)
 {
     lv_obj_t* screen = UIWidgets::createScreen();
 
@@ -37,6 +42,7 @@ lv_obj_t* ScreenBLEExplorer::create(ScreenManager& screenManager, BLEExplorer& b
 
     refreshContext.screenManager = &screenManager;
     refreshContext.bleExplorer = &bleExplorer;
+    refreshContext.bleFoxHunt = &bleFoxHunt;
 
     lastDeviceCount = 0;
 
@@ -89,8 +95,19 @@ void ScreenBLEExplorer::startScan(ScreenManager& screenManager, BLEExplorer& ble
 
 /**
  * @brief Stops BLE scanning.
+ *
+ * Stops the active BLE scan, updates the scan button and rebuilds the
+ * device list so discovered devices remain selectable for Fox Hunt.
+ *
+ * @param screenManager Reference to the ScreenManager.
+ * @param bleExplorer Reference to the BLE Explorer feature.
+ * @param bleFoxHunt Reference to the BLE Fox Hunt feature.
  */
-void ScreenBLEExplorer::stopScan(ScreenManager& screenManager, BLEExplorer& bleExplorer)
+void ScreenBLEExplorer::stopScan(
+    ScreenManager& screenManager,
+    BLEExplorer& bleExplorer,
+    BLEFoxHunt& bleFoxHunt
+)
 {
     bleExplorer.stopScan();
 
@@ -102,14 +119,14 @@ void ScreenBLEExplorer::stopScan(ScreenManager& screenManager, BLEExplorer& bleE
             lv_label_set_text(label, "SCAN");
     }
 
-    renderDevices(screenManager, bleExplorer);
+    renderDevices(screenManager, bleExplorer, bleFoxHunt);
     updateStatus(bleExplorer);
 }
 
 /**
  * @brief Rebuilds the displayed BLE device list.
  */
-void ScreenBLEExplorer::renderDevices(ScreenManager& screenManager, BLEExplorer& bleExplorer)
+void ScreenBLEExplorer::renderDevices(ScreenManager& screenManager, BLEExplorer& bleExplorer, BLEFoxHunt& bleFoxHunt)
 {
     if (deviceContainer == nullptr)
         return;
@@ -164,6 +181,7 @@ void ScreenBLEExplorer::renderDevices(ScreenManager& screenManager, BLEExplorer&
 
         context->screenManager = &screenManager;
         context->bleExplorer = &bleExplorer;
+        context->bleFoxHunt = &bleFoxHunt;
         context->index = i;
 
         lv_obj_add_event_cb(deviceButton, deviceClicked, LV_EVENT_CLICKED, context);
@@ -194,23 +212,50 @@ void ScreenBLEExplorer::scanClicked(lv_event_t* event)
 {
     RefreshContext* context = static_cast<RefreshContext*>(lv_event_get_user_data(event));
 
-    if (context == nullptr || context->screenManager == nullptr || context->bleExplorer == nullptr)
-        return;
+    if (context == nullptr ||
+    context->screenManager == nullptr ||
+    context->bleExplorer == nullptr ||
+    context->bleFoxHunt == nullptr)
+    return;
 
     if (context->bleExplorer->isScanning())
-        stopScan(*context->screenManager, *context->bleExplorer);
+    {
+        stopScan(
+            *context->screenManager,
+            *context->bleExplorer,
+            *context->bleFoxHunt
+        );
+    }
     else
-        startScan(*context->screenManager, *context->bleExplorer);
+    {
+        startScan(
+            *context->screenManager,
+            *context->bleExplorer
+        );
+    }
 }
 
 /**
  * @brief Handles selection of a discovered BLE device.
  */
+/**
+ * @brief Handles selection of a discovered BLE device.
+ *
+ * Copies the selected BLE device identity into BLEFoxHunt and navigates
+ * to the Fox Hunt screen. The Explorer scan is stopped before navigation;
+ * its screen cleanup subsequently releases the BLE subsystem.
+ *
+ * @param event Pointer to the LVGL event.
+ */
 void ScreenBLEExplorer::deviceClicked(lv_event_t* event)
 {
-    DeviceClickContext* context = static_cast<DeviceClickContext*>(lv_event_get_user_data(event));
+    DeviceClickContext* context =
+        static_cast<DeviceClickContext*>(lv_event_get_user_data(event));
 
-    if (context == nullptr || context->bleExplorer == nullptr || context->screenManager == nullptr)
+    if (context == nullptr ||
+        context->screenManager == nullptr ||
+        context->bleExplorer == nullptr ||
+        context->bleFoxHunt == nullptr)
         return;
 
     BLEExplorer& bleExplorer = *context->bleExplorer;
@@ -220,33 +265,21 @@ void ScreenBLEExplorer::deviceClicked(lv_event_t* event)
 
     const BLEDeviceInfo& device = bleExplorer.getDevice(context->index);
 
+    /*
+     * Copy target information before leaving Explorer because its delete
+     * callback releases the BLE scan cache.
+     */
+    String address = device.address;
     String name = device.name;
 
     if (name.length() == 0)
         name = "< unknown >";
 
-    String address = device.address;
-    int8_t rssi = device.rssi;
+    context->bleFoxHunt->setTarget(address, name);
 
     bleExplorer.stopScan();
 
-    /*
-     * The selected address is stored inside BLEExplorer.
-     *
-     * BLE Fox Hunt will use:
-     * bleExplorer.getSelectedAddress()
-     *
-     * Navigation to BLEFoxHunt will be added when that screen exists.
-     */
-
-    Serial.println(
-        "[BLE] Selected: " +
-        name +
-        " | " +
-        address +
-        " | RSSI " +
-        String(rssi)
-    );
+    context->screenManager->show(Screen::BLEFoxHunt);
 }
 
 /**
@@ -277,20 +310,25 @@ void ScreenBLEExplorer::backClicked(lv_event_t* event)
  */
 void ScreenBLEExplorer::refreshTimerCallback(lv_timer_t* timer)
 {
-    RefreshContext* context = static_cast<RefreshContext*>(lv_timer_get_user_data(timer));
+    RefreshContext* context =
+        static_cast<RefreshContext*>(lv_timer_get_user_data(timer));
 
-    if (context == nullptr || context->screenManager == nullptr || context->bleExplorer == nullptr)
+    if (context == nullptr ||
+        context->screenManager == nullptr ||
+        context->bleExplorer == nullptr ||
+        context->bleFoxHunt == nullptr)
         return;
 
     uint8_t deviceCount = context->bleExplorer->getDeviceCount();
 
-    /*
-     * While scanning the complete list is refreshed so the displayed
-     * RSSI values remain live.
-     */
     if (context->bleExplorer->isScanning() || deviceCount != lastDeviceCount)
     {
-        renderDevices(*context->screenManager, *context->bleExplorer);
+        renderDevices(
+            *context->screenManager,
+            *context->bleExplorer,
+            *context->bleFoxHunt
+        );
+
         lastDeviceCount = deviceCount;
     }
 
@@ -323,6 +361,7 @@ void ScreenBLEExplorer::screenDeleted(lv_event_t* event)
 
     refreshContext.screenManager = nullptr;
     refreshContext.bleExplorer = nullptr;
+    refreshContext.bleFoxHunt = nullptr;
 
     deviceContainer = nullptr;
     scanButton = nullptr;

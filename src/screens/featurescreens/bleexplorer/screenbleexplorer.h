@@ -9,6 +9,7 @@
 
 class ScreenManager;
 class BLEExplorer;
+class BLEFoxHunt;
 
 /**
  * @class ScreenBLEExplorer
@@ -28,7 +29,7 @@ public:
      *
      * @return Pointer to the created LVGL screen.
      */
-    static lv_obj_t* create(ScreenManager& screenManager, BLEExplorer& bleExplorer);
+    static lv_obj_t* create( ScreenManager& screenManager, BLEExplorer& bleExplorer, BLEFoxHunt& bleFoxHunt );
 
 private:
     /**
@@ -39,6 +40,7 @@ private:
     {
         ScreenManager* screenManager = nullptr;
         BLEExplorer* bleExplorer = nullptr;
+        BLEFoxHunt* bleFoxHunt = nullptr;
         uint8_t index = 0;
     };
 
@@ -50,6 +52,7 @@ private:
     {
         ScreenManager* screenManager = nullptr;
         BLEExplorer* bleExplorer = nullptr;
+        BLEFoxHunt* bleFoxHunt = nullptr;
     };
 
     /**
@@ -93,10 +96,18 @@ private:
     /**
      * @brief Stops BLE scanning.
      *
+     * Stops the active BLE scan and refreshes the displayed device list
+     * while preserving the Fox Hunt context for selectable device rows.
+     *
      * @param screenManager Reference to the ScreenManager.
      * @param bleExplorer Reference to the BLE Explorer feature.
+     * @param bleFoxHunt Reference to the BLE Fox Hunt feature.
      */
-    static void stopScan(ScreenManager& screenManager, BLEExplorer& bleExplorer);
+    static void stopScan(
+        ScreenManager& screenManager,
+        BLEExplorer& bleExplorer,
+        BLEFoxHunt& bleFoxHunt
+    );
 
     /**
      * @brief Rebuilds the displayed BLE device list.
@@ -104,7 +115,11 @@ private:
      * @param screenManager Reference to the ScreenManager.
      * @param bleExplorer Reference to the BLE Explorer feature.
      */
-    static void renderDevices(ScreenManager& screenManager, BLEExplorer& bleExplorer);
+    static void renderDevices(
+    ScreenManager& screenManager,
+    BLEExplorer& bleExplorer,
+    BLEFoxHunt& bleFoxHunt
+    );
 
     /**
      * @brief Updates the BLE Explorer status label.

@@ -151,10 +151,11 @@ void ScreenWifiLab::renderNetworks(WiFiLab& wifiLab)
             ssid + "\n"
             "CH " + String(network.channel) +
             "   " + String(network.rssi) + " dBm" +
-            "   " + getSecurityName(network.encryption);
+            "   " + getSecurityName(network.encryption) + "\n" +
+            network.bssid;
 
-        //42 height for 2 lines, 58 for 3
-        lv_obj_t* networkLabel = UIWidgets::addText(networkContainer, 5, 5 + (i * 58), text.c_str(), 195);
+        //42 height for 2 lines, 58 for 3, 74 for 4
+        lv_obj_t* networkLabel = UIWidgets::addText(networkContainer, 5, 5 + (i * 74), text.c_str(), 195);
 
         //if the network is open color it red!
         if (network.encryption == WIFI_AUTH_OPEN)

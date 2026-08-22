@@ -10,6 +10,7 @@ Features::Features(Services& services)
     : apMode(services)
     , wifiLab(services)
     , bleExplorer(services)
+    , bleFoxHunt(services)
     , nrfScanner(services)
     , cc1101Scanner(services)
 {
