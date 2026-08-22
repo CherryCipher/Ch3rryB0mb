@@ -43,7 +43,7 @@ lv_obj_t* ScreenMainMenu::create(ScreenManager& screenManager, Features& feature
         &screenManager
     );
 
-    //Since we might not have an nrf scanner available check if it is
+    //Since we might not have an nrf module available check if it is
     if(features.nrfScanner.isAvailable())
     {
         // NRF Scanner Button
@@ -54,6 +54,22 @@ lv_obj_t* ScreenMainMenu::create(ScreenManager& screenManager, Features& feature
         lv_obj_add_event_cb(
             nrfScannerButton,
             nrfScannerClicked,
+            LV_EVENT_CLICKED,
+            &screenManager
+        );
+    }
+
+    //Since we might not have an cc1101 module available check if it is
+    if(features.cc1101Scanner.isAvailable())
+    {
+        // NRF Scanner Button
+        lv_obj_t* cc1101ScannerButton = UIWidgets::addButton(screen, 125, 115, "> Sub Sc4n", 100, 45);
+
+        
+        // AP Mode navigation event.
+        lv_obj_add_event_cb(
+            cc1101ScannerButton,
+            cc1101ScannerClicked,
             LV_EVENT_CLICKED,
             &screenManager
         );
@@ -84,7 +100,7 @@ void ScreenMainMenu::apModeClicked(lv_event_t* event)
  * @brief Handles the WifiLab menu button event.
  *
  * Retrieves the ScreenManager from the LVGL event user data
- * and requests navigation to the AP Mode screen.
+ * and requests navigation to the WifiLab screen.
  *
  * @param event Pointer to the LVGL event.
  */
@@ -102,7 +118,7 @@ void ScreenMainMenu::wifiLabClicked(lv_event_t* event)
  * @brief Handles the NRF Scanner menu button event.
  *
  * Retrieves the ScreenManager from the LVGL event user data
- * and requests navigation to the AP Mode screen.
+ * and requests navigation to the NRF Scanner screen.
  *
  * @param event Pointer to the LVGL event.
  */
@@ -114,4 +130,22 @@ void ScreenMainMenu::nrfScannerClicked(lv_event_t* event)
         return;
 
     screenManager->show(Screen::NRFScanner);
+}
+
+/**
+ * @brief Handles the cc1101 Scanner menu button event.
+ *
+ * Retrieves the ScreenManager from the LVGL event user data
+ * and requests navigation to the cc1101 Scanner screen.
+ *
+ * @param event Pointer to the LVGL event.
+ */
+void ScreenMainMenu::cc1101ScannerClicked(lv_event_t* event)
+{
+    ScreenManager* screenManager = static_cast<ScreenManager*>( lv_event_get_user_data(event) );
+
+    if (screenManager == nullptr)
+        return;
+
+    screenManager->show(Screen::CC1101Scanner);
 }

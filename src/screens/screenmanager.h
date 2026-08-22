@@ -29,7 +29,8 @@ enum class Screen : uint8_t
     APMode,
     ApModeConfig,
     WifiLab,
-    NRFScanner
+    NRFScanner,
+    CC1101Scanner
 };
 
 /**

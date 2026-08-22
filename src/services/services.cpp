@@ -128,6 +128,9 @@ void Services::stop()
     nrf.stop();
     logger.info("NRFManager stopped.");
 
+    cc1101.stop();
+    logger.info("CC1101Manager stopped.");
+
     logger.info("Logger stopped.");
 
     logger.stop();

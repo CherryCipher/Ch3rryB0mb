@@ -16,6 +16,8 @@
 
 #include "featurescreens/nrfscanner/screennrfscanner.h"
 
+#include "featurescreens/cc1101scanner/screencc1101scanner.h"
+
 /**
  * @brief Constructs a new ScreenManager.
  *
@@ -106,6 +108,10 @@ void ScreenManager::showInternal( Screen screen, bool addToHistory )
         
         case Screen::NRFScanner:
             newScreen = ScreenNrfScanner::create(*this, features.nrfScanner);
+            break;
+
+        case Screen::CC1101Scanner:
+            newScreen = ScreenCC1101Scanner::create(*this, features.cc1101Scanner);
             break;
     }
 

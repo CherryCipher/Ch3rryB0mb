@@ -51,13 +51,23 @@ private:
      */
     static void wifiLabClicked(lv_event_t* event);
 
-        /**
+    /**
      * @brief Handles the NRF Scanner menu button event.
      *
      * Retrieves the ScreenManager from the LVGL event user data
-     * and requests navigation to the Wifilab screen.
+     * and requests navigation to the NRF Scanner screen.
      *
      * @param event Pointer to the LVGL event.
      */
     static void nrfScannerClicked(lv_event_t* event);
+
+    /**
+     * @brief Handles the Sub GHZ Scanner menu button event.
+     *
+     * Retrieves the ScreenManager from the LVGL event user data
+     * and requests navigation to the CC1101 screen.
+     *
+     * @param event Pointer to the LVGL event.
+     */
+    static void cc1101ScannerClicked(lv_event_t* event);
 };

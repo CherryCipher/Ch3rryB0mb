@@ -10,5 +10,6 @@ Features::Features(Services& services)
     : apMode(services)
     , wifiLab(services)
     , nrfScanner(services)
+    , cc1101Scanner(services)
 {
 }
