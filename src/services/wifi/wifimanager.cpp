@@ -4,6 +4,10 @@
  */
 
 #include "WiFiManager.h"
+#include <cstring>
+#include <new>
+
+WiFiManager* WiFiManager::packetCaptureInstance = nullptr;
 
 /**
  * @brief Constructs a new WiFiManager.
@@ -312,6 +316,8 @@ int32_t WiFiManager::getRSSI() const
  */
 bool WiFiManager::stop()
 {
+    releasePacketCapture();
+
     if (isAPRunning())
         WiFi.softAPdisconnect(true);
 
@@ -320,10 +326,437 @@ bool WiFiManager::stop()
     delete[] networks;
     networks = nullptr;
     networkCount = 0;
-
+    
     WiFi.disconnect(true);
     WiFi.mode(WIFI_OFF);
 
     logger.info("WiFiManager stopped. Wi-Fi subsystem released.");
     return true;
+}
+
+/**
+ * @brief Starts passive Wi-Fi packet capture.
+ *
+ * Allocates the packet ring buffer when required and enables promiscuous
+ * receive mode while preserving the active Station connection.
+ *
+ * @return true when packet capture started successfully.
+ * @return false when Wi-Fi is not connected, memory allocation fails or
+ * capture could not be enabled.
+ */
+bool WiFiManager::startPacketCapture()
+{
+    if (!isConnected())
+    {
+        logger.error("Packet capture requires an active Wi-Fi connection.");
+        return false;
+    }
+
+    if (packetCaptureRunning)
+        return true;
+
+    if (capturedPackets == nullptr)
+    {
+        capturedPackets = new (std::nothrow) WiFiPacketInfo[MAX_CAPTURED_PACKETS];
+
+        if (capturedPackets == nullptr)
+        {
+            logger.error("Failed to allocate packet capture buffer.");
+            return false;
+        }
+
+        packetWriteIndex = 0;
+        capturedPacketCount = 0;
+
+        logger.info("Packet capture buffer allocated.");
+    }
+
+    wifi_promiscuous_filter_t filter;
+    filter.filter_mask = WIFI_PROMIS_FILTER_MASK_MGMT | WIFI_PROMIS_FILTER_MASK_DATA | WIFI_PROMIS_FILTER_MASK_CTRL;
+
+    if (esp_wifi_set_promiscuous_filter(&filter) != ESP_OK)
+    {
+        logger.error("Failed to configure Wi-Fi packet capture filter.");
+        return false;
+    }
+
+    packetCaptureInstance = this;
+
+    if (esp_wifi_set_promiscuous_rx_cb(promiscuousCallback) != ESP_OK)
+    {
+        packetCaptureInstance = nullptr;
+        logger.error("Failed to register Wi-Fi packet capture callback.");
+        return false;
+    }
+
+    if (esp_wifi_set_promiscuous(true) != ESP_OK)
+    {
+        packetCaptureInstance = nullptr;
+        logger.error("Failed to enable Wi-Fi packet capture.");
+        return false;
+    }
+
+    packetCaptureRunning = true;
+
+    logger.info("Wi-Fi packet capture started.");
+    return true;
+}
+
+/**
+ * @brief Stops passive Wi-Fi packet capture.
+ *
+ * Disables promiscuous receive mode without changing the active Station
+ * connection.
+ */
+void WiFiManager::stopPacketCapture()
+{
+    if (!packetCaptureRunning)
+        return;
+
+    esp_wifi_set_promiscuous(false);
+
+    packetCaptureRunning = false;
+    packetCaptureInstance = nullptr;
+
+    logger.info("Wi-Fi packet capture stopped.");
+}
+
+/**
+ * @brief Returns whether passive packet capture is active.
+ *
+ * @return true while packet capture is enabled.
+ */
+bool WiFiManager::isPacketCaptureRunning() const
+{
+    return packetCaptureRunning;
+}
+
+/**
+ * @brief Clears all stored packet metadata.
+ */
+void WiFiManager::clearCapturedPackets()
+{
+    portENTER_CRITICAL(&packetMux);
+
+    packetWriteIndex = 0;
+    capturedPacketCount = 0;
+
+    portEXIT_CRITICAL(&packetMux);
+}
+
+/**
+ * @brief Returns the number of packet records currently stored.
+ *
+ * @return Number of valid packet records.
+ */
+uint8_t WiFiManager::getCapturedPacketCount() const
+{
+    portENTER_CRITICAL(&packetMux);
+
+    uint8_t count = capturedPacketCount;
+
+    portEXIT_CRITICAL(&packetMux);
+
+    return count;
+}
+
+/**
+ * @brief Returns a captured packet.
+ *
+ * Packets are indexed newest first.
+ *
+ * @param index Packet index, newest first.
+ * @return Copy of the requested packet metadata.
+ */
+WiFiPacketInfo WiFiManager::getCapturedPacket(uint8_t index) const
+{
+    WiFiPacketInfo result;
+
+    portENTER_CRITICAL(&packetMux);
+
+    if (capturedPackets != nullptr && index < capturedPacketCount)
+    {
+        int packetIndex = static_cast<int>(packetWriteIndex) - 1 - index;
+
+        while (packetIndex < 0)
+            packetIndex += MAX_CAPTURED_PACKETS;
+
+        result = capturedPackets[packetIndex];
+    }
+
+    portEXIT_CRITICAL(&packetMux);
+
+    return result;
+}
+
+/**
+ * @brief ESP32 promiscuous Wi-Fi receive callback.
+ *
+ * Delegates received frames to the active WiFiManager instance.
+ *
+ * @param buffer Packet data supplied by the ESP32 Wi-Fi driver.
+ * @param type Promiscuous packet type.
+ */
+void WiFiManager::promiscuousCallback(void* buffer, wifi_promiscuous_pkt_type_t type)
+{
+    if (packetCaptureInstance == nullptr || buffer == nullptr || type == WIFI_PKT_MISC)
+        return;
+
+    packetCaptureInstance->capturePacket(static_cast<wifi_promiscuous_pkt_t*>(buffer), type);
+}
+
+/**
+ * @brief Extracts compact metadata from a captured Wi-Fi frame.
+ *
+ * Only visible 802.11 information is inspected for protected frames.
+ * Plaintext data frames are additionally inspected for LLC/SNAP and
+ * recognizable network protocols.
+ *
+ * @param packet Received promiscuous packet.
+ * @param type Promiscuous packet type.
+ */
+void WiFiManager::capturePacket(const wifi_promiscuous_pkt_t* packet, wifi_promiscuous_pkt_type_t type)
+{
+    if (packet == nullptr || packet->rx_ctrl.sig_len < 2)
+        return;
+
+    const uint8_t* frame = packet->payload;
+    uint16_t length = packet->rx_ctrl.sig_len;
+
+    WiFiPacketInfo info;
+
+    info.id = ++capturedPacketSequence;
+    info.rssi = packet->rx_ctrl.rssi;
+    info.channel = packet->rx_ctrl.channel;
+    info.length = length;
+
+    uint8_t frameControl1 = frame[0];
+    uint8_t frameControl2 = frame[1];
+
+    info.frameType = (frameControl1 >> 2) & 0x03;
+    info.frameSubtype = (frameControl1 >> 4) & 0x0F;
+    info.protectedFrame = (frameControl2 & 0x40) != 0;
+
+    if (length >= 10)
+        memcpy(info.receiver, frame + 4, 6);
+
+    if (length >= 16)
+        memcpy(info.transmitter, frame + 10, 6);
+
+    if (length >= 22)
+        memcpy(info.address3, frame + 16, 6);
+
+    if (info.protectedFrame)
+    {
+        info.protocol = WiFiPacketProtocol::Protected;
+        storeCapturedPacket(info);
+        return;
+    }
+
+    /*
+     * Protocol parsing only applies to plaintext 802.11 data frames.
+     */
+    if (type != WIFI_PKT_DATA || length < 32)
+    {
+        storeCapturedPacket(info);
+        return;
+    }
+
+    bool toDS = (frameControl2 & 0x01) != 0;
+    bool fromDS = (frameControl2 & 0x02) != 0;
+    bool qosData = (info.frameSubtype & 0x08) != 0;
+
+    uint16_t payloadOffset = 24;
+
+    if (toDS && fromDS)
+        payloadOffset += 6;
+
+    if (qosData)
+        payloadOffset += 2;
+
+    if (length < payloadOffset + 8)
+    {
+        storeCapturedPacket(info);
+        return;
+    }
+
+    const uint8_t* payload = frame + payloadOffset;
+
+    /*
+     * IEEE 802.2 LLC/SNAP header.
+     */
+    if (payload[0] != 0xAA || payload[1] != 0xAA || payload[2] != 0x03)
+    {
+        storeCapturedPacket(info);
+        return;
+    }
+
+    uint16_t etherType = (static_cast<uint16_t>(payload[6]) << 8) | payload[7];
+    uint16_t networkOffset = payloadOffset + 8;
+
+    if (etherType == 0x0806)
+    {
+        info.protocol = WiFiPacketProtocol::ARP;
+
+        if (length >= networkOffset + 28)
+        {
+            const uint8_t* arp = frame + networkOffset;
+
+            info.sourceIP =
+                (static_cast<uint32_t>(arp[14]) << 24) |
+                (static_cast<uint32_t>(arp[15]) << 16) |
+                (static_cast<uint32_t>(arp[16]) << 8) |
+                arp[17];
+
+            info.destinationIP =
+                (static_cast<uint32_t>(arp[24]) << 24) |
+                (static_cast<uint32_t>(arp[25]) << 16) |
+                (static_cast<uint32_t>(arp[26]) << 8) |
+                arp[27];
+        }
+
+        storeCapturedPacket(info);
+        return;
+    }
+
+    if (etherType == 0x86DD)
+    {
+        info.protocol = WiFiPacketProtocol::IPv6;
+        storeCapturedPacket(info);
+        return;
+    }
+
+    if (etherType != 0x0800 || length < networkOffset + 20)
+    {
+        storeCapturedPacket(info);
+        return;
+    }
+
+    info.protocol = WiFiPacketProtocol::IPv4;
+
+    const uint8_t* ipv4 = frame + networkOffset;
+    uint8_t headerLength = (ipv4[0] & 0x0F) * 4;
+
+    if (headerLength < 20 || length < networkOffset + headerLength)
+    {
+        storeCapturedPacket(info);
+        return;
+    }
+
+    info.sourceIP =
+        (static_cast<uint32_t>(ipv4[12]) << 24) |
+        (static_cast<uint32_t>(ipv4[13]) << 16) |
+        (static_cast<uint32_t>(ipv4[14]) << 8) |
+        ipv4[15];
+
+    info.destinationIP =
+        (static_cast<uint32_t>(ipv4[16]) << 24) |
+        (static_cast<uint32_t>(ipv4[17]) << 16) |
+        (static_cast<uint32_t>(ipv4[18]) << 8) |
+        ipv4[19];
+
+    uint8_t ipProtocol = ipv4[9];
+
+    if (ipProtocol == 1)
+    {
+        info.protocol = WiFiPacketProtocol::ICMP;
+        storeCapturedPacket(info);
+        return;
+    }
+
+    if (ipProtocol != 6 && ipProtocol != 17)
+    {
+        storeCapturedPacket(info);
+        return;
+    }
+
+    uint16_t transportOffset = networkOffset + headerLength;
+
+    if (length < transportOffset + 4)
+    {
+        storeCapturedPacket(info);
+        return;
+    }
+
+    const uint8_t* transport = frame + transportOffset;
+
+    info.sourcePort = (static_cast<uint16_t>(transport[0]) << 8) | transport[1];
+    info.destinationPort = (static_cast<uint16_t>(transport[2]) << 8) | transport[3];
+
+    if (ipProtocol == 17)
+    {
+        info.protocol = WiFiPacketProtocol::UDP;
+
+        if (info.sourcePort == 67 || info.sourcePort == 68 || info.destinationPort == 67 || info.destinationPort == 68)
+            info.protocol = WiFiPacketProtocol::DHCP;
+        else if (info.sourcePort == 5353 || info.destinationPort == 5353)
+            info.protocol = WiFiPacketProtocol::MDNS;
+        else if (info.sourcePort == 53 || info.destinationPort == 53)
+            info.protocol = WiFiPacketProtocol::DNS;
+    }
+    else
+    {
+        info.protocol = WiFiPacketProtocol::TCP;
+
+        if (info.sourcePort == 80 || info.destinationPort == 80)
+            info.protocol = WiFiPacketProtocol::HTTP;
+        else if (info.sourcePort == 443 || info.destinationPort == 443)
+            info.protocol = WiFiPacketProtocol::HTTPS;
+    }
+
+    storeCapturedPacket(info);
+}
+
+/**
+ * @brief Stores packet metadata in the packet capture ring buffer.
+ *
+ * Once the ring buffer is full, new packet records replace the oldest
+ * record automatically.
+ *
+ * @param packet Packet metadata to store.
+ */
+void WiFiManager::storeCapturedPacket(const WiFiPacketInfo& packet)
+{
+    if (capturedPackets == nullptr)
+        return;
+
+    portENTER_CRITICAL(&packetMux);
+
+    capturedPackets[packetWriteIndex] = packet;
+    packetWriteIndex = (packetWriteIndex + 1) % MAX_CAPTURED_PACKETS;
+
+    if (capturedPacketCount < MAX_CAPTURED_PACKETS)
+        capturedPacketCount++;
+
+    portEXIT_CRITICAL(&packetMux);
+}
+
+/**
+ * @brief Releases all packet capture memory.
+ *
+ * Stops active promiscuous capture, clears the packet ring buffer and
+ * releases its dynamically allocated memory.
+ *
+ * The active Wi-Fi Station connection remains unchanged.
+ */
+void WiFiManager::releasePacketCapture()
+{
+    stopPacketCapture();
+
+    WiFiPacketInfo* buffer = nullptr;
+
+    portENTER_CRITICAL(&packetMux);
+
+    buffer = capturedPackets;
+    capturedPackets = nullptr;
+
+    packetWriteIndex = 0;
+    capturedPacketCount = 0;
+    capturedPacketSequence = 0;
+
+    portEXIT_CRITICAL(&packetMux);
+
+    delete[] buffer;
+
+    logger.info("Packet capture buffer released.");
 }

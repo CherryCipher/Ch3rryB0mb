@@ -6,6 +6,7 @@
 #include "cc1101scanner/cc1101scanner.h"
 #include "bleexplorer/bleexplorer.h"
 #include "blefoxhunt/blefoxhunt.h"
+#include "packetviewer/packetviewer.h"
 
 class Services;
 
@@ -48,6 +49,11 @@ public:
      * @return false when no Wi-Fi connection is active.
      */
     bool isWiFiConnected() const;
+
+    /**
+     * @brief Wi-Fi Packet Viewer feature.
+     */
+    PacketViewer packetViewer;
 
     /**
      * @brief NRF Scanner feature.

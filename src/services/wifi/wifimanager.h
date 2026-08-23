@@ -6,6 +6,8 @@
 #pragma once
 
 #include <WiFi.h>
+#include <esp_wifi.h>
+
 #include "WiFiConfig.h"
 #include "../logger/logger.h"
 
@@ -24,6 +26,57 @@ struct WiFiNetwork
     int32_t rssi;
     uint8_t channel;
     wifi_auth_mode_t encryption;
+};
+
+/**
+ * @enum WiFiPacketProtocol
+ * @brief Identifies a protocol discovered inside a captured Wi-Fi frame.
+ */
+enum class WiFiPacketProtocol : uint8_t
+{
+    None,
+    Protected,
+    ARP,
+    IPv4,
+    IPv6,
+    ICMP,
+    TCP,
+    UDP,
+    DNS,
+    MDNS,
+    DHCP,
+    HTTP,
+    HTTPS
+};
+
+/**
+ * @struct WiFiPacketInfo
+ * @brief Contains metadata extracted from a captured Wi-Fi frame.
+ *
+ * Only compact packet metadata is stored. Raw frame payloads are not retained,
+ * keeping the capture buffer at a fixed and predictable memory size.
+ */
+struct WiFiPacketInfo
+{
+    uint32_t id = 0;
+    int8_t rssi = 0;
+    uint16_t length = 0;
+    uint8_t channel = 0;
+    uint8_t frameType = 0;
+    uint8_t frameSubtype = 0;
+    bool protectedFrame = false;
+
+    uint8_t receiver[6] = {};
+    uint8_t transmitter[6] = {};
+    uint8_t address3[6] = {};
+
+    WiFiPacketProtocol protocol = WiFiPacketProtocol::None;
+
+    uint32_t sourceIP = 0;
+    uint32_t destinationIP = 0;
+
+    uint16_t sourcePort = 0;
+    uint16_t destinationPort = 0;
 };
 
 /******************************************************************************
@@ -187,6 +240,73 @@ public:
      */
     bool stop();
 
+    /**
+     * @brief Starts passive Wi-Fi packet capture.
+     *
+     * Enables ESP32 promiscuous receive mode while preserving the active
+     * Station connection.
+     *
+     * Captured frames are reduced to compact metadata and stored in a fixed
+     * ring buffer. No packet payload is retained after processing.
+     *
+     * @return true when packet capture started successfully.
+     * @return false when Wi-Fi is not connected or capture could not start.
+     */
+    bool startPacketCapture();
+
+    /**
+     * @brief Stops passive Wi-Fi packet capture.
+     *
+     * Disables promiscuous receive mode without disconnecting the active
+     * Station connection.
+     */
+    void stopPacketCapture();
+
+    /**
+     * @brief Returns whether passive packet capture is active.
+     *
+     * @return true while packet capture is enabled.
+     */
+    bool isPacketCaptureRunning() const;
+
+    /**
+     * @brief Clears all stored packet metadata.
+     *
+     * Does not stop an active packet capture.
+     */
+    void clearCapturedPackets();
+
+    /**
+     * @brief Returns the number of packet records currently stored.
+     *
+     * @return Number of valid records in the fixed packet ring buffer.
+     */
+    uint8_t getCapturedPacketCount() const;
+
+    /**
+     * @brief Returns a captured packet.
+     *
+     * Packets are indexed newest first. Index zero represents the most recently
+     * captured packet.
+     *
+     * A copy is returned so the caller is not exposed to the capture callback
+     * modifying the ring buffer concurrently.
+     *
+     * @param index Packet index, newest first.
+     * @return Copy of the requested packet metadata.
+     */
+    WiFiPacketInfo getCapturedPacket(uint8_t index) const;
+
+    /**
+     * @brief Releases all packet capture memory.
+     *
+     * Stops active capture, clears stored packet records and releases the
+     * dynamically allocated ring buffer.
+     *
+     * The active Wi-Fi Station connection is preserved.
+     */
+    void releasePacketCapture();
+
 private:
     /**
      * @brief Maximum number of Wi-Fi scan results stored by the manager.
@@ -200,6 +320,80 @@ private:
      * cache from permanently consuming static DRAM.
      */
     WiFiNetwork* networks = nullptr;
+
+    /**
+     * @brief Maximum number of packet records retained by Packet Viewer.
+     *
+     * The capture buffer is allocated dynamically only while Packet Viewer
+     * is in use, preventing packet storage from permanently consuming static
+     * DRAM.
+     */
+    static constexpr uint8_t MAX_CAPTURED_PACKETS = 16;
+
+    /**
+     * @brief Dynamically allocated packet capture ring buffer.
+     *
+     * The buffer is allocated when packet capture is first started and can
+     * be released when Packet Viewer is closed.
+     */
+    WiFiPacketInfo* capturedPackets = nullptr;
+
+    /**
+     * @brief Index where the next captured packet will be written.
+     */
+    volatile uint8_t packetWriteIndex = 0;
+
+    /**
+     * @brief Number of valid packet records currently stored.
+     */
+    volatile uint8_t capturedPacketCount = 0;
+
+    /**
+     * @brief Sequence number assigned to captured packets.
+     */
+    volatile uint32_t capturedPacketSequence = 0;
+
+    /**
+     * @brief Indicates whether promiscuous packet capture is active.
+     */
+    volatile bool packetCaptureRunning = false;
+
+    /**
+     * @brief Protects packet ring buffer access between Wi-Fi and application tasks.
+     */
+    mutable portMUX_TYPE packetMux = portMUX_INITIALIZER_UNLOCKED;
+
+    /**
+     * @brief WiFiManager instance receiving promiscuous Wi-Fi callbacks.
+     */
+    static WiFiManager* packetCaptureInstance;
+
+    /**
+     * @brief ESP32 promiscuous Wi-Fi receive callback.
+     *
+     * @param buffer Packet data supplied by the ESP32 Wi-Fi driver.
+     * @param type Promiscuous packet type.
+     */
+    static void promiscuousCallback(void* buffer, wifi_promiscuous_pkt_type_t type);
+
+    /**
+     * @brief Extracts compact metadata from a received Wi-Fi frame.
+     *
+     * Protected data frames are never inspected beyond the visible 802.11
+     * metadata. Plaintext frames may be inspected for publicly visible
+     * protocols such as ARP, IPv4, ICMP, UDP and DNS.
+     *
+     * @param packet Received promiscuous Wi-Fi packet.
+     * @param type Promiscuous packet type.
+     */
+    void capturePacket(const wifi_promiscuous_pkt_t* packet, wifi_promiscuous_pkt_type_t type);
+
+    /**
+     * @brief Stores a packet record in the fixed capture ring buffer.
+     *
+     * @param packet Packet metadata to store.
+     */
+    void storeCapturedPacket(const WiFiPacketInfo& packet);
 
     /**
      * @brief Number of valid networks currently stored.

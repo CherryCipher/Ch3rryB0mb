@@ -14,6 +14,7 @@
 
 #include "featurescreens/wifilab/screenwifilab.h"
 #include "featurescreens/wifilab/screenconnect.h"
+#include "featurescreens/packetviewer/screenpacketviewer.h"
 
 #include "featurescreens/nrfscanner/screennrfscanner.h"
 
@@ -115,6 +116,10 @@ void ScreenManager::showInternal( Screen screen, bool addToHistory )
 
         case Screen::WifiConnect:
             newScreen = ScreenConnect::create(*this, features.wifiLab);
+            break;
+            
+        case Screen::PacketViewer:
+            newScreen = ScreenPacketViewer::create(*this, features.packetViewer);
             break;
 
         case Screen::BLEExplorer:

@@ -52,6 +52,16 @@ private:
     static void wifiLabClicked(lv_event_t* event);
 
     /**
+     * @brief Handles the Packet Viewer menu button event.
+     *
+     * Retrieves the ScreenManager from the LVGL event user data
+     * and requests navigation to the Packet Viewer screen.
+     *
+     * @param event Pointer to the LVGL event.
+     */
+    static void packetViewerClicked(lv_event_t* event);
+
+    /**
      * @brief Handles the NRF Scanner menu button event.
      *
      * Retrieves the ScreenManager from the LVGL event user data
