@@ -36,6 +36,8 @@ public:
     /**
      * @brief Starts passive packet capture.
      *
+     * Uses the packet filter currently configured in WiFiManager.
+     *
      * @return true when packet capture started successfully.
      * @return false when Wi-Fi is not connected or capture could not start.
      */
@@ -70,7 +72,7 @@ public:
     /**
      * @brief Returns the number of retained packet records.
      *
-     * @return Number of packets currently stored in the fixed ring buffer.
+     * @return Number of packets currently stored in the capture ring buffer.
      */
     uint8_t getPacketCount() const;
 
@@ -92,6 +94,7 @@ public:
      *
      * @param index Packet index, newest first.
      * @return true when the packet was selected.
+     * @return false when the index is invalid.
      */
     bool selectPacket(uint8_t index);
 
@@ -108,6 +111,32 @@ public:
      * @return Constant reference to the selected packet copy.
      */
     const WiFiPacketInfo& getSelectedPacket() const;
+
+    /**
+     * @brief Sets the active packet capture filter.
+     *
+     * Updates the filter directly in WiFiManager and clears previously
+     * retained packet records so the visible list immediately represents
+     * the selected packet category.
+     *
+     * @param filter Packet capture filter to activate.
+     */
+    void setFilter(WiFiPacketCaptureFilter filter);
+
+    /**
+     * @brief Returns the active packet capture filter.
+     *
+     * @return Currently active packet capture filter.
+     */
+    WiFiPacketCaptureFilter getFilter() const;
+
+    /**
+     * @brief Returns a readable name for a packet capture filter.
+     *
+     * @param filter Packet capture filter.
+     * @return Human-readable filter name.
+     */
+    static const char* getFilterName(WiFiPacketCaptureFilter filter);
 
     /**
      * @brief Returns a readable protocol name.

@@ -710,14 +710,18 @@ void WiFiManager::capturePacket(const wifi_promiscuous_pkt_t* packet, wifi_promi
 /**
  * @brief Stores packet metadata in the packet capture ring buffer.
  *
- * Once the ring buffer is full, new packet records replace the oldest
- * record automatically.
+ * Applies the active capture filter before storing the packet. Packets that
+ * do not match the selected filter are discarded and never consume a slot
+ * in the ring buffer.
  *
- * @param packet Packet metadata to store.
+ * When the ring buffer is full, new packets automatically replace the
+ * oldest retained packet.
+ *
+ * @param packet Packet metadata to evaluate and store.
  */
 void WiFiManager::storeCapturedPacket(const WiFiPacketInfo& packet)
 {
-    if (capturedPackets == nullptr)
+    if (capturedPackets == nullptr || !matchesPacketCaptureFilter(packet))
         return;
 
     portENTER_CRITICAL(&packetMux);
@@ -759,4 +763,66 @@ void WiFiManager::releasePacketCapture()
     delete[] buffer;
 
     logger.info("Packet capture buffer released.");
+}
+
+/**
+ * @brief Sets the active packet capture filter.
+ *
+ * @param filter Packet capture filter to activate.
+ */
+void WiFiManager::setPacketCaptureFilter(WiFiPacketCaptureFilter filter)
+{
+    packetCaptureFilter = filter;
+}
+
+/**
+ * @brief Returns the active packet capture filter.
+ *
+ * @return Currently active packet capture filter.
+ */
+WiFiPacketCaptureFilter WiFiManager::getPacketCaptureFilter() const
+{
+    return packetCaptureFilter;
+}
+
+/**
+ * @brief Returns whether a captured packet matches the active filter.
+ *
+ * Interesting suppresses management and control frame noise while retaining
+ * all 802.11 data frames and recognized higher-level protocols.
+ *
+ * @param packet Parsed packet metadata.
+ * @return true when the packet should be retained.
+ * @return false when the packet should be discarded.
+ */
+bool WiFiManager::matchesPacketCaptureFilter(const WiFiPacketInfo& packet) const
+{
+    switch (packetCaptureFilter)
+    {
+        case WiFiPacketCaptureFilter::Interesting:
+            return packet.frameType == 2 ||
+                   packet.protocol == WiFiPacketProtocol::ARP ||
+                   packet.protocol == WiFiPacketProtocol::IPv4 ||
+                   packet.protocol == WiFiPacketProtocol::IPv6 ||
+                   packet.protocol == WiFiPacketProtocol::ICMP ||
+                   packet.protocol == WiFiPacketProtocol::TCP ||
+                   packet.protocol == WiFiPacketProtocol::UDP ||
+                   packet.protocol == WiFiPacketProtocol::DNS ||
+                   packet.protocol == WiFiPacketProtocol::MDNS ||
+                   packet.protocol == WiFiPacketProtocol::DHCP ||
+                   packet.protocol == WiFiPacketProtocol::HTTP ||
+                   packet.protocol == WiFiPacketProtocol::HTTPS ||
+                   packet.protocol == WiFiPacketProtocol::Protected;
+
+        case WiFiPacketCaptureFilter::Data:
+            return packet.frameType == 2;
+
+        case WiFiPacketCaptureFilter::Management:
+            return packet.frameType == 0;
+
+        case WiFiPacketCaptureFilter::All:
+            return true;
+    }
+
+    return true;
 }

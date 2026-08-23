@@ -18,7 +18,11 @@ PacketViewer::PacketViewer(Services& services) : services(services)
 /**
  * @brief Starts passive packet capture.
  *
+ * Starts packet capture through WiFiManager using the currently configured
+ * packet capture filter.
+ *
  * @return true when capture started successfully.
+ * @return false when Wi-Fi is not connected or capture could not start.
  */
 bool PacketViewer::start()
 {
@@ -102,6 +106,7 @@ WiFiPacketInfo PacketViewer::getPacket(uint8_t index) const
  *
  * @param index Packet index, newest first.
  * @return true when the packet was selected.
+ * @return false when the index is invalid.
  */
 bool PacketViewer::selectPacket(uint8_t index)
 {
@@ -132,6 +137,54 @@ bool PacketViewer::hasSelectedPacket() const
 const WiFiPacketInfo& PacketViewer::getSelectedPacket() const
 {
     return selectedPacket;
+}
+
+/**
+ * @brief Sets the active packet capture filter.
+ *
+ * Updates the filter directly in WiFiManager and clears previously retained
+ * packet records so all subsequently displayed packets match the selected
+ * category.
+ *
+ * @param filter Packet capture filter to activate.
+ */
+void PacketViewer::setFilter(WiFiPacketCaptureFilter filter)
+{
+    if (services.wifi.getPacketCaptureFilter() == filter)
+        return;
+
+    services.wifi.setPacketCaptureFilter(filter);
+    clear();
+
+    services.logger.info("Packet Viewer: Filter changed to " + String(getFilterName(filter)));
+}
+
+/**
+ * @brief Returns the active packet capture filter.
+ *
+ * @return Currently active packet capture filter.
+ */
+WiFiPacketCaptureFilter PacketViewer::getFilter() const
+{
+    return services.wifi.getPacketCaptureFilter();
+}
+
+/**
+ * @brief Returns a readable name for a packet capture filter.
+ *
+ * @param filter Packet capture filter.
+ * @return Human-readable filter name.
+ */
+const char* PacketViewer::getFilterName(WiFiPacketCaptureFilter filter)
+{
+    switch (filter)
+    {
+        case WiFiPacketCaptureFilter::Interesting: return "INTERESTING";
+        case WiFiPacketCaptureFilter::Data: return "DATA";
+        case WiFiPacketCaptureFilter::Management: return "MGMT";
+        case WiFiPacketCaptureFilter::All: return "ALL";
+        default: return "UNKNOWN";
+    }
 }
 
 /**

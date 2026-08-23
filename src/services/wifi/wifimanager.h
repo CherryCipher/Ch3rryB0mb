@@ -50,6 +50,21 @@ enum class WiFiPacketProtocol : uint8_t
 };
 
 /**
+ * @enum WiFiPacketCaptureFilter
+ * @brief Defines which captured Wi-Fi packets are retained.
+ *
+ * The filter is applied after packet metadata has been extracted but before
+ * the packet is written to the capture ring buffer.
+ */
+enum class WiFiPacketCaptureFilter : uint8_t
+{
+    Interesting,
+    Data,
+    Management,
+    All
+};
+
+/**
  * @struct WiFiPacketInfo
  * @brief Contains metadata extracted from a captured Wi-Fi frame.
  *
@@ -298,6 +313,23 @@ public:
     WiFiPacketInfo getCapturedPacket(uint8_t index) const;
 
     /**
+     * @brief Sets the active packet capture filter.
+     *
+     * The selected filter determines which captured Wi-Fi packets are retained
+     * in the packet ring buffer.
+     *
+     * @param filter Packet capture filter to activate.
+     */
+    void setPacketCaptureFilter(WiFiPacketCaptureFilter filter);
+
+    /**
+     * @brief Returns the active packet capture filter.
+     *
+     * @return Currently active packet capture filter.
+     */
+    WiFiPacketCaptureFilter getPacketCaptureFilter() const;
+
+    /**
      * @brief Releases all packet capture memory.
      *
      * Stops active capture, clears stored packet records and releases the
@@ -394,6 +426,23 @@ private:
      * @param packet Packet metadata to store.
      */
     void storeCapturedPacket(const WiFiPacketInfo& packet);
+
+    /**
+     * @brief Active filter applied before packets enter the capture ring buffer.
+     *
+     * Interesting is used by default to suppress common management and control
+     * frame noise while retaining useful data traffic.
+     */
+    WiFiPacketCaptureFilter packetCaptureFilter = WiFiPacketCaptureFilter::Interesting;
+
+    /**
+     * @brief Returns whether a captured packet matches the active filter.
+     *
+     * @param packet Parsed packet metadata.
+     * @return true when the packet should be retained.
+     * @return false when the packet should be discarded.
+     */
+    bool matchesPacketCaptureFilter(const WiFiPacketInfo& packet) const;
 
     /**
      * @brief Number of valid networks currently stored.

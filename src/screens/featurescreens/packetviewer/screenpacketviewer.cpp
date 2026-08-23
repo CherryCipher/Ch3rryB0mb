@@ -8,21 +8,61 @@
 #include "../../uiwidgets/uiwidget.h"
 #include "app/features/packetviewer/packetviewer.h"
 
+/**
+ * @brief Context shared by Packet Viewer callbacks.
+ */
 ScreenPacketViewer::ScreenContext ScreenPacketViewer::screenContext;
 
+/**
+ * @brief Scrollable packet list container.
+ */
 lv_obj_t* ScreenPacketViewer::packetContainer = nullptr;
+
+/**
+ * @brief START or STOP capture button.
+ */
 lv_obj_t* ScreenPacketViewer::captureButton = nullptr;
+
+/**
+ * @brief CLEAR packet button.
+ */
 lv_obj_t* ScreenPacketViewer::clearButton = nullptr;
+
+/**
+ * @brief Packet capture filter button.
+ */
+lv_obj_t* ScreenPacketViewer::filterButton = nullptr;
+
+/**
+ * @brief Packet ring buffer usage label.
+ */
 lv_obj_t* ScreenPacketViewer::statusLabel = nullptr;
+
+/**
+ * @brief Empty packet list label.
+ */
 lv_obj_t* ScreenPacketViewer::emptyLabel = nullptr;
 
+/**
+ * @brief Packet list refresh timer.
+ */
 lv_timer_t* ScreenPacketViewer::refreshTimer = nullptr;
 
+/**
+ * @brief Number of packet rows currently created.
+ */
 uint8_t ScreenPacketViewer::renderedRows = 0;
+
+/**
+ * @brief Indicates whether packet detail is currently displayed.
+ */
 bool ScreenPacketViewer::detailVisible = false;
 
 /**
  * @brief Creates the Wi-Fi Packet Viewer screen.
+ *
+ * Automatically starts passive packet capture when an active Wi-Fi
+ * Station connection is available.
  *
  * @param screenManager Reference to the application ScreenManager.
  * @param packetViewer Reference to the Packet Viewer feature.
@@ -56,18 +96,23 @@ lv_obj_t* ScreenPacketViewer::create(ScreenManager& screenManager, PacketViewer&
         return screen;
     }
 
-    captureButton = UIWidgets::addButton(screen, 15, 50, "STOP", 90, 35);
+    captureButton = UIWidgets::addButton(screen, 15, 50, "STOP", 85, 35);
     lv_obj_add_event_cb(captureButton, captureClicked, LV_EVENT_CLICKED, &packetViewer);
 
-    clearButton = UIWidgets::addButton(screen, 115, 50, "CLEAR", 60, 35);
+    clearButton = UIWidgets::addButton(screen, 110, 50, "CLEAR", 65, 35);
     lv_obj_add_event_cb(clearButton, clearClicked, LV_EVENT_CLICKED, &packetViewer);
 
-    statusLabel = UIWidgets::addText(screen, 180, 58, "0", 50);
+    statusLabel = UIWidgets::addText(screen, 180, 58, "0/16", 50);
 
-    packetContainer = UIWidgets::createScrollContainer(screen, 10, 95, 220, 210);
+    filterButton = UIWidgets::addButton(screen, 15, 92, "", 210, 32);
+    lv_obj_add_event_cb(filterButton, filterClicked, LV_EVENT_CLICKED, &packetViewer);
+
+    packetContainer = UIWidgets::createScrollContainer(screen, 10, 132, 220, 173);
     emptyLabel = UIWidgets::addText(packetContainer, 5, 5, "Listening for Wi-Fi traffic...", 195);
 
     packetViewer.clear();
+
+    updateFilterButton(packetViewer);
 
     if (!packetViewer.start())
     {
@@ -89,8 +134,8 @@ lv_obj_t* ScreenPacketViewer::create(ScreenManager& screenManager, PacketViewer&
 /**
  * @brief Updates the visible packet list.
  *
- * Creates only the number of packet rows required and reuses those rows
- * afterwards by updating their label text.
+ * Creates packet rows only when required and reuses existing rows during
+ * subsequent updates.
  *
  * @param packetViewer Reference to the Packet Viewer feature.
  */
@@ -112,7 +157,7 @@ void ScreenPacketViewer::updatePackets(PacketViewer& packetViewer)
 
     if (emptyLabel != nullptr)
     {
-        lv_obj_delete(emptyLabel);
+        lv_obj_del(emptyLabel);
         emptyLabel = nullptr;
     }
 
@@ -136,7 +181,9 @@ void ScreenPacketViewer::updatePackets(PacketViewer& packetViewer)
 }
 
 /**
- * @brief Updates one packet row.
+ * @brief Updates a packet row with current packet information.
+ *
+ * Displays protocol, packet length, RSSI, channel and frame type.
  *
  * @param row Packet row button.
  * @param packetViewer Reference to the Packet Viewer feature.
@@ -152,7 +199,6 @@ void ScreenPacketViewer::updatePacketRow(lv_obj_t* row, PacketViewer& packetView
         protocol = PacketViewer::getFrameSubtypeName(packet.frameType, packet.frameSubtype);
 
     String text =
-        "#" + String(packet.id) + "  " +
         protocol + "  " +
         String(packet.length) + " B\n" +
         String(packet.rssi) + " dBm | CH " +
@@ -168,6 +214,9 @@ void ScreenPacketViewer::updatePacketRow(lv_obj_t* row, PacketViewer& packetView
 /**
  * @brief Displays detailed information about the selected packet.
  *
+ * Displays frame information, visible MAC addresses and any available
+ * plaintext IP or transport metadata.
+ *
  * @param packetViewer Reference to the Packet Viewer feature.
  */
 void ScreenPacketViewer::showPacketDetail(PacketViewer& packetViewer)
@@ -182,7 +231,7 @@ void ScreenPacketViewer::showPacketDetail(PacketViewer& packetViewer)
     const WiFiPacketInfo& packet = packetViewer.getSelectedPacket();
 
     String text =
-        "PACKET #" + String(packet.id) + "\n\n" +
+        String(PacketViewer::getFrameSubtypeName(packet.frameType, packet.frameSubtype)) + "\n\n" +
         "TYPE: " + PacketViewer::getFrameTypeName(packet.frameType) + "\n" +
         "SUB: " + PacketViewer::getFrameSubtypeName(packet.frameType, packet.frameSubtype) + "\n" +
         "PROTOCOL: " + PacketViewer::getProtocolName(packet.protocol) + "\n" +
@@ -216,7 +265,7 @@ void ScreenPacketViewer::showPacketDetail(PacketViewer& packetViewer)
 }
 
 /**
- * @brief Updates Packet Viewer status text.
+ * @brief Updates the packet ring buffer usage indicator.
  *
  * @param packetViewer Reference to the Packet Viewer feature.
  */
@@ -227,6 +276,24 @@ void ScreenPacketViewer::updateStatus(PacketViewer& packetViewer)
 
     String status = String(packetViewer.getPacketCount()) + "/16";
     lv_label_set_text(statusLabel, status.c_str());
+}
+
+/**
+ * @brief Updates the packet filter button label.
+ *
+ * @param packetViewer Reference to the Packet Viewer feature.
+ */
+void ScreenPacketViewer::updateFilterButton(PacketViewer& packetViewer)
+{
+    if (filterButton == nullptr)
+        return;
+
+    String text = "FILTER: " + String(PacketViewer::getFilterName(packetViewer.getFilter()));
+
+    lv_obj_t* label = lv_obj_get_child(filterButton, 0);
+
+    if (label != nullptr)
+        lv_label_set_text(label, text.c_str());
 }
 
 /**
@@ -248,7 +315,7 @@ void ScreenPacketViewer::packetClicked(lv_event_t* event)
 }
 
 /**
- * @brief Handles the START/STOP capture button.
+ * @brief Handles the START or STOP capture button.
  *
  * @param event Pointer to the LVGL event.
  */
@@ -275,6 +342,8 @@ void ScreenPacketViewer::captureClicked(lv_event_t* event)
 /**
  * @brief Handles the CLEAR button.
  *
+ * Clears retained packet records and resets the packet list.
+ *
  * @param event Pointer to the LVGL event.
  */
 void ScreenPacketViewer::clearClicked(lv_event_t* event)
@@ -290,6 +359,57 @@ void ScreenPacketViewer::clearClicked(lv_event_t* event)
 
     renderedRows = 0;
     detailVisible = false;
+
+    emptyLabel = UIWidgets::addText(packetContainer, 5, 5, packetViewer->isRunning() ? "Listening for Wi-Fi traffic..." : "Capture stopped.", 195);
+
+    updateStatus(*packetViewer);
+}
+
+/**
+ * @brief Handles the packet capture filter button.
+ *
+ * Cycles through INTERESTING, DATA, MANAGEMENT and ALL capture filters.
+ * Changing the filter clears previously retained packets.
+ *
+ * @param event Pointer to the LVGL event.
+ */
+void ScreenPacketViewer::filterClicked(lv_event_t* event)
+{
+    PacketViewer* packetViewer = static_cast<PacketViewer*>(lv_event_get_user_data(event));
+
+    if (packetViewer == nullptr || packetContainer == nullptr)
+        return;
+
+    WiFiPacketCaptureFilter nextFilter;
+
+    switch (packetViewer->getFilter())
+    {
+        case WiFiPacketCaptureFilter::Interesting:
+            nextFilter = WiFiPacketCaptureFilter::Data;
+            break;
+
+        case WiFiPacketCaptureFilter::Data:
+            nextFilter = WiFiPacketCaptureFilter::Management;
+            break;
+
+        case WiFiPacketCaptureFilter::Management:
+            nextFilter = WiFiPacketCaptureFilter::All;
+            break;
+
+        default:
+            nextFilter = WiFiPacketCaptureFilter::Interesting;
+            break;
+    }
+
+    packetViewer->setFilter(nextFilter);
+
+    lv_obj_clean(packetContainer);
+
+    renderedRows = 0;
+    detailVisible = false;
+    emptyLabel = nullptr;
+
+    updateFilterButton(*packetViewer);
 
     emptyLabel = UIWidgets::addText(packetContainer, 5, 5, packetViewer->isRunning() ? "Listening for Wi-Fi traffic..." : "Capture stopped.", 195);
 
@@ -348,7 +468,10 @@ void ScreenPacketViewer::backClicked(lv_event_t* event)
 }
 
 /**
- * @brief Periodically refreshes the visible packet list.
+ * @brief Periodically refreshes the packet list and status.
+ *
+ * Packet capture is stopped automatically if the active Wi-Fi Station
+ * connection disappears.
  *
  * @param timer Pointer to the LVGL timer.
  */
@@ -372,8 +495,8 @@ void ScreenPacketViewer::refreshTimerCallback(lv_timer_t* timer)
 /**
  * @brief Cleans up Packet Viewer screen resources.
  *
- * Stops packet capture and releases the dynamically allocated packet
- * buffer while preserving the active Wi-Fi Station connection.
+ * Releases packet capture memory while preserving the active Wi-Fi Station
+ * connection.
  *
  * @param event Pointer to the LVGL delete event.
  */
@@ -396,6 +519,7 @@ void ScreenPacketViewer::screenDeleted(lv_event_t* event)
     packetContainer = nullptr;
     captureButton = nullptr;
     clearButton = nullptr;
+    filterButton = nullptr;
     statusLabel = nullptr;
     emptyLabel = nullptr;
 
