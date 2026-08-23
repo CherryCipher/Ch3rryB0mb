@@ -18,20 +18,23 @@ BLEManager::BLEManager(Logger& logger)
 }
 
 /**
- * @brief Initializes the BLE subsystem.
+ * @brief Initializes the BLE manager.
  *
- * NimBLE is initialized once and the scanner is configured for active,
- * non-blocking BLE advertisement scanning.
+ * Prepares the BLEManager for later use without starting the NimBLE stack.
  *
- * @return true if initialization succeeded.
+ * Classic Bluetooth controller memory is released because Ch3rryB0mb only
+ * uses Bluetooth Low Energy. This makes the unused controller memory
+ * available to other ESP32 subsystems such as Wi-Fi.
+ *
+ * @return true when the BLE manager is ready for use.
  */
 bool BLEManager::start()
 {
-    if (running)
-        return true;
+    if (running) return true;
+
+    esp_bt_controller_mem_release(ESP_BT_MODE_CLASSIC_BT);
 
     running = true;
-
     logger.info("BLEManager started.");
 
     return true;
