@@ -80,6 +80,25 @@ lv_obj_t* ScreenConnect::create(ScreenManager& screenManager, WiFiLab& wifiLab)
     connectContext.screenManager = &screenManager;
     connectContext.wifiLab = &wifiLab;
 
+    if (wifiLab.isConnected())
+    {
+        String ssid = wifiLab.getConnectedSSID();
+        String ip = wifiLab.getLocalIP().toString();
+        String signal = String(wifiLab.getRSSI()) + " dBm";
+
+        UIWidgets::addText(screen, 15, 60, "CONNECTED", 210);
+        UIWidgets::addText(screen, 15, 90, ssid.c_str(), 210);
+        UIWidgets::addText(screen, 15, 120, ("IP: " + ip).c_str(), 210);
+        UIWidgets::addText(screen, 15, 145, ("SIGNAL: " + signal).c_str(), 210);
+
+        connectButton = UIWidgets::addButton(screen, 15, 190, "DISCONNECT", 210, 40);
+        lv_obj_add_event_cb(connectButton, disconnectClicked, LV_EVENT_CLICKED, &connectContext);
+
+        lv_obj_add_event_cb(screen, screenDeleted, LV_EVENT_DELETE, nullptr);
+
+        return screen;
+    }
+
     if (!wifiLab.hasSelectedNetwork())
     {
         UIWidgets::addText(screen, 15, 60, "No Wi-Fi network selected.", 210);
@@ -184,8 +203,8 @@ void ScreenConnect::connectClicked(lv_event_t* event)
 /**
  * @brief Handles the BACK button event.
  *
- * Stops only an unfinished connection attempt and returns to WiFi Lab.
- * A completed Wi-Fi connection is intentionally kept active.
+ * Returns to the previous application screen without changing the
+ * active Wi-Fi Station connection.
  *
  * @param event Pointer to the LVGL event.
  */
@@ -196,13 +215,26 @@ void ScreenConnect::backClicked(lv_event_t* event)
     if (screenManager == nullptr)
         return;
 
-    if (connecting && connectContext.wifiLab != nullptr)
-    {
-        connectContext.wifiLab->disconnect();
-        connecting = false;
-    }
-
     screenManager->back();
+}
+
+/**
+ * @brief Handles the DISCONNECT button event.
+ *
+ * Disconnects the active Wi-Fi Station connection through WiFiLab
+ * and returns to the Wi-Fi Lab scan screen.
+ *
+ * @param event Pointer to the LVGL event.
+ */
+void ScreenConnect::disconnectClicked(lv_event_t* event)
+{
+    ConnectContext* context = static_cast<ConnectContext*>(lv_event_get_user_data(event));
+
+    if (context == nullptr || context->screenManager == nullptr || context->wifiLab == nullptr)
+        return;
+
+    context->wifiLab->disconnect();
+    context->screenManager->show(Screen::WifiLab);
 }
 
 /**

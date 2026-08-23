@@ -248,23 +248,16 @@ const char* ScreenWifiLab::getSecurityName(wifi_auth_mode_t security)
 }
 
 /**
- * @brief Cleans up WiFi Lab resources when the screen is deleted.
+ * @brief Cleans up Wi-Fi Lab screen references.
  *
- * Shuts down the Wi-Fi subsystem and clears stored UI references when
- * leaving the WiFi Lab screen.
+ * Clears references to LVGL objects when the screen is deleted.
+ * The Wi-Fi subsystem is intentionally left active because Station
+ * connections persist independently of the Wi-Fi Lab screen.
  *
  * @param event Pointer to the LVGL delete event.
  */
 void ScreenWifiLab::screenDeleted(lv_event_t* event)
 {
-    WiFiLab* wifiLab = static_cast<WiFiLab*>(lv_event_get_user_data(event));
-
-    if (wifiLab != nullptr)
-        wifiLab->shutdown();
-
-    screenContext.screenManager = nullptr;
-    screenContext.wifiLab = nullptr;
-
     networkContainer = nullptr;
     scanButton = nullptr;
 }

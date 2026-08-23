@@ -17,11 +17,16 @@ class WiFiLab;
  * @class ScreenConnect
  * @brief Provides the Wi-Fi connection screen.
  *
- * ScreenConnect displays the network selected in WiFi Lab and allows
- * the user to enter a password and start a Station connection.
+ * ScreenConnect handles both Wi-Fi connection setup and the display
+ * of an active Station connection.
  *
- * Connection handling is delegated to WiFiLab. The screen periodically
- * checks the connection state without blocking the LVGL interface.
+ * When disconnected, the screen displays the network selected in
+ * WiFi Lab and allows the user to enter credentials and connect.
+ *
+ * When connected, the screen displays connection information and
+ * provides a control for explicitly disconnecting from the network.
+ *
+ * Connection handling is delegated to WiFiLab.
  */
 class ScreenConnect
 {
@@ -29,8 +34,9 @@ public:
     /**
      * @brief Creates the Wi-Fi connection screen.
      *
-     * Displays information about the selected network, creates the
-     * password input when required and provides the CONNECT control.
+     * Displays the active Station connection when Wi-Fi is already connected.
+     * Otherwise, displays the network selected in WiFi Lab and provides the
+     * controls required to start a new connection.
      *
      * @param screenManager Reference to the application ScreenManager.
      * @param wifiLab Reference to the WiFiLab feature.
@@ -141,6 +147,16 @@ private:
      * @param timer Pointer to the LVGL timer.
      */
     static void connectionTimerCallback(lv_timer_t* timer);
+
+    /**
+     * @brief Handles the DISCONNECT button event.
+     *
+     * Disconnects the active Wi-Fi Station connection through WiFiLab
+     * and returns to the Wi-Fi Lab scan screen.
+     *
+     * @param event Pointer to the LVGL event.
+     */
+    static void disconnectClicked(lv_event_t* event);
 
     /**
      * @brief Updates the connection status displayed on screen.

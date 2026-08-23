@@ -235,20 +235,21 @@ bool WiFiManager::connect(const String& ssid, const String& password)
 }
 
 /**
- * @brief Disconnects the Station interface from the current Wi-Fi network.
+ * @brief Disconnects the Station interface from Wi-Fi.
  *
- * Keeps the Wi-Fi radio enabled so scanning or another Station connection
- * can be started without fully reinitializing the Wi-Fi subsystem.
+ * Cancels any active Station connection or connection attempt while
+ * keeping the Wi-Fi subsystem enabled for future scans or connections.
  */
 void WiFiManager::disconnect()
 {
-    if (WiFi.status() != WL_CONNECTED)
-        return;
-
     String ssid = WiFi.SSID();
 
     WiFi.disconnect(false);
-    logger.info("Disconnected from Wi-Fi network: " + ssid);
+
+    if (ssid.length() > 0)
+        logger.info("Disconnected from Wi-Fi network: " + ssid);
+    else
+        logger.info("Wi-Fi Station disconnected.");
 }
 
 /**
@@ -282,6 +283,19 @@ String WiFiManager::getConnectedSSID() const
 IPAddress WiFiManager::getLocalIP() const
 {
     return WiFi.localIP();
+}
+
+/**
+ * @brief Returns the signal strength of the active Station connection.
+ *
+ * Retrieves the RSSI reported by the ESP32 Wi-Fi subsystem for the
+ * currently connected Access Point.
+ *
+ * @return Current Wi-Fi signal strength in dBm.
+ */
+int32_t WiFiManager::getRSSI() const
+{
+    return WiFi.RSSI();
 }
 
 /**

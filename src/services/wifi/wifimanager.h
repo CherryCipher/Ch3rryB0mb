@@ -171,6 +171,16 @@ public:
     IPAddress getLocalIP() const;
 
     /**
+     * @brief Returns the signal strength of the active Station connection.
+     *
+     * Retrieves the RSSI reported by the ESP32 Wi-Fi subsystem for the
+     * currently connected Access Point.
+     *
+     * @return Current Wi-Fi signal strength in dBm.
+     */
+    int32_t getRSSI() const;
+
+    /**
      * @brief Stops the WiFiManager and disables all Wi-Fi functionality.
      *
      * @return true when Wi-Fi has been shut down.

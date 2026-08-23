@@ -107,7 +107,10 @@ void ScreenManager::showInternal( Screen screen, bool addToHistory )
             break;
 
         case Screen::WifiLab:
-            newScreen = ScreenWifiLab::create(*this, features.wifiLab);
+            if (features.wifiLab.isConnected())
+                newScreen = ScreenConnect::create(*this, features.wifiLab);
+            else
+                newScreen = ScreenWifiLab::create(*this, features.wifiLab);
             break;
 
         case Screen::WifiConnect:

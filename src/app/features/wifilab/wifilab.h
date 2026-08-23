@@ -109,6 +109,22 @@ public:
     bool isConnected() const;
 
     /**
+     * @brief Returns the SSID of the active Wi-Fi connection.
+     *
+     * Retrieves the currently connected network name through WiFiManager.
+     *
+     * @return SSID of the active Station connection.
+     */
+    String getConnectedSSID() const;
+
+    /**
+     * @brief Returns the signal strength of the active Wi-Fi connection.
+     *
+     * @return Current Wi-Fi signal strength in dBm.
+     */
+    int32_t getRSSI() const;
+
+    /**
      * @brief Returns the Station interface IP address.
      *
      * @return Local Station IP address.

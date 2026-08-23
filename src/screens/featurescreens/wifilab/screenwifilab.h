@@ -134,7 +134,10 @@ private:
     static const char* getSecurityName(wifi_auth_mode_t security);
 
     /**
-     * @brief Cleans up WiFi Lab resources when the screen is deleted.
+     * @brief Cleans up Wi-Fi Lab screen references.
+     *
+     * Clears screen-specific LVGL references without stopping the Wi-Fi
+     * subsystem or disconnecting an active Station connection.
      *
      * @param event Pointer to the LVGL delete event.
      */
