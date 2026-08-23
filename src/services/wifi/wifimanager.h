@@ -1,7 +1,11 @@
+/**
+ * @file wifimanager.h
+ * @brief Wi-Fi service interface for Ch3rryB0mb.
+ */
+
 #pragma once
 
 #include <WiFi.h>
-
 #include "WiFiConfig.h"
 #include "../logger/logger.h"
 
@@ -21,7 +25,6 @@ struct WiFiNetwork
     uint8_t channel;
     wifi_auth_mode_t encryption;
 };
-
 
 /******************************************************************************
  * WiFiManager
@@ -43,7 +46,6 @@ struct WiFiNetwork
  * library (WiFi.h). All Wi-Fi operations should be performed through the
  * WiFiManager.
  *
- *
  ******************************************************************************/
 class WiFiManager
 {
@@ -60,7 +62,6 @@ public:
      *
      * This prepares the manager for use but does not enable any Wi-Fi mode.
      * Applications should explicitly start the desired mode (AP, STA, etc.).
-     *
      *
      * @return true if initialization succeeded.
      */
@@ -81,13 +82,13 @@ public:
      * @brief Stops the Access Point.
      *
      * Disconnects all connected clients and disables AP mode.
-     *
      */
     void stopAP();
 
     /**
      * @brief Returns whether the Access Point is currently running.
      *
+     * @return true when AP mode is active.
      */
     bool isAPRunning() const;
 
@@ -95,16 +96,19 @@ public:
      * @brief Returns the IP address of the Access Point.
      *
      * Usually this will be 192.168.4.1.
+     *
+     * @return Access Point IP address.
      */
     IPAddress getAPIP() const;
 
     /**
      * @brief Scans for nearby Wi-Fi networks.
      *
-     * Performs a Wi-Fi network scan and stores the discovered access points
+     * Performs a Wi-Fi network scan and stores the discovered Access Points
      * internally for later retrieval.
      *
-     * @return true if the scan completed successfully, otherwise false.
+     * @return true if the scan completed successfully.
+     * @return false if the scan failed.
      */
     bool scanNetworks();
 
@@ -124,8 +128,52 @@ public:
     const WiFiNetwork& getNetwork(int index) const;
 
     /**
+     * @brief Starts a Station mode connection to a Wi-Fi network.
+     *
+     * Starts the connection process without waiting for it to complete.
+     * Connection state can be checked using isConnected().
+     *
+     * @param ssid SSID of the network.
+     * @param password Password of the network. May be empty for open networks.
+     *
+     * @return true if the connection attempt was started.
+     * @return false if the supplied SSID is empty.
+     */
+    bool connect(const String& ssid, const String& password);
+
+    /**
+     * @brief Disconnects the Station interface from the current Wi-Fi network.
+     *
+     * The Wi-Fi subsystem remains enabled so another connection or scan can
+     * be started without fully reinitializing the radio.
+     */
+    void disconnect();
+
+    /**
+     * @brief Returns whether the Station interface is connected.
+     *
+     * @return true when connected to a Wi-Fi network.
+     */
+    bool isConnected() const;
+
+    /**
+     * @brief Returns the SSID of the currently connected Wi-Fi network.
+     *
+     * @return Connected network SSID.
+     */
+    String getConnectedSSID() const;
+
+    /**
+     * @brief Returns the Station interface IP address.
+     *
+     * @return Local IP address assigned to the Station interface.
+     */
+    IPAddress getLocalIP() const;
+
+    /**
      * @brief Stops the WiFiManager and disables all Wi-Fi functionality.
      *
+     * @return true when Wi-Fi has been shut down.
      */
     bool stop();
 

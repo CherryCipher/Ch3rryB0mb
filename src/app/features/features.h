@@ -39,6 +39,17 @@ public:
     WiFiLab wifiLab;
 
     /**
+     * @brief Returns whether Ch3rryB0mb is currently connected to Wi-Fi.
+     *
+     * Provides the UI layer with the current Wi-Fi connection state without
+     * exposing the underlying Services or WiFiManager implementation.
+     *
+     * @return true when the Wi-Fi Station interface is connected.
+     * @return false when no Wi-Fi connection is active.
+     */
+    bool isWiFiConnected() const;
+
+    /**
      * @brief NRF Scanner feature.
      */
     NRFScanner nrfScanner;
@@ -57,4 +68,14 @@ public:
      * @brief BLE Fox Hunt feature.
      */
     BLEFoxHunt bleFoxHunt;
+
+    
+private:
+    /**
+     * @brief Reference to the shared application services.
+     *
+     * Used by the feature container to expose application-level state
+     * without requiring UI components to access Services directly.
+     */
+    Services& services;
 };

@@ -19,7 +19,7 @@ lv_obj_t* ScreenMainMenu::create(ScreenManager& screenManager, Features& feature
     lv_obj_t* screen = UIWidgets::createScreen();
 
     // Header.
-    UIWidgets::addHeader(screen, 0, 0, "Ch3rryB0mb" );
+    UIWidgets::addHeader(screen, 0, 0, "CH3RRYB0MB", features.isWiFiConnected() ? LV_SYMBOL_WIFI : nullptr);
 
     // Ap Mode Button
     lv_obj_t* apModeButton = UIWidgets::addButton(screen, 15, 60, "> AP Mode", 100, 45);

@@ -2,12 +2,11 @@
  * @file screenwifilab.h
  * @brief Wi-Fi Lab screen interface.
  *
- * This file defines the Wi-Fi Lab screen used to scan for and
- * display nearby wireless Access Points.
+ * This file defines the Wi-Fi Lab screen used to scan for,
+ * display and select nearby wireless Access Points.
  */
 
 #pragma once
-
 #include <lvgl.h>
 #include <WiFi.h>
 
@@ -21,8 +20,11 @@ class WiFiLab;
  * The ScreenWifiLab displays nearby wireless Access Points discovered
  * through the WiFiLab feature.
  *
+ * Network rows can be selected to prepare a network for use by other
+ * Wi-Fi features.
+ *
  * The screen is responsible only for presentation and user interaction.
- * Wi-Fi scanning itself is delegated to the WiFiLab feature.
+ * Wi-Fi operations are delegated to the WiFiLab feature.
  */
 class ScreenWifiLab
 {
@@ -30,8 +32,8 @@ public:
     /**
      * @brief Creates the Wi-Fi Lab screen.
      *
-     * Creates the screen controls, performs an initial Wi-Fi scan
-     * and displays the discovered Access Points.
+     * Creates the screen controls and a scrollable list used to display
+     * discovered Access Points.
      *
      * @param screenManager Reference to the application ScreenManager.
      * @param wifiLab Reference to the WiFiLab feature.
@@ -41,6 +43,16 @@ public:
     static lv_obj_t* create(ScreenManager& screenManager, WiFiLab& wifiLab);
 
 private:
+    /**
+     * @struct ScreenContext
+     * @brief Context shared by Wi-Fi Lab callbacks.
+     */
+    struct ScreenContext
+    {
+        ScreenManager* screenManager = nullptr;
+        WiFiLab* wifiLab = nullptr;
+    };
+
     /**
      * @brief Scan button.
      */
@@ -53,6 +65,11 @@ private:
      * and rebuilt after a new scan.
      */
     static lv_obj_t* networkContainer;
+
+    /**
+     * @brief Context shared by Wi-Fi Lab callbacks.
+     */
+    static ScreenContext screenContext;
 
     /**
      * @brief Scans for nearby Wi-Fi networks and updates the screen.
@@ -68,14 +85,14 @@ private:
      * @brief Displays the current Wi-Fi scan results.
      *
      * Clears the existing contents of the network container and
-     * creates a new row for every discovered Access Point.
+     * creates a selectable row for every discovered Access Point.
      *
      * @param wifiLab Reference to the WiFiLab feature.
      */
     static void renderNetworks(WiFiLab& wifiLab);
 
     /**
-     * @brief Handles the Wi-Fi Lab refresh button event.
+     * @brief Handles the Wi-Fi Lab scan button event.
      *
      * Performs a new Wi-Fi scan and refreshes the displayed
      * network list.
@@ -83,6 +100,16 @@ private:
      * @param event Pointer to the LVGL event.
      */
     static void scanClicked(lv_event_t* event);
+
+    /**
+     * @brief Handles selection of a discovered Wi-Fi network.
+     *
+     * Selects the network represented by the clicked row through
+     * the WiFiLab feature.
+     *
+     * @param event Pointer to the LVGL event.
+     */
+    static void networkClicked(lv_event_t* event);
 
     /**
      * @brief Handles the Wi-Fi Lab back button event.
