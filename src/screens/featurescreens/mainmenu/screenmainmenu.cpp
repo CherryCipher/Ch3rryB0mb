@@ -19,7 +19,7 @@ lv_obj_t* ScreenMainMenu::create(ScreenManager& screenManager, Features& feature
     lv_obj_t* screen = UIWidgets::createScreen();
 
     // Header.
-    UIWidgets::addHeader(screen, 0, 0, "Ch3rryB0mb" );
+    UIWidgets::addHeader(screen, 0, 0, "CH3RRYB0MB", features.isWiFiConnected() ? LV_SYMBOL_WIFI : nullptr);
 
     // Ap Mode Button
     lv_obj_t* apModeButton = UIWidgets::addButton(screen, 15, 60, "> AP Mode", 100, 45);
@@ -53,6 +53,10 @@ lv_obj_t* ScreenMainMenu::create(ScreenManager& screenManager, Features& feature
         LV_EVENT_CLICKED,
         &screenManager
     );
+
+    // Packet Viewer Button
+    lv_obj_t* packetViewerButton = UIWidgets::addButton(screen, 125, 115, "> P4ckets", 100, 45);
+    lv_obj_add_event_cb(packetViewerButton, packetViewerClicked, LV_EVENT_CLICKED, &screenManager);
 
     //Modules Label
     UIWidgets::addText(screen, 15, 170, "MODULES:", 210); 
@@ -126,6 +130,24 @@ void ScreenMainMenu::wifiLabClicked(lv_event_t* event)
         return;
 
     screenManager->show(Screen::WifiLab);
+}
+
+/**
+ * @brief Handles the Packet Viewer menu button event.
+ *
+ * Retrieves the ScreenManager from the LVGL event user data
+ * and requests navigation to the Packet Viewer screen.
+ *
+ * @param event Pointer to the LVGL event.
+ */
+void ScreenMainMenu::packetViewerClicked(lv_event_t* event)
+{
+    ScreenManager* screenManager = static_cast<ScreenManager*>(lv_event_get_user_data(event));
+
+    if (screenManager == nullptr)
+        return;
+
+    screenManager->show(Screen::PacketViewer);
 }
 
 /**

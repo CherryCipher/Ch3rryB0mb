@@ -71,7 +71,7 @@ void ScreenBLEExplorer::startScan(BLEExplorer& bleExplorer)
         if (deviceContainer != nullptr)
         {
             lv_obj_clean(deviceContainer);
-            emptyLabel = UIWidgets::addText( deviceContainer, 5, 5, "BLE scan failed.", 195 );
+            emptyLabel = UIWidgets::addText( deviceContainer, 5, 5, "BLE scan failed.\n(disconnect to wifi if connected)", 195 );
         }
 
         renderedDeviceCount = 0;

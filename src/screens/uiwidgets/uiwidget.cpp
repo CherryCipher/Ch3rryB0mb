@@ -16,18 +16,20 @@
  * Creates a full-width header bar with the default Ch3rryB0mb styling
  * and places the supplied title text inside the header.
  *
+ * An optional status value can be displayed on the right side of the
+ * header for connection or system status indicators.
+ *
  * @param parent Parent LVGL object.
  * @param x Horizontal position in pixels.
  * @param y Vertical position in pixels.
  * @param text Text displayed in the header.
+ * @param status Optional status text displayed on the right side.
  *
  * @return Pointer to the created LVGL header container.
  */
-lv_obj_t* UIWidgets::addHeader(lv_obj_t* parent, int x, int y, const char* text)
+lv_obj_t* UIWidgets::addHeader(lv_obj_t* parent, int x, int y, const char* text, const char* status)
 {
-    // Header container.
     lv_obj_t* header = lv_obj_create(parent);
-
     lv_obj_set_pos(header, x, y);
     lv_obj_set_size(header, 240, 40);
 
@@ -39,12 +41,18 @@ lv_obj_t* UIWidgets::addHeader(lv_obj_t* parent, int x, int y, const char* text)
 
     lv_obj_clear_flag(header, LV_OBJ_FLAG_SCROLLABLE);
 
-    // Header title.
     lv_obj_t* label = lv_label_create(header);
-
     lv_label_set_text(label, text);
     lv_obj_set_style_text_color(label, lv_color_hex(0xFFFFFF), LV_PART_MAIN);
     lv_obj_align(label, LV_ALIGN_LEFT_MID, 10, 0);
+
+    if (status != nullptr)
+    {
+        lv_obj_t* statusLabel = lv_label_create(header);
+        lv_label_set_text(statusLabel, status);
+        lv_obj_set_style_text_color(statusLabel, lv_color_hex(0xFFFFFF), LV_PART_MAIN);
+        lv_obj_align(statusLabel, LV_ALIGN_RIGHT_MID, -10, 0);
+    }
 
     return header;
 }

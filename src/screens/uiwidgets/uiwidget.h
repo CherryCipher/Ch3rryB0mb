@@ -27,18 +27,20 @@ class UIWidgets
 {
 public:
     /**
-     * @brief Creates a styled header label.
+     * @brief Creates a styled Ch3rryB0mb header.
      *
-     * The header uses the default Ch3rryB0mb header styling.
+     * Creates a full-width header bar with the default Ch3rryB0mb styling
+     * and places the supplied title text inside the header.
      *
      * @param parent Parent LVGL object.
      * @param x Horizontal position in pixels.
      * @param y Vertical position in pixels.
      * @param text Text displayed in the header.
+     * @param status Optional status text displayed on the right side.
      *
-     * @return Pointer to the created LVGL label object.
+     * @return Pointer to the created LVGL header container.
      */
-    static lv_obj_t* addHeader( lv_obj_t* parent, int x, int y, const char* text );
+    static lv_obj_t* addHeader(lv_obj_t* parent, int x, int y, const char* text, const char* status = nullptr);
 
     /**
      * @brief Creates a styled button.
