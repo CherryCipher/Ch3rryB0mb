@@ -4,6 +4,8 @@
 #include "wifilab/wifilab.h"
 #include "nrfscanner/nrfscanner.h"
 #include "cc1101scanner/cc1101scanner.h"
+#include "bleexplorer/bleexplorer.h"
+#include "blefoxhunt/blefoxhunt.h"
 
 class Services;
 
@@ -45,4 +47,14 @@ public:
      * @brief CC1101 Scanner feature.
      */
     CC1101Scanner cc1101Scanner;
+
+    /**
+     * @brief BLE Explorer feature.
+     */
+    BLEExplorer bleExplorer;
+
+    /**
+     * @brief BLE Fox Hunt feature.
+     */
+    BLEFoxHunt bleFoxHunt;
 };

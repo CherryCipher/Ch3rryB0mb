@@ -53,11 +53,6 @@ lv_timer_t* ScreenNrfScanner::updateTimer = nullptr;
 ScreenNrfScanner::BackContext ScreenNrfScanner::backContext = {nullptr, nullptr};
 
 /**
- * @brief Buffer containing generated NRF channel options.
- */
-char ScreenNrfScanner::nrfChannelOptions[1536] = {0};
-
-/**
  * @brief Creates the NRF Scanner screen.
  *
  * Creates scanner configuration controls, live RF visualization
@@ -86,7 +81,6 @@ lv_obj_t* ScreenNrfScanner::create(ScreenManager& screenManager, NRFScanner& nrf
     UIWidgets::addText(screen, 125, 50, "CHANNEL", 100);
     channelDropdown = UIWidgets::addDropdown(screen, 125, 70, "0 - 125", 100);
 
-    buildNrfChannelOptions();
     updateChannelDropdown(ScanMode::FullSpectrum);
 
     lv_obj_add_event_cb(modeDropdown, modeChanged, LV_EVENT_VALUE_CHANGED, &nrfScanner);
@@ -261,58 +255,66 @@ void ScreenNrfScanner::updateChannelDropdown(ScanMode mode)
 {
     switch (mode)
     {
-        case ScanMode::FullSpectrum:
-            lv_dropdown_set_options(channelDropdown, "0-125");
-            lv_dropdown_set_selected(channelDropdown, 0);
-            lv_obj_add_state(channelDropdown, LV_STATE_DISABLED);
-            break;
+    case ScanMode::FullSpectrum:
+        lv_dropdown_set_options(channelDropdown, "0-125");
+        lv_dropdown_set_selected(channelDropdown, 0);
+        lv_obj_add_state(channelDropdown, LV_STATE_DISABLED);
+        break;
 
-        case ScanMode::NrfChannel:
-            lv_obj_clear_state(channelDropdown, LV_STATE_DISABLED);
-            lv_dropdown_set_options(channelDropdown, nrfChannelOptions);
-            lv_dropdown_set_selected(channelDropdown, 0);
-            break;
+    case ScanMode::NrfChannel:
+        lv_obj_clear_state(channelDropdown, LV_STATE_DISABLED);
+        buildNrfChannelOptions();
+        lv_dropdown_set_selected(channelDropdown, 0);
+        break;
 
-        case ScanMode::WifiBand:
-            lv_obj_clear_state(channelDropdown, LV_STATE_DISABLED);
-            lv_dropdown_set_options(
-                channelDropdown,
-                "CH 1\n"
-                "CH 2\n"
-                "CH 3\n"
-                "CH 4\n"
-                "CH 5\n"
-                "CH 6\n"
-                "CH 7\n"
-                "CH 8\n"
-                "CH 9\n"
-                "CH 10\n"
-                "CH 11\n"
-                "CH 12\n"
-                "CH 13"
-            );
-            lv_dropdown_set_selected(channelDropdown, 0);
-            break;
+    case ScanMode::WifiBand:
+        lv_obj_clear_state(channelDropdown, LV_STATE_DISABLED);
+        lv_dropdown_set_options(
+            channelDropdown,
+            "CH 1\n"
+            "CH 2\n"
+            "CH 3\n"
+            "CH 4\n"
+            "CH 5\n"
+            "CH 6\n"
+            "CH 7\n"
+            "CH 8\n"
+            "CH 9\n"
+            "CH 10\n"
+            "CH 11\n"
+            "CH 12\n"
+            "CH 13"
+        );
+        lv_dropdown_set_selected(channelDropdown, 0);
+        break;
     }
 }
 
 /**
  * @brief Generates NRF channel dropdown options.
  *
- * Generates newline-separated channel labels for NRF24
- * channels 0 through 125.
+ * Builds the channel option list in temporary heap memory.
+ * LVGL copies the option string internally, allowing the temporary
+ * buffer to be released immediately afterwards.
  */
 void ScreenNrfScanner::buildNrfChannelOptions()
 {
-    nrfChannelOptions[0] = '\0';
+    constexpr size_t BUFFER_SIZE = 800;
+
+    char* options = new char[BUFFER_SIZE];
+
+    if (options == nullptr)
+        return;
+
+    options[0] = '\0';
 
     size_t offset = 0;
 
     for (uint16_t channel = 0; channel < NRFManager::NRF_CHANNEL_COUNT; channel++)
     {
         int written = snprintf(
-            nrfChannelOptions + offset,
-            sizeof(nrfChannelOptions) - offset,
+            options + offset,
+            BUFFER_SIZE - offset,
             channel < NRFManager::NRF_CHANNEL_COUNT - 1 ? "CH %u\n" : "CH %u",
             channel
         );
@@ -322,9 +324,13 @@ void ScreenNrfScanner::buildNrfChannelOptions()
 
         offset += static_cast<size_t>(written);
 
-        if (offset >= sizeof(nrfChannelOptions))
+        if (offset >= BUFFER_SIZE)
             break;
     }
+
+    lv_dropdown_set_options(channelDropdown, options);
+
+    delete[] options;
 }
 
 /**

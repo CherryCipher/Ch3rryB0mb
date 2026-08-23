@@ -18,6 +18,9 @@
 
 #include "featurescreens/cc1101scanner/screencc1101scanner.h"
 
+#include "featurescreens/bleexplorer/screenbleexplorer.h"
+#include "featurescreens/blefoxhunt/screenblefoxhunt.h"
+
 /**
  * @brief Constructs a new ScreenManager.
  *
@@ -104,6 +107,14 @@ void ScreenManager::showInternal( Screen screen, bool addToHistory )
 
         case Screen::WifiLab:
             newScreen = ScreenWifiLab::create(*this, features.wifiLab);
+            break;
+
+        case Screen::BLEExplorer:
+            newScreen = ScreenBLEExplorer::create(*this, features.bleExplorer, features.bleFoxHunt);
+            break;
+
+        case Screen::BLEFoxHunt:
+            newScreen = ScreenBLEFoxHunt::create(*this, features.bleFoxHunt);
             break;
         
         case Screen::NRFScanner:

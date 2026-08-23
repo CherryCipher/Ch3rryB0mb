@@ -8,6 +8,7 @@
 #include "UI/uimanager.h"
 #include "nrf/nrfmanager.h"
 #include "cc1101/cc1101manager.h"
+#include "BLE/blemanager.h"
 
 /**
  * @class Services
@@ -110,6 +111,11 @@ public:
      * @brief Shared WiFi service.
      */
     WiFiManager wifi;
+
+    /**
+     * @brief Shared Bluetooth Low Energy manager.
+     */
+    BLEManager ble;
 
     /**
      * @brief Shared embedded web server.

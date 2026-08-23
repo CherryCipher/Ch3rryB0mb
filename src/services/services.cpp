@@ -11,6 +11,7 @@ Services::Services()
     , spi(logger)
     , storage(logger, spi)
     , wifi(logger)
+    , ble(logger)
     , web(storage, logger)
     , ui(logger)
     , nrf(logger, spi)
@@ -60,6 +61,12 @@ bool Services::start()
     if (!wifi.start())
     {
         logger.error("Failed to start WiFiManager.");
+        return false;
+    }
+
+    if (!ble.start())
+    {
+        logger.error("Failed to start BLEManager.");
         return false;
     }
 
@@ -118,6 +125,9 @@ void Services::stop()
 
     wifi.stop();
     logger.info("WiFiManager stopped.");
+
+    ble.stop();
+    logger.info("BLEManager stopped.");
 
     storage.stop();
     logger.info("StorageManager stopped.");

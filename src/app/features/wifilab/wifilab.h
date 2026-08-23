@@ -51,6 +51,16 @@ public:
      */
     const WiFiNetwork& getNetwork(int index) const;
 
+    /**
+     * @brief Shuts down Wi-Fi resources used by WiFi Lab.
+     *
+     * Stops Wi-Fi activity and disables the Wi-Fi subsystem so its runtime
+     * resources are released when leaving the WiFi Lab feature.
+     *
+     * Wi-Fi can be initialized again when a new scan is started.
+     */
+    void shutdown();
+
 private:
     /**
      * @brief Reference to the shared application services.

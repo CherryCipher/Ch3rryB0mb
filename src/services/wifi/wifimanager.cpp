@@ -20,16 +20,15 @@
     /**
      * @brief Initializes the WiFiManager.
      *
-     * Wifi mode is initially set to WIFI_OFF to ensure a known state. Applications should explicitly start the desired mode (AP, STA, etc.) after initialization.
-     * start() is called during the initialization of the services.wifi object in the Services class constructor.
+     * Prepares the WiFiManager for use without initializing or enabling the
+     * ESP32 Wi-Fi subsystem. Individual Wi-Fi features explicitly activate
+     * the required Wi-Fi mode when needed.
+     *
+     * @return true when the manager is ready for use.
      */
     bool WiFiManager::start()
     {
-        //Initialy we turn wifi off, and set the apRunning flag to false. This is to ensure that we start in a known state.
-        WiFi.mode(WIFI_OFF);
         logger.info("WiFiManager started.");
-        logger.info("WiFi mode set to WIFI_OFF. Wi-Fi radio disabled.");
-
         return true;
     }
 
@@ -87,22 +86,16 @@
     }
 
     /**
-     * @brief Stops the Access Point and disables the Wi-Fi.
+     * @brief Stops the active Access Point.
      *
-     * Disconnects all connected clients, stops the SoftAP and powers down
-     * the Wi-Fi radio to return the ESP32 to an idle state.
-     *
+     * Disconnects all connected clients and stops the SoftAP. The complete
+     * Wi-Fi subsystem remains managed by WiFiManager and can be shut down
+     * separately using stop().
      */
     void WiFiManager::stopAP()
     {
-        // Disconnect all connected clients and stop the Access Point.
         WiFi.softAPdisconnect(true);
         logger.info("SoftAP stopped. All clients disconnected.");
-
-        // Disable the ESP32 Wi-Fi radio.
-        // Since the AP stops we also set the mode to WIFI_OFF to ensure we are in a known state.
-        WiFi.mode(WIFI_OFF);
-        logger.info("Wifi mode set to WIFI_OFF. Wi-Fi radio disabled.");
     }
 
     /**
@@ -117,27 +110,36 @@
     }
 
     /**
-     * @brief Stops the WiFiManager and disables all Wi-Fi functionality.
+     * @brief Stops the WiFiManager and releases Wi-Fi resources.
      *
-     * This function stops the Access Point if it is running and then disables
-     * the Wi-Fi radio to return the ESP32 to an idle state.
+     * Stops any active Access Point, clears stored scan results and disables
+     * the ESP32 Wi-Fi subsystem so its runtime resources become available to
+     * other features.
      *
+     * Wi-Fi can be activated again later by starting an Access Point or
+     * performing a network scan.
+     *
+     * @return true when Wi-Fi has been shut down.
      */
     bool WiFiManager::stop()
     {
-        // Stop the Access Point if it is running.
         if (isAPRunning())
-        {
-            stopAP();
-        }
+            WiFi.softAPdisconnect(true);
 
-        // Disable the Wi-Fi radio.
+        WiFi.scanDelete();
+
+        delete[] networks;
+        networks = nullptr;
+        networkCount = 0;
+
+        WiFi.disconnect(true);
         WiFi.mode(WIFI_OFF);
-        logger.info("WiFiManager stopped. Wi-Fi radio disabled.");
+
+        logger.info("WiFiManager stopped. Wi-Fi subsystem released.");
 
         return true;
     }
-
+    
     /**
      * @brief Scans for nearby Wi-Fi networks.
      *
@@ -152,6 +154,9 @@
     bool WiFiManager::scanNetworks()
     {
         networkCount = 0;
+
+        delete[] networks;
+        networks = nullptr;
 
         wifi_mode_t currentMode = WiFi.getMode();
 
@@ -175,6 +180,20 @@
         }
 
         networkCount = min(foundNetworks, MAX_SCAN_RESULTS);
+
+        if (networkCount > 0)
+        {
+            networks = new WiFiNetwork[networkCount];
+
+            if (networks == nullptr)
+            {
+                WiFi.scanDelete();
+                networkCount = 0;
+
+                logger.error("Failed to allocate Wi-Fi scan result cache.");
+                return false;
+            }
+        }
 
         for (int i = 0; i < networkCount; i++)
         {

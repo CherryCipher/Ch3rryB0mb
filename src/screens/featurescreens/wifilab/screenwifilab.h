@@ -105,4 +105,11 @@ private:
      * @return Human-readable security name.
      */
     static const char* getSecurityName(wifi_auth_mode_t security);
+
+    /**
+     * @brief Cleans up WiFi Lab resources when the screen is deleted.
+     *
+     * @param event Pointer to the LVGL delete event.
+     */
+    static void screenDeleted(lv_event_t* event);
 };

@@ -29,6 +29,8 @@ enum class Screen : uint8_t
     APMode,
     ApModeConfig,
     WifiLab,
+    BLEExplorer,
+    BLEFoxHunt,
     NRFScanner,
     CC1101Scanner
 };

@@ -99,11 +99,6 @@ private:
     static BackContext backContext;
 
     /**
-     * @brief Buffer containing generated NRF channel options.
-     */
-    static char nrfChannelOptions[1536];
-
-    /**
      * @brief Handles changes to the scanner mode dropdown.
      *
      * @param event Pointer to the LVGL event.
