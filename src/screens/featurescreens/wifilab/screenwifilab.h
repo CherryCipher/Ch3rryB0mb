@@ -134,10 +134,13 @@ private:
     static const char* getSecurityName(wifi_auth_mode_t security);
 
     /**
-     * @brief Cleans up Wi-Fi Lab screen references.
+     * @brief Cleans up Wi-Fi Lab screen resources.
      *
-     * Clears screen-specific LVGL references without stopping the Wi-Fi
-     * subsystem or disconnecting an active Station connection.
+     * Releases the Wi-Fi subsystem when no Station connection is active,
+     * allowing other wireless features to reuse the ESP32 radio resources.
+     *
+     * An active Wi-Fi connection is intentionally preserved when leaving
+     * the screen.
      *
      * @param event Pointer to the LVGL delete event.
      */
