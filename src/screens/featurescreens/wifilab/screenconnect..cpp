@@ -105,6 +105,8 @@ lv_obj_t* ScreenConnect::create(ScreenManager& screenManager, WiFiLab& wifiLab)
         return screen;
     }
 
+    statusLabel = UIWidgets::addText(screen, 15, 270, "READY", 210);
+
     const WiFiNetwork& network = wifiLab.getSelectedNetwork();
 
     UIWidgets::addText(screen, 15, 55, "NETWORK", 210);
@@ -141,8 +143,6 @@ lv_obj_t* ScreenConnect::create(ScreenManager& screenManager, WiFiLab& wifiLab)
     }
 
     lv_obj_add_event_cb(connectButton, connectClicked, LV_EVENT_CLICKED, &connectContext);
-
-    statusLabel = UIWidgets::addText(screen, 15, 270, "READY", 210);
 
     connectionTimer = lv_timer_create(connectionTimerCallback, 250, &connectContext);
     lv_obj_add_event_cb(screen, screenDeleted, LV_EVENT_DELETE, nullptr);
