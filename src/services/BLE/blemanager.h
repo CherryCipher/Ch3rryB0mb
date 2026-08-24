@@ -7,6 +7,7 @@
 
 #include <Arduino.h>
 #include <NimBLEDevice.h>
+
 #include "../logger/logger.h"
 
 /**
@@ -14,7 +15,7 @@
  * @brief Contains information about a discovered BLE device.
  *
  * Represents one BLE advertiser discovered by the BLEManager.
- * The structure contains only information required by Ch3rryB0mb
+ * The structure contains only information required by application
  * features and does not expose the underlying NimBLE API.
  */
 struct BLEDeviceInfo
@@ -29,16 +30,14 @@ struct BLEDeviceInfo
 
 /**
  * @class BLEManager
- * @brief Manages Bluetooth Low Energy scanning.
+ * @brief Manages Bluetooth Low Energy scanning and advertising.
  *
- * BLEManager provides a small abstraction around the ESP32 BLE radio.
+ * BLEManager provides a shared abstraction around the ESP32 BLE radio.
  *
- * It continuously receives BLE advertisements without blocking the
- * application loop. Discovered devices are stored internally and can
- * later be used by BLE features such as the BLE Explorer and Fox Hunt.
+ * The manager owns the NimBLE lifecycle and exposes BLE scanning and
+ * advertising functionality to both Ch3rryB0mb and Ch3rryN0de.
  *
- * Applications should not directly use the NimBLE API. BLE operations
- * should be performed through BLEManager.
+ * Applications should not directly initialize or deinitialize NimBLE.
  */
 class BLEManager : private NimBLEScanCallbacks
 {
@@ -56,37 +55,38 @@ public:
     explicit BLEManager(Logger& logger);
 
     /**
-     * @brief Initializes the BLE subsystem.
+     * @brief Starts the BLE manager.
      *
-     * Initializes NimBLE and configures the BLE scanner.
-     * Scanning is not automatically started.
+     * Prepares BLE for use without immediately initializing the NimBLE stack.
+     * Scanning or advertising initialize NimBLE when first required.
      *
-     * @return true if initialization succeeded.
+     * @return true when the manager is ready.
      */
     bool start();
 
     /**
-     * @brief Stops BLE scanning and disables the manager.
+     * @brief Stops the BLE manager.
+     *
+     * Stops scanning and advertising and completely deinitializes NimBLE.
      *
      * @return true when the manager has stopped.
      */
     bool stop();
 
     /**
-     * @brief Returns whether the BLEManager is running.
+     * @brief Returns whether the BLE manager is running.
      *
-     * @return true if initialized and available.
-     * @return false otherwise.
+     * @return true when the manager is available.
      */
     bool isRunning() const;
 
     /**
      * @brief Starts continuous BLE scanning.
      *
-     * Existing scan results are cleared before the scan starts.
+     * Any active BLE advertisement is stopped before scanning begins.
+     * Existing scan results are cleared.
      *
-     * @return true if scanning started successfully.
-     * @return false if the manager is unavailable.
+     * @return true when scanning started successfully.
      */
     bool startScan();
 
@@ -96,12 +96,35 @@ public:
     void stopScan();
 
     /**
-     * @brief Returns whether a BLE scan is active.
+     * @brief Returns whether BLE scanning is active.
      *
-     * @return true if scanning.
-     * @return false otherwise.
+     * @return true when scanning.
      */
     bool isScanning() const;
+
+    /**
+     * @brief Starts BLE advertising.
+     *
+     * Any active BLE scan is stopped before advertising begins.
+     *
+     * @param name Device name included in the advertisement.
+     * @param serviceUUID Optional service UUID to advertise.
+     *
+     * @return true when advertising started successfully.
+     */
+    bool startAdvertising(const String& name, const String& serviceUUID = "");
+
+    /**
+     * @brief Stops BLE advertising.
+     */
+    void stopAdvertising();
+
+    /**
+     * @brief Returns whether BLE advertising is active.
+     *
+     * @return true when advertising.
+     */
+    bool isAdvertising() const;
 
     /**
      * @brief Clears all stored BLE devices.
@@ -129,16 +152,18 @@ public:
      *
      * @param address BLE address to search for.
      *
-     * @return Index of the device or -1 when not found.
+     * @return Device index or -1 when not found.
      */
     int findDevice(const String& address) const;
 
     /**
      * @brief Completely shuts down the BLE subsystem.
      *
-     * Stops scanning, releases the BLE device cache and deinitializes
-     * NimBLE so its runtime memory becomes available to other subsystems
-     * such as Wi-Fi.
+     * Stops scanning and advertising, releases the device cache and
+     * deinitializes NimBLE.
+     *
+     * The BLEManager itself remains available and NimBLE can later be
+     * initialized again by starting a scan or advertisement.
      */
     void shutdown();
 
@@ -164,6 +189,11 @@ private:
     NimBLEScan* scanner = nullptr;
 
     /**
+     * @brief NimBLE advertising instance.
+     */
+    NimBLEAdvertising* advertiser = nullptr;
+
+    /**
      * @brief Devices discovered during the current scan.
      */
     BLEDeviceInfo* devices = nullptr;
@@ -184,10 +214,14 @@ private:
     bool initialized = false;
 
     /**
-     * @brief Processes a received BLE advertisement.
+     * @brief Initializes the NimBLE stack when required.
      *
-     * Called by NimBLE whenever a complete advertisement result
-     * becomes available.
+     * @return true when NimBLE is available.
+     */
+    bool ensureInitialized();
+
+    /**
+     * @brief Processes a received BLE advertisement.
      *
      * @param advertisedDevice BLE advertisement received by NimBLE.
      */
@@ -195,8 +229,6 @@ private:
 
     /**
      * @brief Stores or updates a discovered BLE device.
-     *
-     * Existing devices are matched using their BLE address.
      *
      * @param advertisedDevice BLE advertisement to process.
      */

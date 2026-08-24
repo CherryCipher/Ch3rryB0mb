@@ -8,8 +8,6 @@
 /**
  * @brief Constructs a new BLEManager.
  *
- * Stores a reference to the application's Logger.
- *
  * @param logger Reference to the application's Logger.
  */
 BLEManager::BLEManager(Logger& logger)
@@ -18,15 +16,9 @@ BLEManager::BLEManager(Logger& logger)
 }
 
 /**
- * @brief Initializes the BLE manager.
+ * @brief Starts the BLE manager.
  *
- * Prepares the BLEManager for later use without starting the NimBLE stack.
- *
- * Classic Bluetooth controller memory is released because Ch3rryB0mb only
- * uses Bluetooth Low Energy. This makes the unused controller memory
- * available to other ESP32 subsystems such as Wi-Fi.
- *
- * @return true when the BLE manager is ready for use.
+ * @return true when the manager is ready.
  */
 bool BLEManager::start()
 {
@@ -35,61 +27,34 @@ bool BLEManager::start()
     esp_bt_controller_mem_release(ESP_BT_MODE_CLASSIC_BT);
 
     running = true;
+
     logger.info("BLEManager started.");
 
     return true;
 }
 
 /**
- * @brief Stops the active BLE scan.
+ * @brief Stops the BLE manager.
  *
- * Stops BLE advertisement scanning without deinitializing the BLE
- * subsystem. The BLE stack and discovered device cache remain available
- * so scanning can be resumed or another BLE feature can reuse them.
+ * @return true when the manager has stopped.
  */
-void BLEManager::stopScan()
+bool BLEManager::stop()
 {
-    if (scanner != nullptr && scanner->isScanning())
-        scanner->stop();
+    if (!running) return true;
 
-    logger.info("BLE scan stopped.");
+    shutdown();
+
+    running = false;
+
+    logger.info("BLEManager stopped.");
+
+    return true;
 }
 
 /**
- * @brief Completely shuts down the BLE subsystem.
+ * @brief Returns whether the BLE manager is running.
  *
- * Stops any active BLE scan, releases the dynamically allocated
- * device cache and deinitializes NimBLE.
- *
- * Deinitializing NimBLE releases runtime memory used by the BLE stack,
- * allowing other ESP32 subsystems such as Wi-Fi to initialize reliably.
- *
- * After shutdown, BLE can be initialized again by calling startScan().
- */
-void BLEManager::shutdown()
-{
-    if (scanner != nullptr && scanner->isScanning())
-        scanner->stop();
-
-    delete[] devices;
-    devices = nullptr;
-    deviceCount = 0;
-
-    if (initialized)
-    {
-        logger.info("Deinitializing NimBLE.");
-
-        NimBLEDevice::deinit(true);
-
-        scanner = nullptr;
-        initialized = false;
-
-        logger.info("NimBLE deinitialized.");
-    }
-}
-
-/**
- * @brief Returns whether BLEManager is running.
+ * @return true when the manager is available.
  */
 bool BLEManager::isRunning() const
 {
@@ -97,31 +62,50 @@ bool BLEManager::isRunning() const
 }
 
 /**
- * @brief Starts continuous BLE scanning.
+ * @brief Initializes NimBLE when required.
  *
- * Scanning runs asynchronously through NimBLE callbacks, allowing the
- * application and UI loops to remain responsive.
- *
- * @return true if scanning started successfully.
+ * @return true when NimBLE is available.
  */
-bool BLEManager::startScan()
+bool BLEManager::ensureInitialized()
 {
-    if (!running)
-    {
+    if (initialized) return true;
+
+    if (!running) {
         logger.error("BLEManager is not running.");
         return false;
     }
 
-    if (!initialized)
-    {
-        logger.info("Initializing NimBLE.");
+    logger.info("Initializing NimBLE.");
 
-        NimBLEDevice::init("");
+    NimBLEDevice::init("");
 
+    initialized = true;
+
+    logger.info("NimBLE initialized.");
+
+    return true;
+}
+
+/**
+ * @brief Starts continuous BLE scanning.
+ *
+ * @return true when scanning started successfully.
+ */
+bool BLEManager::startScan()
+{
+    if (!running) {
+        logger.error("BLEManager is not running.");
+        return false;
+    }
+
+    if (!ensureInitialized()) return false;
+
+    stopAdvertising();
+
+    if (scanner == nullptr) {
         scanner = NimBLEDevice::getScan();
 
-        if (scanner == nullptr)
-        {
+        if (scanner == nullptr) {
             logger.error("Failed to create BLE scanner.");
             return false;
         }
@@ -131,32 +115,24 @@ bool BLEManager::startScan()
         scanner->setInterval(SCAN_INTERVAL_MS);
         scanner->setWindow(SCAN_WINDOW_MS);
         scanner->setMaxResults(0);
-
-        initialized = true;
-
-        logger.info("NimBLE initialized.");
     }
 
-    if (devices == nullptr)
-    {
+    if (devices == nullptr) {
         devices = new BLEDeviceInfo[MAX_DEVICES];
 
-        if (devices == nullptr)
-        {
+        if (devices == nullptr) {
             logger.error("Failed to allocate BLE device cache.");
             return false;
         }
     }
 
-    if (scanner->isScanning())
-        scanner->stop();
+    if (scanner->isScanning()) scanner->stop();
 
     clearDevices();
 
     logger.info("Starting BLE scan.");
 
-    if (!scanner->start(0, false, true))
-    {
+    if (!scanner->start(0, false, true)) {
         logger.error("Failed to start BLE scan.");
         return false;
     }
@@ -165,11 +141,122 @@ bool BLEManager::startScan()
 }
 
 /**
+ * @brief Stops the active BLE scan.
+ */
+void BLEManager::stopScan()
+{
+    if (scanner == nullptr || !scanner->isScanning()) return;
+
+    scanner->stop();
+
+    logger.info("BLE scan stopped.");
+}
+
+/**
  * @brief Returns whether BLE scanning is active.
+ *
+ * @return true when scanning.
  */
 bool BLEManager::isScanning() const
 {
     return scanner != nullptr && scanner->isScanning();
+}
+
+/**
+ * @brief Starts BLE advertising.
+ *
+ * @param name Device name included in the advertisement.
+ * @param serviceUUID Optional service UUID to advertise.
+ *
+ * @return true when advertising started successfully.
+ */
+bool BLEManager::startAdvertising(const String& name, const String& serviceUUID)
+{
+    if (!running) {
+        logger.error("BLEManager is not running.");
+        return false;
+    }
+
+    if (!ensureInitialized()) return false;
+
+    stopScan();
+
+    advertiser = NimBLEDevice::getAdvertising();
+
+    if (advertiser == nullptr) {
+        logger.error("Failed to create BLE advertiser.");
+        return false;
+    }
+
+    if (advertiser->isAdvertising()) advertiser->stop();
+
+    advertiser->clearData();
+
+    if (!name.isEmpty() && !advertiser->setName(name.c_str())) {
+        logger.error("Failed to set BLE advertisement name.");
+        return false;
+    }
+
+    if (!serviceUUID.isEmpty() && !advertiser->addServiceUUID(serviceUUID.c_str())) {
+        logger.error("Failed to add BLE service UUID.");
+        return false;
+    }
+
+    logger.info(String("Starting BLE advertising as ") + name + ".");
+
+    if (!advertiser->start()) {
+        logger.error("Failed to start BLE advertising.");
+        return false;
+    }
+
+    return true;
+}
+
+/**
+ * @brief Stops BLE advertising.
+ */
+void BLEManager::stopAdvertising()
+{
+    if (advertiser == nullptr || !advertiser->isAdvertising()) return;
+
+    advertiser->stop();
+
+    logger.info("BLE advertising stopped.");
+}
+
+/**
+ * @brief Returns whether BLE advertising is active.
+ *
+ * @return true when advertising.
+ */
+bool BLEManager::isAdvertising() const
+{
+    return advertiser != nullptr && advertiser->isAdvertising();
+}
+
+/**
+ * @brief Completely shuts down the BLE subsystem.
+ */
+void BLEManager::shutdown()
+{
+    stopScan();
+    stopAdvertising();
+
+    delete[] devices;
+    devices = nullptr;
+    deviceCount = 0;
+
+    if (!initialized) return;
+
+    logger.info("Deinitializing NimBLE.");
+
+    NimBLEDevice::deinit(true);
+
+    scanner = nullptr;
+    advertiser = nullptr;
+    initialized = false;
+
+    logger.info("NimBLE deinitialized.");
 }
 
 /**
@@ -179,15 +266,15 @@ void BLEManager::clearDevices()
 {
     deviceCount = 0;
 
-    if (devices == nullptr)
-        return;
+    if (devices == nullptr) return;
 
-    for (uint8_t i = 0; i < MAX_DEVICES; i++)
-        devices[i] = BLEDeviceInfo();
+    for (uint8_t i = 0; i < MAX_DEVICES; i++) devices[i] = BLEDeviceInfo();
 }
 
 /**
  * @brief Returns the number of stored BLE devices.
+ *
+ * @return Number of stored devices.
  */
 uint8_t BLEManager::getDeviceCount() const
 {
@@ -198,6 +285,8 @@ uint8_t BLEManager::getDeviceCount() const
  * @brief Returns information about a discovered BLE device.
  *
  * @param index Index of the requested device.
+ *
+ * @return Constant reference to the BLE device information.
  */
 const BLEDeviceInfo& BLEManager::getDevice(uint8_t index) const
 {
@@ -214,8 +303,7 @@ const BLEDeviceInfo& BLEManager::getDevice(uint8_t index) const
 int BLEManager::findDevice(const String& address) const
 {
     for (uint8_t i = 0; i < deviceCount; i++)
-        if (devices[i].address == address)
-            return i;
+        if (devices[i].address == address) return i;
 
     return -1;
 }
@@ -227,8 +315,7 @@ int BLEManager::findDevice(const String& address) const
  */
 void BLEManager::onResult(const NimBLEAdvertisedDevice* advertisedDevice)
 {
-    if (!running || advertisedDevice == nullptr)
-        return;
+    if (!running || advertisedDevice == nullptr) return;
 
     updateDevice(advertisedDevice);
 }
@@ -236,37 +323,35 @@ void BLEManager::onResult(const NimBLEAdvertisedDevice* advertisedDevice)
 /**
  * @brief Stores or updates a discovered BLE device.
  *
- * Devices are matched using their BLE address. Repeated advertisements
- * update the RSSI and advertisement information instead of creating
- * duplicate entries.
- *
  * @param advertisedDevice BLE advertisement to process.
  */
 void BLEManager::updateDevice(const NimBLEAdvertisedDevice* advertisedDevice)
 {
     String address = advertisedDevice->getAddress().toString().c_str();
 
-    int index = findDevice(address);
+    int existingIndex = findDevice(address);
 
-    if (index < 0)
-    {
-        if (deviceCount >= MAX_DEVICES)
-            return;
+    BLEDeviceInfo* device = nullptr;
 
-        index = deviceCount++;
-        devices[index].address = address;
+    if (existingIndex >= 0) {
+        device = &devices[existingIndex];
+    } else {
+        if (deviceCount >= MAX_DEVICES) return;
+
+        device = &devices[deviceCount++];
+        device->address = address;
     }
 
-    BLEDeviceInfo& device = devices[index];
+    if (advertisedDevice->haveName()) device->name = advertisedDevice->getName().c_str();
 
-    device.rssi = advertisedDevice->getRSSI();
-    device.lastSeen = millis();
+    device->rssi = advertisedDevice->getRSSI();
+    device->lastSeen = millis();
 
-    if (advertisedDevice->haveName())
-        device.name = advertisedDevice->getName().c_str();
-
-    device.hasTxPower = advertisedDevice->haveTXPower();
-
-    if (device.hasTxPower)
-        device.txPower = advertisedDevice->getTXPower();
+    if (advertisedDevice->haveTXPower()) {
+        device->txPower = advertisedDevice->getTXPower();
+        device->hasTxPower = true;
+    } else {
+        device->txPower = 0;
+        device->hasTxPower = false;
+    }
 }
