@@ -7,6 +7,7 @@
 #include "bleexplorer/bleexplorer.h"
 #include "blefoxhunt/blefoxhunt.h"
 #include "packetviewer/packetviewer.h"
+#include "configurenode/configurenode.h"
 
 class Services;
 
@@ -74,6 +75,11 @@ public:
      * @brief BLE Fox Hunt feature.
      */
     BLEFoxHunt bleFoxHunt;
+
+    /**
+     * @brief Ch3rryN0de configuration feature.
+     */
+    ConfigureNode configureNode;
 
     
 private:

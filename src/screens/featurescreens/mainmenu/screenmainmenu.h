@@ -141,4 +141,11 @@ private:
      * @param event Pointer to the LVGL event.
      */
     static void bleExplorerClicked(lv_event_t* event);
+
+    /**
+     * @brief Handles the Find Node menu button event.
+     *
+     * @param event Pointer to the LVGL event.
+     */
+    static void findNodeClicked(lv_event_t* event);
 };

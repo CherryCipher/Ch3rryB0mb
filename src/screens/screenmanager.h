@@ -34,7 +34,9 @@ enum class Screen : uint8_t
     BLEExplorer,
     BLEFoxHunt,
     NRFScanner,
-    CC1101Scanner
+    CC1101Scanner,
+    NodeFinder,
+    NodeConfig
 };
 
 /**

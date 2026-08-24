@@ -22,6 +22,7 @@ struct BLEDeviceInfo
 {
     String name;
     String address;
+    String serviceUUID;
     int8_t rssi = -127;
     int8_t txPower = 0;
     bool hasTxPower = false;

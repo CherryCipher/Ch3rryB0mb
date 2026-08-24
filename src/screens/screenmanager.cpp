@@ -23,6 +23,9 @@
 #include "featurescreens/bleexplorer/screenbleexplorer.h"
 #include "featurescreens/blefoxhunt/screenblefoxhunt.h"
 
+#include "featurescreens/nodefinder/screennodefinder.h"
+#include "featurescreens/nodeconfig/screennodeconfig.h"
+
 /**
  * @brief Constructs a new ScreenManager.
  *
@@ -136,6 +139,14 @@ void ScreenManager::showInternal( Screen screen, bool addToHistory )
 
         case Screen::CC1101Scanner:
             newScreen = ScreenCC1101Scanner::create(*this, features.cc1101Scanner);
+            break;
+
+        case Screen::NodeFinder:
+            newScreen = ScreenNodeFinder::create(*this, features.configureNode);
+            break;
+
+        case Screen::NodeConfig:
+            newScreen = ScreenNodeConfig::create(*this, features.configureNode);
             break;
     }
 

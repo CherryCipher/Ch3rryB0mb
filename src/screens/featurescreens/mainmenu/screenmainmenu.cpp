@@ -134,8 +134,8 @@ void ScreenMainMenu::renderSubGHzPage()
  */
 void ScreenMainMenu::renderNodePage()
 {
-    UIWidgets::addText(pageContainer, 15, 20, "CH3RRYN0DE", 210);
-    UIWidgets::addText(pageContainer, 15, 45, "COMING SOON...", 210);
+    lv_obj_t* findNodeButton = UIWidgets::addButton(pageContainer, 15, 10, "> Find Node", 100, 45);
+    lv_obj_add_event_cb(findNodeButton, findNodeClicked, LV_EVENT_CLICKED, screenManager);
 }
 
 /**
@@ -265,4 +265,17 @@ void ScreenMainMenu::bleExplorerClicked(lv_event_t* event)
     if (manager == nullptr) return;
 
     manager->show(Screen::BLEExplorer);
+}
+
+/**
+ * @brief Handles the Find Node menu button event.
+ *
+ * @param event Pointer to the LVGL event.
+ */
+void ScreenMainMenu::findNodeClicked(lv_event_t* event)
+{
+    ScreenManager* manager = static_cast<ScreenManager*>(lv_event_get_user_data(event));
+    if (manager == nullptr) return;
+
+    manager->show(Screen::NodeFinder);
 }

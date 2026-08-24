@@ -342,6 +342,11 @@ void BLEManager::updateDevice(const NimBLEAdvertisedDevice* advertisedDevice)
         device->address = address;
     }
 
+    device->serviceUUID = "";
+
+    if (advertisedDevice->getServiceUUIDCount() > 0)
+        device->serviceUUID = advertisedDevice->getServiceUUID(0).toString().c_str();
+
     if (advertisedDevice->haveName()) device->name = advertisedDevice->getName().c_str();
 
     device->rssi = advertisedDevice->getRSSI();
