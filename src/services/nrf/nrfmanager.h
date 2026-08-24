@@ -1,3 +1,11 @@
+/**
+ * @file nrfmanager.h
+ * @brief Declaration of the NRF24 radio manager.
+ *
+ * Provides shared NRF24 functionality including RF activity scanning
+ * and packet transmission.
+ */
+
 #pragma once
 
 #include <Arduino.h>
@@ -10,11 +18,15 @@
  * @class NRFManager
  * @brief Manages NRF24 radio functionality.
  *
- * The NRFManager is responsible for initializing and controlling the
- * NRF24 radio used by Ch3rryB0mb.
+ * NRFManager is responsible for initializing and controlling the NRF24
+ * radio used by Ch3rryB0mb and Ch3rryN0de.
  *
  * It provides RF activity scanning for the complete NRF24 spectrum,
  * individual NRF24 channels and individual 2.4 GHz Wi-Fi bands.
+ *
+ * The manager also provides generic NRF24 packet transmission so higher
+ * level features can configure and use the radio without accessing the
+ * underlying RF24 instance directly.
  *
  * RF activity is measured using the NRF24 Received Power Detector (RPD).
  * Scan results therefore represent activity percentages rather than
@@ -46,6 +58,11 @@ public:
     static constexpr uint8_t WIFI_SCAN_WIDTH = 21;
 
     /**
+     * @brief Maximum NRF24 payload size in bytes.
+     */
+    static constexpr uint8_t MAX_PAYLOAD_SIZE = 32;
+
+    /**
      * @brief Constructs a new NRFManager.
      *
      * @param logger Reference to the application's Logger.
@@ -57,8 +74,7 @@ public:
      * @brief Initializes the NRF24 radio.
      *
      * Verifies that the shared SPI infrastructure is available,
-     * initializes the NRF24 radio and configures it for RF activity
-     * scanning.
+     * initializes the NRF24 radio and places it in an inactive state.
      *
      * @return true if the NRF24 radio was initialized successfully.
      * @return false otherwise.
@@ -68,7 +84,8 @@ public:
     /**
      * @brief Stops the NRFManager.
      *
-     * Powers down the NRF24 radio and marks the manager as inactive.
+     * Stops listening, powers down the NRF24 radio and marks the
+     * manager as inactive.
      *
      * @return true when the NRFManager is stopped.
      */
@@ -81,6 +98,37 @@ public:
      * @return false otherwise.
      */
     bool isRunning() const;
+
+    /**
+     * @brief Configures the NRF24 for packet transmission.
+     *
+     * Stops listening and configures the radio for unacknowledged
+     * transmission using the selected NRF24 channel and destination
+     * address.
+     *
+     * The destination address must contain five address bytes.
+     *
+     * @param channel NRF24 channel between 0 and 125.
+     * @param address Pointer to the five-byte destination address.
+     *
+     * @return true if the transmitter was configured successfully.
+     * @return false if the manager is not running or the configuration is invalid.
+     */
+    bool configureTransmitter(uint8_t channel, const uint8_t* address);
+
+    /**
+     * @brief Transmits a packet using the current NRF24 configuration.
+     *
+     * Payloads may contain between 1 and 32 bytes.
+     *
+     * @param data Pointer to the payload data.
+     * @param length Number of payload bytes to transmit.
+     *
+     * @return true if the packet was transmitted successfully.
+     * @return false if the manager is not running, the payload is invalid
+     *         or transmission failed.
+     */
+    bool send(const void* data, uint8_t length);
 
     /**
      * @brief Scans the complete NRF24 frequency range.
@@ -128,12 +176,7 @@ public:
      * @return false if the manager is not running, the Wi-Fi channel is
      *         invalid or samplesPerChannel is zero.
      */
-    bool scanWifiChannel(
-        uint8_t wifiChannel,
-        uint8_t results[WIFI_SCAN_WIDTH],
-        uint8_t& startNrfChannel,
-        uint16_t samplesPerChannel = 20
-    );
+    bool scanWifiChannel(uint8_t wifiChannel, uint8_t results[WIFI_SCAN_WIDTH], uint8_t& startNrfChannel, uint16_t samplesPerChannel = 20);
 
 private:
     /**

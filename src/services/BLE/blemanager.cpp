@@ -43,7 +43,6 @@ bool BLEManager::stop()
     if (!running) return true;
 
     shutdown();
-
     running = false;
 
     logger.info("BLEManager stopped.");
@@ -155,7 +154,7 @@ void BLEManager::stopScan()
 /**
  * @brief Returns whether BLE scanning is active.
  *
- * @return true when scanning.
+ * @return true when scanning is active.
  */
 bool BLEManager::isScanning() const
 {
@@ -227,7 +226,7 @@ void BLEManager::stopAdvertising()
 /**
  * @brief Returns whether BLE advertising is active.
  *
- * @return true when advertising.
+ * @return true when advertising is active.
  */
 bool BLEManager::isAdvertising() const
 {
@@ -235,37 +234,7 @@ bool BLEManager::isAdvertising() const
 }
 
 /**
- * @brief Completely shuts down the BLE subsystem.
- */
-void BLEManager::shutdown()
-{
-    stopScan();
-    stopAdvertising();
-
-    delete[] devices;
-    devices = nullptr;
-    deviceCount = 0;
-
-    if (!initialized) return;
-
-    logger.info("Deinitializing NimBLE.");
-
-    NimBLEDevice::deinit(true);
-
-    scanner = nullptr;
-    advertiser = nullptr;
-    initialized = false;
-
-    disconnect();
-
-    server = nullptr;
-    serverService = nullptr;
-
-    logger.info("NimBLE deinitialized.");
-}
-
-/**
- * @brief Clears all stored BLE devices.
+ * @brief Clears all stored BLE scan results.
  */
 void BLEManager::clearDevices()
 {
@@ -277,9 +246,9 @@ void BLEManager::clearDevices()
 }
 
 /**
- * @brief Returns the number of stored BLE devices.
+ * @brief Returns the number of discovered BLE devices.
  *
- * @return Number of stored devices.
+ * @return Number of stored BLE devices.
  */
 uint8_t BLEManager::getDeviceCount() const
 {
@@ -299,7 +268,7 @@ const BLEDeviceInfo& BLEManager::getDevice(uint8_t index) const
 }
 
 /**
- * @brief Finds a BLE device by address.
+ * @brief Finds a discovered BLE device by address.
  *
  * @param address BLE address to search for.
  *
@@ -335,7 +304,6 @@ void BLEManager::updateDevice(const NimBLEAdvertisedDevice* advertisedDevice)
     String address = advertisedDevice->getAddress().toString().c_str();
 
     int existingIndex = findDevice(address);
-
     BLEDeviceInfo* device = nullptr;
 
     if (existingIndex >= 0) {
@@ -356,6 +324,7 @@ void BLEManager::updateDevice(const NimBLEAdvertisedDevice* advertisedDevice)
 
     device->rssi = advertisedDevice->getRSSI();
     device->lastSeen = millis();
+    device->addressType = advertisedDevice->getAddressType();
 
     if (advertisedDevice->haveTXPower()) {
         device->txPower = advertisedDevice->getTXPower();
@@ -364,8 +333,6 @@ void BLEManager::updateDevice(const NimBLEAdvertisedDevice* advertisedDevice)
         device->txPower = 0;
         device->hasTxPower = false;
     }
-
-    device->addressType = advertisedDevice->getAddressType();
 }
 
 /**
@@ -382,7 +349,7 @@ BLEManager::CharacteristicCallbacks::CharacteristicCallbacks(BLEManager& manager
 /**
  * @brief Handles a remote write to a local characteristic.
  *
- * @param characteristic Written characteristic.
+ * @param characteristic Characteristic that received the write.
  * @param connInfo Information about the connected peer.
  */
 void BLEManager::CharacteristicCallbacks::onWrite(NimBLECharacteristic* characteristic, NimBLEConnInfo& connInfo)
@@ -390,14 +357,13 @@ void BLEManager::CharacteristicCallbacks::onWrite(NimBLECharacteristic* characte
     if (characteristic == nullptr || callback == nullptr) return;
 
     NimBLEAttValue value = characteristic->getValue();
-
     String uuid = characteristic->getUUID().toString().c_str();
 
     callback(uuid, value.data(), value.size());
 }
 
 /**
- * @brief Creates a local GATT service.
+ * @brief Creates a local GATT server and service.
  *
  * @param serviceUUID UUID of the service to create.
  *
@@ -454,10 +420,42 @@ bool BLEManager::addServerCharacteristic(const String& characteristicUUID, uint3
         return false;
     }
 
-    if (writeCallback != nullptr)
-        characteristic->setCallbacks(new CharacteristicCallbacks(*this, writeCallback));
+    if (writeCallback != nullptr) characteristic->setCallbacks(new CharacteristicCallbacks(*this, writeCallback));
 
     logger.info(String("BLE characteristic created: ") + characteristicUUID);
+
+    return true;
+}
+
+/**
+ * @brief Updates the value of a local GATT characteristic.
+ *
+ * @param characteristicUUID UUID of the characteristic to update.
+ * @param data Pointer to the new characteristic value.
+ * @param length Number of bytes in the value.
+ *
+ * @return true when the characteristic value was updated successfully.
+ */
+bool BLEManager::setServerCharacteristicValue(const String& characteristicUUID, const uint8_t* data, size_t length)
+{
+    if (data == nullptr || length == 0) {
+        logger.error("Invalid BLE characteristic value.");
+        return false;
+    }
+
+    if (serverService == nullptr) {
+        logger.error("BLE server service is not configured.");
+        return false;
+    }
+
+    NimBLECharacteristic* characteristic = serverService->getCharacteristic(characteristicUUID.c_str());
+
+    if (characteristic == nullptr) {
+        logger.error(String("BLE server characteristic not found: ") + characteristicUUID);
+        return false;
+    }
+
+    characteristic->setValue(data, length);
 
     return true;
 }
@@ -503,7 +501,6 @@ bool BLEManager::connect(const String& address, uint8_t addressType)
 
     stopScan();
     stopAdvertising();
-
     disconnect();
 
     NimBLEAddress bleAddress(address.c_str(), addressType);
@@ -545,9 +542,9 @@ void BLEManager::disconnect()
 }
 
 /**
- * @brief Returns whether the BLE client is connected.
+ * @brief Returns whether a BLE client connection is active.
  *
- * @return true when connected.
+ * @return true when connected to a remote BLE server.
  */
 bool BLEManager::isConnected() const
 {
@@ -559,10 +556,10 @@ bool BLEManager::isConnected() const
  *
  * @param serviceUUID UUID of the remote service.
  * @param characteristicUUID UUID of the remote characteristic.
- * @param data Pointer to the bytes to write.
+ * @param data Pointer to the data to write.
  * @param length Number of bytes to write.
  *
- * @return true when the write completed successfully.
+ * @return true when the characteristic was written successfully.
  */
 bool BLEManager::writeCharacteristic(const String& serviceUUID, const String& characteristicUUID, const uint8_t* data, size_t length)
 {
@@ -598,4 +595,32 @@ bool BLEManager::writeCharacteristic(const String& serviceUUID, const String& ch
     logger.info(String("BLE characteristic written: ") + characteristicUUID);
 
     return true;
+}
+
+/**
+ * @brief Completely shuts down the BLE subsystem.
+ */
+void BLEManager::shutdown()
+{
+    stopScan();
+    stopAdvertising();
+    disconnect();
+
+    delete[] devices;
+    devices = nullptr;
+    deviceCount = 0;
+
+    if (!initialized) return;
+
+    logger.info("Deinitializing NimBLE.");
+
+    NimBLEDevice::deinit(true);
+
+    scanner = nullptr;
+    advertiser = nullptr;
+    server = nullptr;
+    serverService = nullptr;
+    initialized = false;
+
+    logger.info("NimBLE deinitialized.");
 }

@@ -3,15 +3,15 @@
  * @brief Declaration of the Ch3rryN0de configuration feature.
  *
  * This feature discovers Ch3rryN0de devices through BLE, manages node
- * selection and stores the configuration for the selected node.
+ * selection, stores node configuration and controls configuration sessions.
  */
 
 #pragma once
 
 #include <Arduino.h>
 
-#include "services/BLE/blemanager.h"
 #include "node/nodeprotocol.h"
+#include "services/BLE/blemanager.h"
 
 class Services;
 
@@ -22,17 +22,12 @@ class Services;
  * ConfigureNode acts as the application layer between the node UI and
  * the shared BLEManager.
  *
- * BLEManager remains generic and exposes discovered BLE devices while
- * ConfigureNode filters these results using the Ch3rryN0de service UUID.
+ * BLEManager remains generic and exposes BLE functionality while
+ * ConfigureNode implements Ch3rryN0de-specific discovery and configuration.
  */
 class ConfigureNode
 {
 public:
-    /**
-     * @brief BLE service UUID advertised by Ch3rryN0de devices.
-     */
-    static constexpr const char* NODE_SERVICE_UUID = "6f17c001-9d8b-4b4d-a2e3-43d9a3c30001";
-
     /**
      * @brief Maximum number of nodes stored during discovery.
      */
@@ -48,8 +43,8 @@ public:
     /**
      * @brief Starts scanning for Ch3rryN0de devices.
      *
-     * Existing BLE scan results and node results are cleared before a
-     * new scan begins.
+     * Existing BLE scan results and filtered node results are cleared
+     * before a new scan begins.
      *
      * @return true when scanning started successfully.
      */
@@ -136,6 +131,25 @@ public:
     const NodeConfig& getConfig() const;
 
     /**
+     * @brief Connects to the selected node and sends its current configuration.
+     *
+     * The BLE connection remains active after the configuration has been
+     * written so additional session commands can be sent.
+     *
+     * @return true when the configuration was sent successfully.
+     */
+    bool sendConfig();
+
+    /**
+     * @brief Sends the START command to the connected node.
+     *
+     * Requires an active BLE connection established by sendConfig().
+     *
+     * @return true when the START command was sent successfully.
+     */
+    bool startSession();
+
+    /**
      * @brief Returns a display name for a node radio.
      *
      * @param radio Radio value to convert.
@@ -154,11 +168,12 @@ public:
     static const char* getModeName(NodeMode mode);
 
     /**
-     * @brief Connects to the selected node and sends its current configuration.
+     * @brief Stops node discovery and releases the BLE subsystem.
      *
-     * @return true when the configuration was sent successfully.
+     * Stops any active node scan and shuts down BLE so other radio
+     * subsystems such as Wi-Fi can safely use the ESP32 radio.
      */
-    bool sendConfig();
+    void stop();
 
 private:
     /**

@@ -6,9 +6,7 @@
 #include "nodeservices.h"
 
 /**
- * @brief Constructs the node service container.
- *
- * Initializes all service dependencies in the correct order.
+ * @brief Constructs the Ch3rryN0de service container.
  */
 NodeServices::NodeServices()
     : spi(logger),
@@ -19,50 +17,148 @@ NodeServices::NodeServices()
 }
 
 /**
- * @brief Starts all services required by the node.
+ * @brief Starts the core Ch3rryN0de services.
  *
- * @return true if all required services initialized successfully.
- * @return false if one or more required services failed to initialize.
+ * @return true when all required core services started successfully.
  */
 bool NodeServices::start()
 {
     logger.start();
 
-    displayReady = display.begin();
+    logger.info("Starting C3N0 services.");
 
-    // Safe shared SPI state.
-    pinMode(22, OUTPUT);
-    digitalWrite(22, HIGH);
+    configureRadioPins();
 
-    pinMode(16, OUTPUT);
-    digitalWrite(16, HIGH);
+    if (!display.begin()) {
+        logger.error("Failed to start NodeDisplayManager.");
+        return false;
+    }
 
-    pinMode(27, OUTPUT);
-    digitalWrite(27, LOW);
+    display.showBoot();
 
-    bool spiReady = spi.start();
-    bleReady = ble.start();
+    if (!spi.start()) {
+        logger.error("Failed to start SPIManager.");
+        return false;
+    }
 
-    if (displayReady) display.showConfigMode();
+    if (!ble.start()) {
+        logger.error("Failed to start BLEManager.");
+        return false;
+    }
 
-    return spiReady && bleReady;
+    logger.info("C3N0 services started.");
+
+    return true;
 }
 
 /**
- * @brief Stops all active node services.
+ * @brief Stops all active Ch3rryN0de services.
  */
 void NodeServices::stop()
 {
-    logger.info("Stopping C3N0 services...");
+    stopNRF();
+    stopCC1101();
 
     if (ble.isRunning()) ble.stop();
-    if (cc1101.isRunning()) cc1101.stop();
-    if (nrf.isRunning()) nrf.stop();
     if (spi.isRunning()) spi.stop();
 
-    if (displayReady) display.clear();
+    configureRadioPins();
 
     logger.info("C3N0 services stopped.");
+}
 
-    logger.stop();
+/**
+ * @brief Starts the NRF24 radio service.
+ *
+ * Stops the CC1101 when active, restores safe NRF24 and CC1101 pin
+ * states and starts NRFManager.
+ *
+ * @return true when NRFManager started successfully.
+ */
+bool NodeServices::startNRF()
+{
+    if (nrf.isRunning()) return true;
+
+    if (cc1101.isRunning()) stopCC1101();
+
+    pinMode(NRF_CE_PIN, OUTPUT);
+    pinMode(NRF_CSN_PIN, OUTPUT);
+    pinMode(CC1101_CSN_PIN, OUTPUT);
+
+    digitalWrite(NRF_CE_PIN, LOW);
+    digitalWrite(NRF_CSN_PIN, HIGH);
+    digitalWrite(CC1101_CSN_PIN, HIGH);
+
+    delay(10);
+
+    logger.info("Starting NRF24 radio.");
+
+    if (!nrf.start()) {
+        logger.error("Failed to start NRFManager.");
+        return false;
+    }
+
+    return true;
+}
+
+/**
+ * @brief Stops the NRF24 radio service.
+ */
+void NodeServices::stopNRF()
+{
+    if (!nrf.isRunning()) return;
+
+    nrf.stop();
+
+    digitalWrite(NRF_CE_PIN, LOW);
+    digitalWrite(NRF_CSN_PIN, HIGH);
+}
+
+/**
+ * @brief Starts the CC1101 radio service.
+ *
+ * @return true when CC1101Manager started successfully.
+ */
+bool NodeServices::startCC1101()
+{
+    if (cc1101.isRunning()) return true;
+
+    if (nrf.isRunning()) stopNRF();
+
+    digitalWrite(NRF_CE_PIN, LOW);
+    digitalWrite(NRF_CSN_PIN, HIGH);
+    digitalWrite(CC1101_CSN_PIN, HIGH);
+
+    if (!cc1101.start()) {
+        logger.error("Failed to start CC1101Manager.");
+        return false;
+    }
+
+    return true;
+}
+
+/**
+ * @brief Stops the CC1101 radio service.
+ */
+void NodeServices::stopCC1101()
+{
+    if (!cc1101.isRunning()) return;
+
+    cc1101.stop();
+
+    digitalWrite(CC1101_CSN_PIN, HIGH);
+}
+
+/**
+ * @brief Configures shared radio pins to safe inactive states.
+ */
+void NodeServices::configureRadioPins()
+{
+    pinMode(NRF_CE_PIN, OUTPUT);
+    pinMode(NRF_CSN_PIN, OUTPUT);
+    pinMode(CC1101_CSN_PIN, OUTPUT);
+
+    digitalWrite(NRF_CE_PIN, LOW);
+    digitalWrite(NRF_CSN_PIN, HIGH);
+    digitalWrite(CC1101_CSN_PIN, HIGH);
 }

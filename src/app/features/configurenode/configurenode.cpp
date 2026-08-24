@@ -165,6 +165,72 @@ const NodeConfig& ConfigureNode::getConfig() const
 }
 
 /**
+ * @brief Connects to the selected node and sends its current configuration.
+ *
+ * @return true when the configuration was sent successfully.
+ */
+bool ConfigureNode::sendConfig()
+{
+    if (!hasSelectedNode()) {
+        services.logger.error("No Ch3rryN0de selected.");
+        return false;
+    }
+
+    const BLEDeviceInfo& node = getSelectedNode();
+
+    stopScan();
+
+    if (!services.ble.connect(node.address, node.addressType)) {
+        services.logger.error("Failed to connect to Ch3rryN0de.");
+        return false;
+    }
+
+    if (!services.ble.writeCharacteristic(
+        NodeProtocol::SERVICE_UUID,
+        NodeProtocol::CONFIG_UUID,
+        reinterpret_cast<const uint8_t*>(&config),
+        sizeof(NodeConfig)
+    )) {
+        services.logger.error("Failed to send node configuration.");
+        services.ble.disconnect();
+        return false;
+    }
+
+    services.logger.info("Node configuration sent.");
+
+    return true;
+}
+
+/**
+ * @brief Sends the START command to the connected node.
+ *
+ * @return true when the START command was sent successfully.
+ */
+bool ConfigureNode::startSession()
+{
+    if (!services.ble.isConnected()) {
+        services.logger.error("No active Ch3rryN0de connection.");
+        return false;
+    }
+
+    NodeCommand command = NodeCommand::Start;
+
+    if (!services.ble.writeCharacteristic(
+        NodeProtocol::SERVICE_UUID,
+        NodeProtocol::COMMAND_UUID,
+        reinterpret_cast<const uint8_t*>(&command),
+        sizeof(NodeCommand)
+    )) {
+        services.logger.error("Failed to send START command.");
+        return false;
+    }
+
+    services.logger.info("START command sent.");
+
+    return true;
+}
+
+/**
  * @brief Returns a display name for a node radio.
  *
  * @param radio Radio value to convert.
@@ -206,7 +272,7 @@ const char* ConfigureNode::getModeName(NodeMode mode)
  */
 bool ConfigureNode::isNode(const BLEDeviceInfo& device) const
 {
-    return device.serviceUUID.equalsIgnoreCase(NODE_SERVICE_UUID);
+    return device.serviceUUID.equalsIgnoreCase(NodeProtocol::SERVICE_UUID);
 }
 
 /**
@@ -225,38 +291,9 @@ bool ConfigureNode::hasNode(const String& address) const
 }
 
 /**
- * @brief Connects to the selected node and sends its current configuration.
- *
- * @return true when the configuration was sent successfully.
+ * @brief Stops node discovery and releases the BLE subsystem.
  */
-bool ConfigureNode::sendConfig()
+void ConfigureNode::stop()
 {
-    if (!hasSelectedNode()) {
-        services.logger.error("No Ch3rryN0de selected.");
-        return false;
-    }
-
-    const BLEDeviceInfo& node = getSelectedNode();
-
-    stopScan();
-
-    if (!services.ble.connect(node.address, node.addressType)) {
-        services.logger.error("Failed to connect to Ch3rryN0de.");
-        return false;
-    }
-
-    if (!services.ble.writeCharacteristic(
-        NodeProtocol::SERVICE_UUID,
-        NodeProtocol::CONFIG_UUID,
-        reinterpret_cast<const uint8_t*>(&config),
-        sizeof(NodeConfig)
-    )) {
-        services.logger.error("Failed to send node configuration.");
-        services.ble.disconnect();
-        return false;
-    }
-
-    services.logger.info("Node configuration sent.");
-
-    return true;
+    services.ble.stop();
 }

@@ -146,7 +146,8 @@ void ScreenNodeConfig::modeClicked(lv_event_t* event)
 /**
  * @brief Handles the start button.
  *
- * Sends the current node configuration to the selected Ch3rryN0de.
+ * Sends the current configuration and START command to the selected
+ * Ch3rryN0de.
  *
  * @param event Pointer to the LVGL event.
  */
@@ -155,6 +156,7 @@ void ScreenNodeConfig::startClicked(lv_event_t* event)
     if (context.configureNode == nullptr) return;
 
     if (!context.configureNode->sendConfig()) return;
+    if (!context.configureNode->startSession()) return;
 }
 
 /**

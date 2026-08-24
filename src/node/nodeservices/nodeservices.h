@@ -2,70 +2,108 @@
  * @file nodeservices.h
  * @brief Declaration of the Ch3rryN0de service container.
  *
- * NodeServices owns and provides access to the hardware and system
- * services required by the Ch3rryN0de firmware.
+ * NodeServices owns and manages the shared hardware services used by
+ * Ch3rryN0de.
  *
- * The node reuses shared Ch3rryB0mb managers where possible while keeping
- * node-specific functionality such as the OLED display separate.
+ * Infrastructure services are initialized during startup while radio
+ * services such as NRF24 and CC1101 are started lazily when requested
+ * by the application layer.
  */
 
 #pragma once
+
+#include <Arduino.h>
 
 #include "services/logger/logger.h"
 #include "services/spi/spimanager.h"
 #include "services/nrf/nrfmanager.h"
 #include "services/cc1101/cc1101manager.h"
 #include "services/BLE/blemanager.h"
-
-#include "../display/nodedisplaymanager.h"
+#include "node/display/nodedisplaymanager.h"
 
 /**
  * @class NodeServices
- * @brief Owns and initializes the services used by Ch3rryN0de.
+ * @brief Owns and manages Ch3rryN0de hardware services.
  *
- * NodeServices acts as the central service container for the node firmware.
- * It owns the logger, shared radio managers and node-specific display manager.
+ * NodeServices provides centralized ownership and lifecycle management
+ * for the node hardware layer.
  *
- * The class is responsible for starting and stopping these services in a
- * predictable order and exposing them to higher-level node components.
+ * The shared SPI bus and BLEManager are started during node startup.
+ * NRF24 and CC1101 radios remain inactive until explicitly requested
+ * by the application layer.
+ *
+ * Only one SPI radio is activated at a time.
  */
 class NodeServices
 {
 public:
     /**
-     * @brief Constructs the node service container.
-     *
-     * Initializes service dependencies such as BLEManager, which requires
-     * access to the shared Logger instance.
+     * @brief Constructs the Ch3rryN0de service container.
      */
     NodeServices();
 
     /**
-     * @brief Starts all services required by the node.
+     * @brief Starts the core Ch3rryN0de services.
      *
-     * Initializes the display, SPI bus and available radio managers.
-     * Hardware initialization results are reported through Serial and,
-     * when available, on the node OLED display.
+     * Initializes logging, the OLED display, shared SPI bus and BLEManager.
      *
-     * @return true if all required node services started successfully.
-     * @return false if one or more required services failed to start.
+     * NRF24 and CC1101 are deliberately not started here and remain in
+     * safe inactive states until requested by the application layer.
+     *
+     * @return true when all required core services started successfully.
      */
     bool start();
 
     /**
-     * @brief Stops all active node services.
+     * @brief Stops all active Ch3rryN0de services.
      *
-     * Stops active radio services and clears the node display.
+     * Stops active radios, BLE and the shared SPI manager.
      */
     void stop();
 
     /**
-     * @brief Shared application logger.
+     * @brief Starts the NRF24 radio service.
+     *
+     * Stops the CC1101 when active, applies safe SPI radio pin states and
+     * starts NRFManager.
+     *
+     * @return true when NRFManager started successfully.
+     */
+    bool startNRF();
+
+    /**
+     * @brief Stops the NRF24 radio service.
+     *
+     * Stops NRFManager and returns the NRF24 control pins to their safe
+     * inactive states.
+     */
+    void stopNRF();
+
+    /**
+     * @brief Starts the CC1101 radio service.
+     *
+     * Stops the NRF24 when active, applies safe SPI radio pin states and
+     * starts CC1101Manager.
+     *
+     * @return true when CC1101Manager started successfully.
+     */
+    bool startCC1101();
+
+    /**
+     * @brief Stops the CC1101 radio service.
+     *
+     * Stops CC1101Manager and returns its chip select pin to the inactive
+     * state.
+     */
+    void stopCC1101();
+
+    /**
+     * @brief Application logger.
      */
     Logger logger;
 
     /**
-     * @brief Shared SPI bus manager.
+     * @brief Shared SPI manager.
      */
     SPIManager spi;
 
@@ -91,22 +129,22 @@ public:
 
 private:
     /**
-     * @brief Whether the OLED display initialized successfully.
+     * @brief NRF24 Chip Enable GPIO.
      */
-    bool displayReady = false;
+    static constexpr uint8_t NRF_CE_PIN = 27;
 
     /**
-     * @brief Whether the NRF24 radio initialized successfully.
+     * @brief NRF24 Chip Select GPIO.
      */
-    bool nrfReady = false;
+    static constexpr uint8_t NRF_CSN_PIN = 22;
 
     /**
-     * @brief Whether the CC1101 radio initialized successfully.
+     * @brief CC1101 Chip Select GPIO.
      */
-    bool cc1101Ready = false;
+    static constexpr uint8_t CC1101_CSN_PIN = 16;
 
     /**
-     * @brief Whether BLE initialized successfully.
+     * @brief Configures shared radio pins to safe inactive states.
      */
-    bool bleReady = false;
+    void configureRadioPins();
 };

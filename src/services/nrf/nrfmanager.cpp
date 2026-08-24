@@ -1,3 +1,8 @@
+/**
+ * @file nrfmanager.cpp
+ * @brief Implementation of the NRF24 radio manager.
+ */
+
 #include "nrfmanager.h"
 
 /**
@@ -18,32 +23,30 @@ NRFManager::NRFManager(Logger& logger, SPIManager& spiManager)
  * @brief Initializes the NRF24 radio.
  *
  * Verifies that the shared SPI infrastructure is available,
- * initializes the NRF24 using the hardware SPI bus and configures
- * the radio for RF activity scanning.
+ * initializes the NRF24 using the hardware SPI bus and places
+ * the radio in an inactive state.
  *
  * @return true if the NRF24 radio was initialized successfully.
  * @return false otherwise.
  */
 bool NRFManager::start()
 {
-    if (running)
-        return true;
+    if (running) return true;
 
     logger.info("Starting NRFManager.");
 
-    if (!spiManager.isRunning())
-    {
+    if (!spiManager.isRunning()) {
         logger.error("SPIManager is not running.");
         return false;
     }
 
-    if (!radio.begin(&spiManager.getHardwareBus()))
-    {
+    if (!radio.begin(&spiManager.getHardwareBus())) {
         logger.error("NRF24 radio not detected.");
         return false;
     }
 
     radio.stopConstCarrier();
+    radio.stopListening();
     radio.setAutoAck(false);
     radio.disableCRC();
     radio.powerDown();
@@ -59,14 +62,14 @@ bool NRFManager::start()
 /**
  * @brief Stops the NRFManager.
  *
- * Powers down the NRF24 radio and marks the manager as inactive.
+ * Stops listening, powers down the NRF24 radio and marks the
+ * manager as inactive.
  *
  * @return true when the NRFManager is stopped.
  */
 bool NRFManager::stop()
 {
-    if (!running)
-        return true;
+    if (!running) return true;
 
     radio.stopListening();
     radio.powerDown();
@@ -90,10 +93,82 @@ bool NRFManager::isRunning() const
 }
 
 /**
- * @brief Scans the complete NRF24 frequency range.
+ * @brief Configures the NRF24 for packet transmission.
  *
- * Scans NRF24 channels 0 through 125 and stores an RF activity
- * percentage for every channel.
+ * @param channel NRF24 channel between 0 and 125.
+ * @param address Pointer to the five-byte destination address.
+ *
+ * @return true if the transmitter was configured successfully.
+ * @return false otherwise.
+ */
+bool NRFManager::configureTransmitter(uint8_t channel, const uint8_t* address)
+{
+    if (!running) {
+        logger.error("NRFManager is not running.");
+        return false;
+    }
+
+    if (channel >= NRF_CHANNEL_COUNT) {
+        logger.error("Invalid NRF channel.");
+        return false;
+    }
+
+    if (address == nullptr) {
+        logger.error("Invalid NRF destination address.");
+        return false;
+    }
+
+    radio.stopListening();
+    radio.powerUp();
+
+    radio.setChannel(channel);
+    radio.setAutoAck(false);
+    radio.disableCRC();
+    radio.setDataRate(RF24_1MBPS);
+    radio.setPALevel(RF24_PA_LOW);
+    radio.openWritingPipe(address);
+
+    logger.info(String("NRF transmitter configured on channel ") + channel + ".");
+
+    return true;
+}
+
+/**
+ * @brief Transmits a packet using the current NRF24 configuration.
+ *
+ * @param data Pointer to the payload data.
+ * @param length Number of payload bytes to transmit.
+ *
+ * @return true if the packet was transmitted successfully.
+ * @return false otherwise.
+ */
+bool NRFManager::send(const void* data, uint8_t length)
+{
+    if (!running) {
+        logger.error("NRFManager is not running.");
+        return false;
+    }
+
+    if (data == nullptr) {
+        logger.error("NRF payload is null.");
+        return false;
+    }
+
+    if (length == 0 || length > MAX_PAYLOAD_SIZE) {
+        logger.error("Invalid NRF payload length.");
+        return false;
+    }
+
+    if (!radio.write(data, length)) {
+        logger.warning("NRF packet transmission failed.");
+        return false;
+    }
+
+    return true;
+}
+
+/**
+ * @brief Scans the complete NRF24 frequency range.
  *
  * @param results Array receiving 126 activity values from 0 to 100.
  * @param samplesPerChannel Number of measurements performed per channel.
@@ -103,14 +178,12 @@ bool NRFManager::isRunning() const
  */
 bool NRFManager::scanSpectrum(uint8_t results[NRF_CHANNEL_COUNT], uint16_t samplesPerChannel)
 {
-    if (!running)
-    {
+    if (!running) {
         logger.error("NRFManager is not running.");
         return false;
     }
 
-    if (samplesPerChannel == 0)
-    {
+    if (samplesPerChannel == 0) {
         logger.error("Spectrum scan requires at least one sample.");
         return false;
     }
@@ -132,9 +205,6 @@ bool NRFManager::scanSpectrum(uint8_t results[NRF_CHANNEL_COUNT], uint16_t sampl
 /**
  * @brief Measures RF activity on one NRF24 channel.
  *
- * Repeatedly samples the selected NRF24 channel and returns the
- * resulting activity percentage through the supplied reference.
- *
  * @param channel NRF24 channel between 0 and 125.
  * @param activity Reference receiving an activity value from 0 to 100.
  * @param samples Number of measurements performed on the channel.
@@ -144,20 +214,17 @@ bool NRFManager::scanSpectrum(uint8_t results[NRF_CHANNEL_COUNT], uint16_t sampl
  */
 bool NRFManager::scanNrfChannel(uint8_t channel, uint8_t& activity, uint16_t samples)
 {
-    if (!running)
-    {
+    if (!running) {
         logger.error("NRFManager is not running.");
         return false;
     }
 
-    if (channel >= NRF_CHANNEL_COUNT)
-    {
+    if (channel >= NRF_CHANNEL_COUNT) {
         logger.error("Invalid NRF channel.");
         return false;
     }
 
-    if (samples == 0)
-    {
+    if (samples == 0) {
         logger.error("NRF channel scan requires at least one sample.");
         return false;
     }
@@ -174,39 +241,27 @@ bool NRFManager::scanNrfChannel(uint8_t channel, uint8_t& activity, uint16_t sam
 /**
  * @brief Scans the frequency range occupied by a Wi-Fi channel.
  *
- * Maps Wi-Fi channels 1 through 13 to their 2.4 GHz center frequency
- * and scans approximately 20 MHz of spectrum around that center using
- * 21 adjacent NRF24 channels.
- *
  * @param wifiChannel Wi-Fi channel between 1 and 13.
  * @param results Array receiving 21 activity values from 0 to 100.
- * @param startNrfChannel Reference receiving the first scanned NRF24 channel.
+ * @param startNrfChannel Reference receiving the first NRF24 channel.
  * @param samplesPerChannel Number of measurements performed per NRF channel.
  *
  * @return true if the scan completed successfully.
  * @return false otherwise.
  */
-bool NRFManager::scanWifiChannel(
-    uint8_t wifiChannel,
-    uint8_t results[WIFI_SCAN_WIDTH],
-    uint8_t& startNrfChannel,
-    uint16_t samplesPerChannel
-)
+bool NRFManager::scanWifiChannel(uint8_t wifiChannel, uint8_t results[WIFI_SCAN_WIDTH], uint8_t& startNrfChannel, uint16_t samplesPerChannel)
 {
-    if (!running)
-    {
+    if (!running) {
         logger.error("NRFManager is not running.");
         return false;
     }
 
-    if (wifiChannel < 1 || wifiChannel > WIFI_CHANNEL_COUNT)
-    {
+    if (wifiChannel < 1 || wifiChannel > WIFI_CHANNEL_COUNT) {
         logger.error("Invalid Wi-Fi channel.");
         return false;
     }
 
-    if (samplesPerChannel == 0)
-    {
+    if (samplesPerChannel == 0) {
         logger.error("Wi-Fi channel scan requires at least one sample.");
         return false;
     }
@@ -222,8 +277,7 @@ bool NRFManager::scanWifiChannel(
 
     radio.powerUp();
 
-    for (uint8_t index = 0; index < WIFI_SCAN_WIDTH; index++)
-    {
+    for (uint8_t index = 0; index < WIFI_SCAN_WIDTH; index++) {
         uint8_t nrfChannel = startNrfChannel + index;
         results[index] = measureChannel(nrfChannel, samplesPerChannel);
     }
@@ -238,10 +292,6 @@ bool NRFManager::scanWifiChannel(
 /**
  * @brief Measures RF activity on a single NRF24 channel.
  *
- * Selects the requested channel and performs repeated RPD measurements.
- * The number of detected samples is converted into a percentage between
- * 0 and 100.
- *
  * @param channel NRF24 channel between 0 and 125.
  * @param samples Number of measurements to perform.
  *
@@ -253,14 +303,11 @@ uint8_t NRFManager::measureChannel(uint8_t channel, uint16_t samples)
 
     radio.setChannel(channel);
 
-    for (uint16_t sample = 0; sample < samples; sample++)
-    {
+    for (uint16_t sample = 0; sample < samples; sample++) {
         radio.startListening();
-
         delayMicroseconds(SAMPLE_TIME_US);
 
-        if (radio.testRPD())
-            hits++;
+        if (radio.testRPD()) hits++;
 
         radio.stopListening();
     }

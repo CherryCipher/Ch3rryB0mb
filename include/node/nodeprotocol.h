@@ -40,6 +40,16 @@ namespace NodeProtocol
      * @brief BLE characteristic used for node status updates.
      */
     static constexpr const char* STATUS_UUID = "6f17c004-9d8b-4b4d-a2e3-43d9a3c30001";
+
+    /**
+     * @brief Shared NRF24 address used by Ch3rryN0de lab sessions.
+     */
+    static constexpr uint8_t NRF_ADDRESS[6] = "C3N0";
+
+    /**
+     * @brief Default payload transmitted by NRF beacon mode.
+     */
+    static constexpr const char* NRF_BEACON_PAYLOAD = "C3N0";
 }
 
 /**

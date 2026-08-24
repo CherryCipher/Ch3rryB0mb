@@ -128,6 +128,9 @@ void ScreenNodeFinder::updateStatus(ConfigureNode& configureNode)
 /**
  * @brief Handles a discovered node button event.
  *
+ * Selects the requested node, stops discovery and opens the node
+ * configuration screen while keeping BLE available for communication.
+ *
  * @param event Pointer to the LVGL event.
  */
 void ScreenNodeFinder::nodeClicked(lv_event_t* event)
@@ -158,6 +161,9 @@ void ScreenNodeFinder::scanClicked(lv_event_t* event)
 /**
  * @brief Handles the back button event.
  *
+ * Stops the node discovery feature, releases BLE resources and returns
+ * to the previous screen.
+ *
  * @param event Pointer to the LVGL event.
  */
 void ScreenNodeFinder::backClicked(lv_event_t* event)
@@ -165,7 +171,7 @@ void ScreenNodeFinder::backClicked(lv_event_t* event)
     Context* ctx = static_cast<Context*>(lv_event_get_user_data(event));
     if (ctx == nullptr || ctx->screenManager == nullptr) return;
 
-    if (ctx->configureNode != nullptr) ctx->configureNode->stopScan();
+    if (ctx->configureNode != nullptr) ctx->configureNode->stop();
 
     ctx->screenManager->back();
 }
@@ -186,6 +192,10 @@ void ScreenNodeFinder::refreshTimerCallback(lv_timer_t* timer)
 
 /**
  * @brief Cleans up screen resources when the screen is deleted.
+ *
+ * Stops an active discovery scan but deliberately keeps BLE available
+ * because the next screen may continue communicating with the selected
+ * node.
  *
  * @param event Pointer to the LVGL event.
  */
