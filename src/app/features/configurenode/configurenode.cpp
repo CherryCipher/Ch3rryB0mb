@@ -223,3 +223,40 @@ bool ConfigureNode::hasNode(const String& address) const
 
     return false;
 }
+
+/**
+ * @brief Connects to the selected node and sends its current configuration.
+ *
+ * @return true when the configuration was sent successfully.
+ */
+bool ConfigureNode::sendConfig()
+{
+    if (!hasSelectedNode()) {
+        services.logger.error("No Ch3rryN0de selected.");
+        return false;
+    }
+
+    const BLEDeviceInfo& node = getSelectedNode();
+
+    stopScan();
+
+    if (!services.ble.connect(node.address, node.addressType)) {
+        services.logger.error("Failed to connect to Ch3rryN0de.");
+        return false;
+    }
+
+    if (!services.ble.writeCharacteristic(
+        NodeProtocol::SERVICE_UUID,
+        NodeProtocol::CONFIG_UUID,
+        reinterpret_cast<const uint8_t*>(&config),
+        sizeof(NodeConfig)
+    )) {
+        services.logger.error("Failed to send node configuration.");
+        services.ble.disconnect();
+        return false;
+    }
+
+    services.logger.info("Node configuration sent.");
+
+    return true;
+}

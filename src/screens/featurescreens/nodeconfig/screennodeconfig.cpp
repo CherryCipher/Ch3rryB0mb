@@ -146,16 +146,15 @@ void ScreenNodeConfig::modeClicked(lv_event_t* event)
 /**
  * @brief Handles the start button.
  *
+ * Sends the current node configuration to the selected Ch3rryN0de.
+ *
  * @param event Pointer to the LVGL event.
  */
 void ScreenNodeConfig::startClicked(lv_event_t* event)
 {
     if (context.configureNode == nullptr) return;
 
-    /*
-     * BLE connection and configuration transfer will be implemented next.
-     * The NodeConfig is already stored in ConfigureNode and ready to send.
-     */
+    if (!context.configureNode->sendConfig()) return;
 }
 
 /**

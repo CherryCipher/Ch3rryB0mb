@@ -11,47 +11,9 @@
 #include <Arduino.h>
 
 #include "services/BLE/blemanager.h"
+#include "node/nodeprotocol.h"
 
 class Services;
-
-/**
- * @enum NodeRadio
- * @brief Radios supported by Ch3rryN0de.
- */
-enum class NodeRadio : uint8_t
-{
-    BLE,
-    NRF24,
-    CC1101
-};
-
-/**
- * @enum NodeMode
- * @brief Generic operating modes supported by Ch3rryN0de radios.
- */
-enum class NodeMode : uint8_t
-{
-    Beacon,
-    Listen
-};
-
-/**
- * @struct NodeConfig
- * @brief Stores the configuration for a Ch3rryN0de session.
- *
- * The structure contains generic configuration values used by the
- * different supported radios. Radio-specific values are ignored when
- * they are not applicable to the selected radio.
- */
-struct NodeConfig
-{
-    NodeRadio radio = NodeRadio::NRF24;
-    NodeMode mode = NodeMode::Listen;
-
-    uint8_t channel = 30;
-    float frequency = 868.300f;
-    uint16_t interval = 500;
-};
 
 /**
  * @class ConfigureNode
@@ -190,6 +152,13 @@ public:
      * @return Human-readable mode name.
      */
     static const char* getModeName(NodeMode mode);
+
+    /**
+     * @brief Connects to the selected node and sends its current configuration.
+     *
+     * @return true when the configuration was sent successfully.
+     */
+    bool sendConfig();
 
 private:
     /**

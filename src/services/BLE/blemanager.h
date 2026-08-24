@@ -27,7 +27,17 @@ struct BLEDeviceInfo
     int8_t txPower = 0;
     bool hasTxPower = false;
     uint32_t lastSeen = 0;
+    uint8_t addressType = BLE_ADDR_PUBLIC;
 };
+
+/**
+ * @brief Callback used when data is written to a local BLE characteristic.
+ *
+ * @param characteristicUUID UUID of the written characteristic.
+ * @param data Pointer to the received data.
+ * @param length Number of received bytes.
+ */
+using BLEWriteCallback = void (*)(const String& characteristicUUID, const uint8_t* data, size_t length);
 
 /**
  * @class BLEManager
@@ -168,6 +178,67 @@ public:
      */
     void shutdown();
 
+    /**
+     * @brief Creates a local GATT service.
+     *
+     * @param serviceUUID UUID of the service to create.
+     *
+     * @return true when the service was created successfully.
+     */
+    bool createServer(const String& serviceUUID);
+
+    /**
+     * @brief Adds a characteristic to the current local GATT service.
+     *
+     * @param characteristicUUID UUID of the characteristic.
+     * @param properties NimBLE characteristic property flags.
+     * @param writeCallback Optional callback invoked when data is written.
+     *
+     * @return true when the characteristic was created successfully.
+     */
+    bool addServerCharacteristic(const String& characteristicUUID, uint32_t properties, BLEWriteCallback writeCallback = nullptr);
+
+    /**
+     * @brief Starts the configured local GATT server.
+     *
+     * @return true when the server started successfully.
+     */
+    bool startServer();
+
+    /**
+     * @brief Connects to a remote BLE device.
+     *
+     * @param address BLE device address.
+     * @param addressType BLE address type discovered during scanning.
+     *
+     * @return true when connected successfully.
+     */
+    bool connect(const String& address, uint8_t addressType);
+
+    /**
+     * @brief Disconnects the active BLE client connection.
+     */
+    void disconnect();
+
+    /**
+     * @brief Returns whether the BLE client is connected.
+     *
+     * @return true when connected to a remote BLE server.
+     */
+    bool isConnected() const;
+
+    /**
+     * @brief Writes raw data to a remote GATT characteristic.
+     *
+     * @param serviceUUID UUID of the remote service.
+     * @param characteristicUUID UUID of the remote characteristic.
+     * @param data Pointer to the bytes to write.
+     * @param length Number of bytes to write.
+     *
+     * @return true when the write completed successfully.
+     */
+    bool writeCharacteristic(const String& serviceUUID, const String& characteristicUUID, const uint8_t* data, size_t length);
+
 private:
     /**
      * @brief BLE scan interval in milliseconds.
@@ -234,4 +305,36 @@ private:
      * @param advertisedDevice BLE advertisement to process.
      */
     void updateDevice(const NimBLEAdvertisedDevice* advertisedDevice);
+
+    /**
+     * @class CharacteristicCallbacks
+     * @brief Routes NimBLE characteristic writes back to BLEManager.
+     */
+    class CharacteristicCallbacks : public NimBLECharacteristicCallbacks
+    {
+    public:
+        /**
+         * @brief Constructs a characteristic callback router.
+         *
+         * @param manager BLEManager that owns the characteristic.
+         * @param callback Application callback invoked on writes.
+         */
+        CharacteristicCallbacks(BLEManager& manager, BLEWriteCallback callback);
+
+        /**
+         * @brief Handles a remote write to a local characteristic.
+         *
+         * @param characteristic Written characteristic.
+         * @param connInfo Information about the connected peer.
+         */
+        void onWrite(NimBLECharacteristic* characteristic, NimBLEConnInfo& connInfo) override;
+
+    private:
+        BLEManager& manager;
+        BLEWriteCallback callback;
+    };
+
+    NimBLEServer* server = nullptr;
+    NimBLEService* serverService = nullptr;
+    NimBLEClient* client = nullptr;
 };

@@ -256,6 +256,11 @@ void BLEManager::shutdown()
     advertiser = nullptr;
     initialized = false;
 
+    disconnect();
+
+    server = nullptr;
+    serverService = nullptr;
+
     logger.info("NimBLE deinitialized.");
 }
 
@@ -359,4 +364,238 @@ void BLEManager::updateDevice(const NimBLEAdvertisedDevice* advertisedDevice)
         device->txPower = 0;
         device->hasTxPower = false;
     }
+
+    device->addressType = advertisedDevice->getAddressType();
+}
+
+/**
+ * @brief Constructs a characteristic callback router.
+ *
+ * @param manager BLEManager that owns the characteristic.
+ * @param callback Application callback invoked on writes.
+ */
+BLEManager::CharacteristicCallbacks::CharacteristicCallbacks(BLEManager& manager, BLEWriteCallback callback)
+    : manager(manager), callback(callback)
+{
+}
+
+/**
+ * @brief Handles a remote write to a local characteristic.
+ *
+ * @param characteristic Written characteristic.
+ * @param connInfo Information about the connected peer.
+ */
+void BLEManager::CharacteristicCallbacks::onWrite(NimBLECharacteristic* characteristic, NimBLEConnInfo& connInfo)
+{
+    if (characteristic == nullptr || callback == nullptr) return;
+
+    NimBLEAttValue value = characteristic->getValue();
+
+    String uuid = characteristic->getUUID().toString().c_str();
+
+    callback(uuid, value.data(), value.size());
+}
+
+/**
+ * @brief Creates a local GATT service.
+ *
+ * @param serviceUUID UUID of the service to create.
+ *
+ * @return true when the service was created successfully.
+ */
+bool BLEManager::createServer(const String& serviceUUID)
+{
+    if (!running) {
+        logger.error("BLEManager is not running.");
+        return false;
+    }
+
+    if (!ensureInitialized()) return false;
+
+    if (server == nullptr) server = NimBLEDevice::createServer();
+
+    if (server == nullptr) {
+        logger.error("Failed to create BLE server.");
+        return false;
+    }
+
+    serverService = server->createService(serviceUUID.c_str());
+
+    if (serverService == nullptr) {
+        logger.error("Failed to create BLE service.");
+        return false;
+    }
+
+    logger.info(String("BLE GATT service created: ") + serviceUUID);
+
+    return true;
+}
+
+/**
+ * @brief Adds a characteristic to the current local GATT service.
+ *
+ * @param characteristicUUID UUID of the characteristic.
+ * @param properties NimBLE characteristic property flags.
+ * @param writeCallback Optional callback invoked when data is written.
+ *
+ * @return true when the characteristic was created successfully.
+ */
+bool BLEManager::addServerCharacteristic(const String& characteristicUUID, uint32_t properties, BLEWriteCallback writeCallback)
+{
+    if (serverService == nullptr) {
+        logger.error("BLE server service is not configured.");
+        return false;
+    }
+
+    NimBLECharacteristic* characteristic = serverService->createCharacteristic(characteristicUUID.c_str(), properties);
+
+    if (characteristic == nullptr) {
+        logger.error(String("Failed to create BLE characteristic: ") + characteristicUUID);
+        return false;
+    }
+
+    if (writeCallback != nullptr)
+        characteristic->setCallbacks(new CharacteristicCallbacks(*this, writeCallback));
+
+    logger.info(String("BLE characteristic created: ") + characteristicUUID);
+
+    return true;
+}
+
+/**
+ * @brief Starts the configured local GATT server.
+ *
+ * @return true when the server started successfully.
+ */
+bool BLEManager::startServer()
+{
+    if (server == nullptr) {
+        logger.error("BLE server is not configured.");
+        return false;
+    }
+
+    if (!server->start()) {
+        logger.error("Failed to start BLE GATT server.");
+        return false;
+    }
+
+    logger.info("BLE GATT server started.");
+
+    return true;
+}
+
+/**
+ * @brief Connects to a remote BLE device.
+ *
+ * @param address BLE device address.
+ * @param addressType BLE address type.
+ *
+ * @return true when connected successfully.
+ */
+bool BLEManager::connect(const String& address, uint8_t addressType)
+{
+    if (!running) {
+        logger.error("BLEManager is not running.");
+        return false;
+    }
+
+    if (!ensureInitialized()) return false;
+
+    stopScan();
+    stopAdvertising();
+
+    disconnect();
+
+    NimBLEAddress bleAddress(address.c_str(), addressType);
+
+    client = NimBLEDevice::createClient(bleAddress);
+
+    if (client == nullptr) {
+        logger.error("Failed to create BLE client.");
+        return false;
+    }
+
+    logger.info(String("Connecting to BLE device ") + address + ".");
+
+    if (!client->connect()) {
+        logger.error("BLE connection failed.");
+
+        NimBLEDevice::deleteClient(client);
+        client = nullptr;
+
+        return false;
+    }
+
+    logger.info("BLE connection established.");
+
+    return true;
+}
+
+/**
+ * @brief Disconnects the active BLE client connection.
+ */
+void BLEManager::disconnect()
+{
+    if (client == nullptr) return;
+
+    NimBLEDevice::deleteClient(client);
+    client = nullptr;
+
+    logger.info("BLE client disconnected.");
+}
+
+/**
+ * @brief Returns whether the BLE client is connected.
+ *
+ * @return true when connected.
+ */
+bool BLEManager::isConnected() const
+{
+    return client != nullptr && client->isConnected();
+}
+
+/**
+ * @brief Writes raw data to a remote GATT characteristic.
+ *
+ * @param serviceUUID UUID of the remote service.
+ * @param characteristicUUID UUID of the remote characteristic.
+ * @param data Pointer to the bytes to write.
+ * @param length Number of bytes to write.
+ *
+ * @return true when the write completed successfully.
+ */
+bool BLEManager::writeCharacteristic(const String& serviceUUID, const String& characteristicUUID, const uint8_t* data, size_t length)
+{
+    if (!isConnected() || data == nullptr || length == 0) {
+        logger.error("BLE characteristic write requested without an active connection.");
+        return false;
+    }
+
+    NimBLERemoteService* service = client->getService(serviceUUID.c_str());
+
+    if (service == nullptr) {
+        logger.error(String("Remote BLE service not found: ") + serviceUUID);
+        return false;
+    }
+
+    NimBLERemoteCharacteristic* characteristic = service->getCharacteristic(characteristicUUID.c_str());
+
+    if (characteristic == nullptr) {
+        logger.error(String("Remote BLE characteristic not found: ") + characteristicUUID);
+        return false;
+    }
+
+    if (!characteristic->canWrite()) {
+        logger.error("Remote BLE characteristic is not writable.");
+        return false;
+    }
+
+    if (!characteristic->writeValue(data, length, true)) {
+        logger.error("Failed to write BLE characteristic.");
+        return false;
+    }
+
+    logger.info(String("BLE characteristic written: ") + characteristicUUID);
+
+    return true;
 }
