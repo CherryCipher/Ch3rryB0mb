@@ -24,17 +24,21 @@ bool BLEManager::start()
 {
     if (running) return true;
 
-    esp_bt_controller_mem_release(ESP_BT_MODE_CLASSIC_BT);
+    static bool classicMemoryReleased = false;
+
+    if (!classicMemoryReleased) {
+        esp_bt_controller_mem_release(ESP_BT_MODE_CLASSIC_BT);
+        classicMemoryReleased = true;
+    }
 
     running = true;
 
     logger.info("BLEManager started.");
-
     return true;
 }
 
 /**
- * @brief Stops the BLE manager.
+ * @brief Stops the complete BLE subsystem.
  *
  * @return true when the manager has stopped.
  */
@@ -46,7 +50,6 @@ bool BLEManager::stop()
     running = false;
 
     logger.info("BLEManager stopped.");
-
     return true;
 }
 
@@ -61,9 +64,12 @@ bool BLEManager::isRunning() const
 }
 
 /**
- * @brief Initializes NimBLE when required.
+ * @brief Initializes the NimBLE stack when required.
  *
- * @return true when NimBLE is available.
+ * On Ch3rryN0de the ESP32-S3 BLE transmitter is configured with a
+ * normal high transmit power while keeping the default BLE PHY.
+ *
+ * @return true when NimBLE is initialized and available.
  */
 bool BLEManager::ensureInitialized()
 {
@@ -78,10 +84,13 @@ bool BLEManager::ensureInitialized()
 
     NimBLEDevice::init("");
 
+#ifdef C3N0_S3
+    NimBLEDevice::setPower(ESP_PWR_LVL_P6);
+#endif
+
     initialized = true;
 
     logger.info("NimBLE initialized.");
-
     return true;
 }
 
@@ -100,6 +109,7 @@ bool BLEManager::startScan()
     if (!ensureInitialized()) return false;
 
     stopAdvertising();
+    disconnect();
 
     if (scanner == nullptr) {
         scanner = NimBLEDevice::getScan();
@@ -162,7 +172,10 @@ bool BLEManager::isScanning() const
 }
 
 /**
- * @brief Starts BLE advertising.
+ * @brief Starts legacy connectable BLE advertising.
+ *
+ * Configures conservative legacy advertising suitable for both
+ * BLE 4.x ESP32 centrals and BLE 5 capable ESP32-S3 devices.
  *
  * @param name Device name included in the advertisement.
  * @param serviceUUID Optional service UUID to advertise.
@@ -189,7 +202,22 @@ bool BLEManager::startAdvertising(const String& name, const String& serviceUUID)
 
     if (advertiser->isAdvertising()) advertiser->stop();
 
-    advertiser->clearData();
+    advertiser->reset();
+
+    if (!advertiser->setConnectableMode(BLE_GAP_CONN_MODE_UND)) {
+        logger.error("Failed to configure connectable BLE advertising.");
+        return false;
+    }
+
+    if (!advertiser->setDiscoverableMode(BLE_GAP_DISC_MODE_GEN)) {
+        logger.error("Failed to configure discoverable BLE advertising.");
+        return false;
+    }
+
+#ifdef C3N0_S3
+    advertiser->setMinInterval(160);
+    advertiser->setMaxInterval(240);
+#endif
 
     if (!name.isEmpty() && !advertiser->setName(name.c_str())) {
         logger.error("Failed to set BLE advertisement name.");
@@ -208,6 +236,7 @@ bool BLEManager::startAdvertising(const String& name, const String& serviceUUID)
         return false;
     }
 
+    logger.info("BLE advertising started.");
     return true;
 }
 
@@ -338,7 +367,6 @@ void BLEManager::updateDevice(const NimBLEAdvertisedDevice* advertisedDevice)
 /**
  * @brief Constructs a characteristic callback router.
  *
- * @param manager BLEManager that owns the characteristic.
  * @param callback Application callback invoked on writes.
  */
 BLEManager::CharacteristicCallbacks::CharacteristicCallbacks(BLEWriteCallback callback)
@@ -365,6 +393,9 @@ void BLEManager::CharacteristicCallbacks::onWrite(NimBLECharacteristic* characte
 /**
  * @brief Creates a local GATT server and service.
  *
+ * Installs server callbacks when the server is first created so
+ * connection and disconnection events can be tracked.
+ *
  * @param serviceUUID UUID of the service to create.
  *
  * @return true when the service was created successfully.
@@ -378,11 +409,16 @@ bool BLEManager::createServer(const String& serviceUUID)
 
     if (!ensureInitialized()) return false;
 
-    if (server == nullptr) server = NimBLEDevice::createServer();
-
     if (server == nullptr) {
-        logger.error("Failed to create BLE server.");
-        return false;
+        server = NimBLEDevice::createServer();
+
+        if (server == nullptr) {
+            logger.error("Failed to create BLE server.");
+            return false;
+        }
+
+        serverCallbacks = new ServerCallbacks(*this);
+        server->setCallbacks(serverCallbacks);
     }
 
     serverService = server->createService(serviceUUID.c_str());
@@ -393,7 +429,6 @@ bool BLEManager::createServer(const String& serviceUUID)
     }
 
     logger.info(String("BLE GATT service created: ") + serviceUUID);
-
     return true;
 }
 
@@ -423,7 +458,6 @@ bool BLEManager::addServerCharacteristic(const String& characteristicUUID, uint3
     if (writeCallback != nullptr) characteristic->setCallbacks(new CharacteristicCallbacks(writeCallback));
 
     logger.info(String("BLE characteristic created: ") + characteristicUUID);
-
     return true;
 }
 
@@ -456,7 +490,6 @@ bool BLEManager::setServerCharacteristicValue(const String& characteristicUUID, 
     }
 
     characteristic->setValue(data, length);
-
     return true;
 }
 
@@ -478,17 +511,19 @@ bool BLEManager::startServer()
     }
 
     logger.info("BLE GATT server started.");
-
     return true;
 }
 
 /**
  * @brief Connects to a remote BLE device.
  *
- * @param address BLE device address.
- * @param addressType BLE address type.
+ * Stops conflicting BLE activity, creates a fresh client and uses
+ * conservative connection parameters for reliable interoperability
+ * between ESP32 and ESP32-S3 devices.
  *
- * @return true when connected successfully.
+ * @param address BLE address of the remote device.
+ * @param addressType BLE address type discovered during scanning.
+ * @return true when the connection was established successfully.
  */
 bool BLEManager::connect(const String& address, uint8_t addressType)
 {
@@ -505,17 +540,21 @@ bool BLEManager::connect(const String& address, uint8_t addressType)
 
     NimBLEAddress bleAddress(address.c_str(), addressType);
 
-    client = NimBLEDevice::createClient(bleAddress);
+    client = NimBLEDevice::createClient();
 
     if (client == nullptr) {
         logger.error("Failed to create BLE client.");
         return false;
     }
 
+    client->setConnectionParams(12, 12, 0, 150);
+    client->setConnectTimeout(5000);
+    client->setConnectRetries(7);
+
     logger.info(String("Connecting to BLE device ") + address + ".");
 
-    if (!client->connect()) {
-        logger.error("BLE connection failed.");
+    if (!client->connect(bleAddress, true, false, false)) {
+        logger.error(String("BLE connection failed, error: ") + client->getLastError());
 
         NimBLEDevice::deleteClient(client);
         client = nullptr;
@@ -524,16 +563,17 @@ bool BLEManager::connect(const String& address, uint8_t addressType)
     }
 
     logger.info("BLE connection established.");
-
     return true;
 }
 
 /**
- * @brief Disconnects the active BLE client connection.
+ * @brief Disconnects and removes the active BLE client.
  */
 void BLEManager::disconnect()
 {
     if (client == nullptr) return;
+
+    if (client->isConnected()) client->disconnect();
 
     NimBLEDevice::deleteClient(client);
     client = nullptr;
@@ -593,12 +633,14 @@ bool BLEManager::writeCharacteristic(const String& serviceUUID, const String& ch
     }
 
     logger.info(String("BLE characteristic written: ") + characteristicUUID);
-
     return true;
 }
 
 /**
  * @brief Completely shuts down the BLE subsystem.
+ *
+ * Stops active BLE operations, releases local BLE state and
+ * fully deinitializes NimBLE.
  */
 void BLEManager::shutdown()
 {
@@ -610,6 +652,9 @@ void BLEManager::shutdown()
     devices = nullptr;
     deviceCount = 0;
 
+    delete serverCallbacks;
+    serverCallbacks = nullptr;
+
     if (!initialized) return;
 
     logger.info("Deinitializing NimBLE.");
@@ -620,7 +665,51 @@ void BLEManager::shutdown()
     advertiser = nullptr;
     server = nullptr;
     serverService = nullptr;
+    client = nullptr;
     initialized = false;
 
     logger.info("NimBLE deinitialized.");
+}
+
+/**
+ * @brief Constructs BLE server callbacks.
+ *
+ * @param manager BLEManager that owns the server.
+ */
+BLEManager::ServerCallbacks::ServerCallbacks(BLEManager& manager)
+    : manager(manager)
+{
+}
+
+/**
+ * @brief Handles an incoming BLE client connection.
+ *
+ * @param server Local NimBLE server.
+ * @param connInfo Information about the connected peer.
+ */
+void BLEManager::ServerCallbacks::onConnect(NimBLEServer* server, NimBLEConnInfo& connInfo)
+{
+    manager.logger.info(String("BLE client connected: ") + connInfo.getAddress().toString().c_str());
+}
+
+/**
+ * @brief Handles a BLE client disconnection.
+ *
+ * Restarts advertising so Ch3rryN0de remains available for
+ * configuration after a client disconnects.
+ *
+ * @param server Local NimBLE server.
+ * @param connInfo Information about the disconnected peer.
+ * @param reason BLE disconnection reason.
+ */
+void BLEManager::ServerCallbacks::onDisconnect(NimBLEServer* server, NimBLEConnInfo& connInfo, int reason)
+{
+    manager.logger.info(String("BLE client disconnected, reason: ") + reason);
+
+    if (manager.advertiser != nullptr && !manager.advertiser->isAdvertising()) {
+        if (manager.advertiser->start())
+            manager.logger.info("BLE advertising restarted.");
+        else
+            manager.logger.error("Failed to restart BLE advertising.");
+    }
 }

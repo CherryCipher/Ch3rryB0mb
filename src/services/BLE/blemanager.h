@@ -31,7 +31,6 @@ struct BLEDeviceInfo
     int8_t txPower = 0;
 
     bool hasTxPower = false;
-
     uint32_t lastSeen = 0;
     uint8_t addressType = BLE_ADDR_PUBLIC;
 };
@@ -52,12 +51,9 @@ using BLEWriteCallback = void (*)(const String& characteristicUUID, const uint8_
  * BLEManager owns the NimBLE lifecycle and provides generic BLE
  * functionality to both Ch3rryB0mb and Ch3rryN0de.
  *
- * Supported functionality includes device scanning, advertising,
- * local GATT server creation, remote GATT client connections and
- * characteristic value access.
- *
- * Higher-level features are responsible for interpreting BLE data
- * and implementing application-specific protocols.
+ * Feature-level operations such as stopping a scan or disconnecting a
+ * client do not deinitialize NimBLE. A complete shutdown is performed
+ * only through stop() or shutdown().
  */
 class BLEManager : private NimBLEScanCallbacks
 {
@@ -77,17 +73,19 @@ public:
     /**
      * @brief Starts the BLE manager.
      *
-     * Marks the manager as available without immediately initializing
-     * the NimBLE stack. NimBLE is initialized lazily when required.
+     * Marks the BLE subsystem as available. NimBLE itself is initialized
+     * lazily when the first BLE operation is requested.
      *
      * @return true when the manager is ready.
      */
     bool start();
 
     /**
-     * @brief Stops the BLE manager.
+     * @brief Stops the complete BLE subsystem.
      *
-     * Stops all active BLE functionality and deinitializes NimBLE.
+     * Stops active BLE operations and fully deinitializes NimBLE.
+     * This should be used when another subsystem requires BLE to be
+     * released, not for ordinary BLE feature navigation.
      *
      * @return true when the manager has stopped.
      */
@@ -103,8 +101,8 @@ public:
     /**
      * @brief Starts continuous BLE scanning.
      *
-     * Active advertising is stopped before the scan begins and
-     * previously discovered devices are cleared.
+     * Stops active advertising, clears previous scan results and starts
+     * a new active scan.
      *
      * @return true when scanning started successfully.
      */
@@ -112,6 +110,9 @@ public:
 
     /**
      * @brief Stops the active BLE scan.
+     *
+     * NimBLE remains initialized so another BLE feature can immediately
+     * reuse the subsystem.
      */
     void stopScan();
 
@@ -125,7 +126,7 @@ public:
     /**
      * @brief Starts BLE advertising.
      *
-     * Active scanning is stopped before advertising begins.
+     * Stops active scanning before advertising begins.
      *
      * @param name Device name included in the advertisement.
      * @param serviceUUID Optional service UUID to advertise.
@@ -136,6 +137,8 @@ public:
 
     /**
      * @brief Stops BLE advertising.
+     *
+     * NimBLE remains initialized.
      */
     void stopAdvertising();
 
@@ -188,9 +191,6 @@ public:
     /**
      * @brief Adds a characteristic to the current local GATT service.
      *
-     * The characteristic is stored internally so its value can later
-     * be updated through setServerCharacteristicValue().
-     *
      * @param characteristicUUID UUID of the characteristic.
      * @param properties NimBLE characteristic property flags.
      * @param writeCallback Optional callback invoked when data is written.
@@ -220,6 +220,13 @@ public:
     /**
      * @brief Connects to a remote BLE device.
      *
+     * The active scan is stopped before the connection attempt. The
+     * client automatically retries connection-establishment failures,
+     * including BLE error 0x3E, which is reported by NimBLE as error 574.
+     *
+     * Automatic MTU negotiation is disabled during connection setup to
+     * improve interoperability with ESP32-S3 peripherals.
+     *
      * @param address BLE device address.
      * @param addressType BLE address type discovered during scanning.
      *
@@ -228,7 +235,9 @@ public:
     bool connect(const String& address, uint8_t addressType);
 
     /**
-     * @brief Disconnects the active BLE client connection.
+     * @brief Disconnects and removes the active BLE client.
+     *
+     * NimBLE remains initialized after the client is released.
      */
     void disconnect();
 
@@ -254,11 +263,11 @@ public:
     /**
      * @brief Completely shuts down the BLE subsystem.
      *
-     * Stops scanning and advertising, disconnects the active client,
-     * releases local state and deinitializes NimBLE.
+     * Stops scanning and advertising, disconnects clients, releases
+     * scan state and fully deinitializes NimBLE.
      *
-     * BLEManager remains available and can initialize NimBLE again
-     * when scanning, advertising or another BLE operation is requested.
+     * BLEManager itself remains available when running is true and can
+     * initialize NimBLE again when required.
      */
     void shutdown();
 
@@ -272,6 +281,11 @@ private:
      * @brief BLE scan window in milliseconds.
      */
     static constexpr uint16_t SCAN_WINDOW_MS = 30;
+
+    /**
+     * @brief Number of automatic retries for connection-establishment failures.
+     */
+    static constexpr uint8_t CONNECT_RETRIES = 5;
 
     /**
      * @class CharacteristicCallbacks
@@ -302,55 +316,62 @@ private:
         BLEWriteCallback callback;
     };
 
-    
     /**
-     * @brief Reference to the application's Logger.
+     * @class ServerCallbacks
+     * @brief Handles local BLE GATT server connection events.
+     *
+     * Used mainly by Ch3rryN0de to log incoming BLE client connections
+     * and restart advertising after a client disconnects.
      */
+    class ServerCallbacks : public NimBLEServerCallbacks
+    {
+    public:
+        /**
+         * @brief Constructs BLE server callbacks.
+         *
+         * @param manager BLEManager that owns the server.
+         */
+        explicit ServerCallbacks(BLEManager& manager);
+
+        /**
+         * @brief Handles an incoming BLE client connection.
+         *
+         * @param server Local NimBLE server.
+         * @param connInfo Information about the connected peer.
+         */
+        void onConnect(NimBLEServer* server, NimBLEConnInfo& connInfo) override;
+
+        /**
+         * @brief Handles a BLE client disconnection.
+         *
+         * Advertising is restarted so the node immediately becomes
+         * configurable again.
+         *
+         * @param server Local NimBLE server.
+         * @param connInfo Information about the disconnected peer.
+         * @param reason BLE disconnection reason.
+         */
+        void onDisconnect(NimBLEServer* server, NimBLEConnInfo& connInfo, int reason) override;
+
+    private:
+        BLEManager& manager;
+    };
+
     Logger& logger;
 
-    /**
-     * @brief NimBLE scanner instance.
-     */
     NimBLEScan* scanner = nullptr;
-
-    /**
-     * @brief NimBLE advertising instance.
-     */
     NimBLEAdvertising* advertiser = nullptr;
-
-    /**
-     * @brief NimBLE GATT server instance.
-     */
     NimBLEServer* server = nullptr;
-
-    /**
-     * @brief Current local GATT service.
-     */
     NimBLEService* serverService = nullptr;
-
-    /**
-     * @brief Active NimBLE client instance.
-     */
     NimBLEClient* client = nullptr;
 
-    /**
-     * @brief Devices discovered during the current scan.
-     */
     BLEDeviceInfo* devices = nullptr;
 
-    /**
-     * @brief Number of valid discovered BLE devices.
-     */
+    ServerCallbacks* serverCallbacks = nullptr;
+
     uint8_t deviceCount = 0;
 
-    /**
-     * @brief Indicates whether BLEManager is available.
-     */
     bool running = false;
-
-    /**
-     * @brief Indicates whether NimBLE has been initialized.
-     */
     bool initialized = false;
 
     /**

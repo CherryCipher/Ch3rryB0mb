@@ -38,6 +38,8 @@ bool Services::start()
         return false;
     }
 
+    printHeap("logger");
+
     logger.info("Starting application services...");
 
     if (!spi.start())
@@ -46,41 +48,49 @@ bool Services::start()
         return false;
     }
 
+    printHeap("Spi");
+
     if (!storage.start())
     {
         logger.error("Failed to start StorageManager.");
         return false;
     }
+    printHeap("storage");
 
     if (!ui.start())
     {
         Serial.println("FATAL ERROR: Can't start UIManager");
         return false;
     }
+    printHeap("ui");
 
     if (!wifi.start())
     {
         logger.error("Failed to start WiFiManager.");
         return false;
     }
+    printHeap("wifi");
 
     if (!ble.start())
     {
         logger.error("Failed to start BLEManager.");
         return false;
     }
+    printHeap("ble");
 
     if (!nrf.start())
     {
         logger.error("Failed to start NRFManager. It will be unavailable in the main menu");
         serviceDown = true;
     }
+    printHeap("nrf");
 
     if (!cc1101.start())
     {
         logger.error("Failed to start CC1101Manager.");
         serviceDown = true;
     }
+    printHeap("cc11");
 
     logger.printBanner();
 
@@ -144,4 +154,17 @@ void Services::stop()
     logger.info("Logger stopped.");
 
     logger.stop();
+}
+
+#include <esp_heap_caps.h>
+
+void Services::printHeap(const char* label)
+{
+    Serial.printf(
+        "[HEAP] %-24s free=%u largest=%u internal=%u\n",
+        label,
+        ESP.getFreeHeap(),
+        heap_caps_get_largest_free_block(MALLOC_CAP_8BIT),
+        heap_caps_get_free_size(MALLOC_CAP_INTERNAL)
+    );
 }

@@ -1,6 +1,8 @@
 /**
  * @file main.cpp
  * @brief Entry point for the Ch3rryN0de firmware.
+ *
+ * Initializes the shared node services and starts the node application.
  */
 
 #include <Arduino.h>
@@ -13,6 +15,9 @@ NodeApplication application(services);
 
 /**
  * @brief Initializes the Ch3rryN0de firmware.
+ *
+ * Starts all required node services, performs the NRF24 hardware test
+ * and then starts the node application in BLE configuration mode.
  */
 void setup()
 {
@@ -23,14 +28,13 @@ void setup()
         Serial.println("[ERROR] Failed to start C3N0 services.");
         return;
     }
-    
-    if (services.startNRF())
-    {
+
+    services.logger.info("Starting NRF24 radio.");
+
+    if (services.nrf.start()) {
         services.logger.info("NRF24 hardware test: OK.");
-        services.stopNRF();
-    } 
-    else 
-    {
+        services.nrf.stop();
+    } else {
         services.logger.error("NRF24 hardware test: FAIL.");
     }
 
@@ -41,10 +45,10 @@ void setup()
 }
 
 /**
- * @brief Updates the Ch3rryN0de application.
+ * @brief Runs the Ch3rryN0de application loop.
  */
 void loop()
 {
     application.update();
-    delay(5);
+    delay(1);
 }

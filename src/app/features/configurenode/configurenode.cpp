@@ -112,7 +112,6 @@ bool ConfigureNode::selectNode(uint8_t index)
     if (index >= nodeCount) return false;
 
     selectedNodeIndex = static_cast<int8_t>(index);
-
     return true;
 }
 
@@ -167,6 +166,9 @@ const NodeConfig& ConfigureNode::getConfig() const
 /**
  * @brief Connects to the selected node and sends its current configuration.
  *
+ * The selected BLE device is copied before BLEManager changes scan or
+ * client state so the address data remains valid throughout the operation.
+ *
  * @return true when the configuration was sent successfully.
  */
 bool ConfigureNode::sendConfig()
@@ -183,16 +185,10 @@ bool ConfigureNode::sendConfig()
     services.logger.info(String("Address: ") + node.address);
     services.logger.info(String("Address type: ") + node.addressType);
 
-    stopScan();
-
-    services.logger.info("Connecting to Ch3rryN0de.");
-
     if (!services.ble.connect(node.address, node.addressType)) {
         services.logger.error("Failed to connect to Ch3rryN0de.");
         return false;
     }
-
-    services.logger.info("Connected to Ch3rryN0de.");
 
     if (!services.ble.writeCharacteristic(
         NodeProtocol::SERVICE_UUID,
@@ -230,10 +226,13 @@ bool ConfigureNode::startSession()
         sizeof(NodeCommand)
     )) {
         services.logger.error("Failed to send START command.");
+        services.ble.disconnect();
         return false;
     }
 
     services.logger.info("START command sent.");
+
+    services.ble.disconnect();
 
     return true;
 }
@@ -299,9 +298,13 @@ bool ConfigureNode::hasNode(const String& address) const
 }
 
 /**
- * @brief Stops node discovery and releases the BLE subsystem.
+ * @brief Stops node discovery and releases feature-level BLE activity.
+ *
+ * NimBLE itself remains initialized so another BLE feature can immediately
+ * use the shared BLE subsystem.
  */
 void ConfigureNode::stop()
 {
-    services.ble.stop();
+    services.ble.stopScan();
+    services.ble.disconnect();
 }

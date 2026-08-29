@@ -3,15 +3,15 @@
  * @brief Declaration of the Ch3rryN0de configuration feature.
  *
  * This feature discovers Ch3rryN0de devices through BLE, manages node
- * selection, stores node configuration and controls configuration sessions.
+ * selection and sends configuration and session commands to a node.
  */
 
 #pragma once
 
 #include <Arduino.h>
 
-#include "node/nodeprotocol.h"
 #include "services/BLE/blemanager.h"
+#include "node/nodeprotocol.h"
 
 class Services;
 
@@ -20,14 +20,17 @@ class Services;
  * @brief Discovers, selects and configures Ch3rryN0de devices.
  *
  * ConfigureNode acts as the application layer between the node UI and
- * the shared BLEManager.
- *
- * BLEManager remains generic and exposes BLE functionality while
- * ConfigureNode implements Ch3rryN0de-specific discovery and configuration.
+ * BLEManager. It filters BLE scan results using the Ch3rryN0de service
+ * UUID and handles configuration and session commands.
  */
 class ConfigureNode
 {
 public:
+    /**
+     * @brief BLE service UUID advertised by Ch3rryN0de devices.
+     */
+    static constexpr const char* NODE_SERVICE_UUID = "6f17c001-9d8b-4b4d-a2e3-43d9a3c30001";
+
     /**
      * @brief Maximum number of nodes stored during discovery.
      */
@@ -43,8 +46,7 @@ public:
     /**
      * @brief Starts scanning for Ch3rryN0de devices.
      *
-     * Existing BLE scan results and filtered node results are cleared
-     * before a new scan begins.
+     * Clears previous filtered node results and starts a new BLE scan.
      *
      * @return true when scanning started successfully.
      */
@@ -68,7 +70,7 @@ public:
     void update();
 
     /**
-     * @brief Clears all discovered nodes.
+     * @brief Clears all discovered nodes and the current selection.
      */
     void clearNodes();
 
@@ -131,25 +133,6 @@ public:
     const NodeConfig& getConfig() const;
 
     /**
-     * @brief Connects to the selected node and sends its current configuration.
-     *
-     * The BLE connection remains active after the configuration has been
-     * written so additional session commands can be sent.
-     *
-     * @return true when the configuration was sent successfully.
-     */
-    bool sendConfig();
-
-    /**
-     * @brief Sends the START command to the connected node.
-     *
-     * Requires an active BLE connection established by sendConfig().
-     *
-     * @return true when the START command was sent successfully.
-     */
-    bool startSession();
-
-    /**
      * @brief Returns a display name for a node radio.
      *
      * @param radio Radio value to convert.
@@ -168,39 +151,34 @@ public:
     static const char* getModeName(NodeMode mode);
 
     /**
-     * @brief Stops node discovery and releases the BLE subsystem.
+     * @brief Connects to the selected node and sends its configuration.
      *
-     * Stops any active node scan and shuts down BLE so other radio
-     * subsystems such as Wi-Fi can safely use the ESP32 radio.
+     * @return true when the configuration was sent successfully.
+     */
+    bool sendConfig();
+
+    /**
+     * @brief Sends the START command to the connected node.
+     *
+     * @return true when the command was sent successfully.
+     */
+    bool startSession();
+
+    /**
+     * @brief Stops node discovery and releases feature-level BLE activity.
+     *
+     * The shared NimBLE subsystem remains initialized so another BLE
+     * feature can use it without a deinitialization cycle.
      */
     void stop();
 
 private:
-    /**
-     * @brief Shared application services.
-     */
     Services& services;
 
-    /**
-     * @brief BLEManager indexes corresponding to discovered nodes.
-     */
     uint8_t nodeIndexes[MAX_NODES] = {};
-
-    /**
-     * @brief Number of discovered nodes.
-     */
     uint8_t nodeCount = 0;
-
-    /**
-     * @brief Selected node index in the filtered node list.
-     *
-     * A value of -1 means that no node is currently selected.
-     */
     int8_t selectedNodeIndex = -1;
 
-    /**
-     * @brief Current configuration for the selected node.
-     */
     NodeConfig config;
 
     /**
@@ -208,7 +186,7 @@ private:
      *
      * @param device BLE device to inspect.
      *
-     * @return true when the Ch3rryN0de service UUID is advertised.
+     * @return true when the device advertises the node service UUID.
      */
     bool isNode(const BLEDeviceInfo& device) const;
 

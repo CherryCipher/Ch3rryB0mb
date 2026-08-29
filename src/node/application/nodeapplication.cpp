@@ -35,6 +35,9 @@ NodeApplication::NodeApplication(NodeServices& services)
 /**
  * @brief Starts the node application.
  *
+ * Creates the BLE configuration GATT server and places Ch3rryN0de
+ * in discoverable configuration mode.
+ *
  * @return true when the application started successfully.
  */
 bool NodeApplication::start()
@@ -73,12 +76,14 @@ bool NodeApplication::start()
         return false;
     }
 
+    services.logger.info("Node BLE server ready.");
+
     if (!services.ble.startAdvertising(NODE_NAME, NodeProtocol::SERVICE_UUID)) {
         services.logger.error("Failed to start BLE advertising.");
         return false;
     }
 
-    services.logger.info(String("Advertising as ") + NODE_NAME + ".");
+    services.logger.info(String("Node configuration mode active as ") + NODE_NAME + ".");
     services.display.showConfigMode();
 
     return true;
