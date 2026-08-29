@@ -2,35 +2,66 @@
 
 #include "hardware/modulepins.h"
 
-#include <Wire.h>
-
 /**
- * @brief Initializes the node OLED display.
+ * @brief Initializes the optional node OLED display.
  *
- * Starts the I2C bus using the centrally configured module pins and
- * initializes the SSD1306 display.
+ * Initializes the I2C bus, probes the configured OLED address and starts
+ * the SSD1306 display when present. Absence of the OLED is not considered
+ * an error because the display is optional.
  *
- * @return true when the display initialized successfully.
+ * @return Always true because the node may operate without an OLED.
  */
 bool NodeDisplayManager::begin()
 {
-    Wire.begin(ModulePins::OLED_SDA, ModulePins::OLED_SCL);
+    available = false;
 
-    if (!display.begin(SSD1306_SWITCHCAPVCC, OLED_ADDRESS)) return false;
+    if (!Wire.begin(ModulePins::OLED_SDA, ModulePins::OLED_SCL, I2C_FREQUENCY)) {
+        Serial.println("[OLED] I2C initialization failed. Continuing without OLED.");
+        return true;
+    }
+
+    Wire.beginTransmission(OLED_ADDRESS);
+    uint8_t result = Wire.endTransmission();
+
+    if (result != 0) {
+        Serial.println("[OLED] OLED not detected. Continuing without OLED.");
+        return true;
+    }
+
+    if (!display.begin(SSD1306_SWITCHCAPVCC, OLED_ADDRESS, true, false)) {
+        Serial.println("[OLED] OLED detected but initialization failed. Continuing without OLED.");
+        return true;
+    }
 
     display.clearDisplay();
     display.setTextColor(SSD1306_WHITE);
     display.setTextWrap(true);
     display.display();
 
+    available = true;
+
+    Serial.println("[OLED] OLED initialized.");
+
     return true;
 }
 
 /**
- * @brief Clears the display.
+ * @brief Returns whether the OLED is available.
+ *
+ * @return true when the OLED was detected and initialized successfully.
+ */
+bool NodeDisplayManager::isAvailable() const
+{
+    return available;
+}
+
+/**
+ * @brief Clears the display when available.
  */
 void NodeDisplayManager::clear()
 {
+    if (!available) return;
+
     display.clearDisplay();
     display.display();
 }
@@ -40,6 +71,8 @@ void NodeDisplayManager::clear()
  */
 void NodeDisplayManager::showBoot()
 {
+    if (!available) return;
+
     prepareScreen();
 
     display.setTextSize(2);
@@ -61,6 +94,8 @@ void NodeDisplayManager::showBoot()
  */
 void NodeDisplayManager::showHardwareStatus(bool nrfOk, bool cc1101Ok, bool bleOk)
 {
+    if (!available) return;
+
     prepareScreen();
 
     display.setTextSize(1);
@@ -79,6 +114,8 @@ void NodeDisplayManager::showHardwareStatus(bool nrfOk, bool cc1101Ok, bool bleO
  */
 void NodeDisplayManager::showConfigMode()
 {
+    if (!available) return;
+
     prepareScreen();
 
     display.setTextSize(1);
@@ -100,6 +137,8 @@ void NodeDisplayManager::showConfigMode()
  */
 void NodeDisplayManager::showNRFMode(const char* mode, uint8_t channel)
 {
+    if (!available) return;
+
     prepareScreen();
 
     display.setTextSize(1);
@@ -123,6 +162,8 @@ void NodeDisplayManager::showNRFMode(const char* mode, uint8_t channel)
  */
 void NodeDisplayManager::showCC1101Mode(const char* mode, float frequency)
 {
+    if (!available) return;
+
     prepareScreen();
 
     display.setTextSize(1);
@@ -146,6 +187,8 @@ void NodeDisplayManager::showCC1101Mode(const char* mode, float frequency)
  */
 void NodeDisplayManager::showBLEMode(const char* mode)
 {
+    if (!available) return;
+
     prepareScreen();
 
     display.setTextSize(1);
@@ -165,6 +208,8 @@ void NodeDisplayManager::showBLEMode(const char* mode)
  */
 void NodeDisplayManager::showMessage(const char* message)
 {
+    if (!available) return;
+
     prepareScreen();
 
     display.setTextSize(1);
@@ -180,6 +225,8 @@ void NodeDisplayManager::showMessage(const char* message)
  */
 void NodeDisplayManager::prepareScreen()
 {
+    if (!available) return;
+
     display.clearDisplay();
     display.setCursor(0, 0);
     display.setTextSize(1);
@@ -194,6 +241,8 @@ void NodeDisplayManager::prepareScreen()
  */
 void NodeDisplayManager::printStatus(const char* label, bool ok)
 {
+    if (!available) return;
+
     display.print(label);
     display.print(": ");
 

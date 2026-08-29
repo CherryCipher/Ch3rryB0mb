@@ -1,25 +1,39 @@
 #pragma once
 
 #include <Arduino.h>
+#include <Wire.h>
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
 
 /**
  * @class NodeDisplayManager
- * @brief Manages the Ch3rryN0de OLED display.
+ * @brief Manages the optional Ch3rryN0de OLED display.
+ *
+ * The display is detected during initialization. If no OLED is connected,
+ * the node continues running normally and all display operations are ignored.
  */
 class NodeDisplayManager
 {
 public:
     /**
-     * @brief Initializes the OLED display.
+     * @brief Initializes the optional OLED display.
      *
-     * @return True when the display initialized successfully.
+     * Initializes the I2C bus and checks whether an OLED is present at the
+     * configured address. The node remains operational when no display is found.
+     *
+     * @return Always true because the OLED is optional.
      */
     bool begin();
 
     /**
-     * @brief Clears the display.
+     * @brief Returns whether the OLED is available.
+     *
+     * @return true when the OLED was detected and initialized successfully.
+     */
+    bool isAvailable() const;
+
+    /**
+     * @brief Clears the display when available.
      */
     void clear();
 
@@ -77,8 +91,11 @@ private:
     static constexpr uint8_t SCREEN_HEIGHT = 64;
     static constexpr uint8_t OLED_ADDRESS = 0x3C;
     static constexpr int8_t OLED_RESET = -1;
+    static constexpr uint32_t I2C_FREQUENCY = 100000;
 
     Adafruit_SSD1306 display = Adafruit_SSD1306(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
+
+    bool available = false;
 
     void prepareScreen();
     void printStatus(const char* label, bool ok);

@@ -326,6 +326,9 @@ void BLEManager::onResult(const NimBLEAdvertisedDevice* advertisedDevice)
 /**
  * @brief Stores or updates a discovered BLE device.
  *
+ * Existing advertisement information is preserved when later advertisement
+ * or scan response packets do not contain the same optional fields.
+ *
  * @param advertisedDevice BLE advertisement to process.
  */
 void BLEManager::updateDevice(const NimBLEAdvertisedDevice* advertisedDevice)
@@ -344,12 +347,21 @@ void BLEManager::updateDevice(const NimBLEAdvertisedDevice* advertisedDevice)
         device->address = address;
     }
 
-    device->serviceUUID = "";
+    if (advertisedDevice->getServiceUUIDCount() > 0) {
+        for (size_t i = 0; i < advertisedDevice->getServiceUUIDCount(); i++) {
+            String serviceUUID = advertisedDevice->getServiceUUID(i).toString().c_str();
 
-    if (advertisedDevice->getServiceUUIDCount() > 0)
-        device->serviceUUID = advertisedDevice->getServiceUUID(0).toString().c_str();
+            if (!serviceUUID.isEmpty()) {
+                device->serviceUUID = serviceUUID;
+                break;
+            }
+        }
+    }
 
-    if (advertisedDevice->haveName()) device->name = advertisedDevice->getName().c_str();
+    if (advertisedDevice->haveName()) {
+        String name = advertisedDevice->getName().c_str();
+        if (!name.isEmpty()) device->name = name;
+    }
 
     device->rssi = advertisedDevice->getRSSI();
     device->lastSeen = millis();
@@ -358,9 +370,6 @@ void BLEManager::updateDevice(const NimBLEAdvertisedDevice* advertisedDevice)
     if (advertisedDevice->haveTXPower()) {
         device->txPower = advertisedDevice->getTXPower();
         device->hasTxPower = true;
-    } else {
-        device->txPower = 0;
-        device->hasTxPower = false;
     }
 }
 
@@ -517,13 +526,13 @@ bool BLEManager::startServer()
 /**
  * @brief Connects to a remote BLE device.
  *
- * Stops conflicting BLE activity, creates a fresh client and uses
- * conservative connection parameters for reliable interoperability
- * between ESP32 and ESP32-S3 devices.
+ * Stops active BLE discovery before creating a fresh client and explicitly
+ * connects to the discovered peer address.
  *
- * @param address BLE address of the remote device.
+ * @param address BLE device address.
  * @param addressType BLE address type discovered during scanning.
- * @return true when the connection was established successfully.
+ *
+ * @return true when connected successfully.
  */
 bool BLEManager::connect(const String& address, uint8_t addressType)
 {
@@ -547,14 +556,14 @@ bool BLEManager::connect(const String& address, uint8_t addressType)
         return false;
     }
 
-    client->setConnectionParams(12, 12, 0, 150);
-    client->setConnectTimeout(5000);
-    client->setConnectRetries(7);
+    client->setConnectTimeout(10);
 
     logger.info(String("Connecting to BLE device ") + address + ".");
 
     if (!client->connect(bleAddress, true, false, false)) {
-        logger.error(String("BLE connection failed, error: ") + client->getLastError());
+        int error = client->getLastError();
+
+        logger.error(String("BLE connection failed, error: ") + error);
 
         NimBLEDevice::deleteClient(client);
         client = nullptr;
@@ -563,6 +572,7 @@ bool BLEManager::connect(const String& address, uint8_t addressType)
     }
 
     logger.info("BLE connection established.");
+
     return true;
 }
 

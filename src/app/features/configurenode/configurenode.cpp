@@ -297,14 +297,7 @@ bool ConfigureNode::hasNode(const String& address) const
     return false;
 }
 
-/**
- * @brief Stops node discovery and releases feature-level BLE activity.
- *
- * NimBLE itself remains initialized so another BLE feature can immediately
- * use the shared BLE subsystem.
- */
 void ConfigureNode::stop()
 {
-    services.ble.stopScan();
-    services.ble.disconnect();
+    services.ble.stop();
 }
