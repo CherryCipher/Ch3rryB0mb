@@ -43,11 +43,38 @@ bool NRFManager::start()
         logger.error("SPIManager is not running.");
         return false;
     }
+    
+    bool detected = radio.begin(&spiManager.getHardwareBus());
+
+    logger.info(String("radio.begin(): ") + (detected ? "OK" : "FAIL"));
+
+    if (!detected) {
+        logger.error("NRF24 radio not detected.");
+        return false;
+    }
+
+    logger.info(String("radio.begin(): ") + (detected ? "OK" : "FAIL"));
+
+    if (!detected) {
+        logger.error("NRF24 radio not detected.");
+        return false;
+    }
+
+    logger.info(String("isChipConnected(): ") + (radio.isChipConnected() ? "YES" : "NO"));
+
+    delay(100);
 
     if (!radio.begin(&spiManager.getHardwareBus())) {
         logger.error("NRF24 radio not detected.");
         return false;
     }
+
+    if (!radio.isChipConnected()) {
+        logger.error("NRF24 SPI connection test failed.");
+        return false;
+    }
+
+    logger.info("NRF24 SPI connection OK.");
 
     radio.stopConstCarrier();
     radio.stopListening();
@@ -59,7 +86,6 @@ bool NRFManager::start()
 
     logger.info("NRF24 radio detected.");
     logger.info("NRFManager started.");
-
     return true;
 }
 

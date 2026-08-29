@@ -176,14 +176,23 @@ bool ConfigureNode::sendConfig()
         return false;
     }
 
-    const BLEDeviceInfo& node = getSelectedNode();
+    const BLEDeviceInfo node = getSelectedNode();
+
+    services.logger.info("Sending node configuration.");
+    services.logger.info(String("Node: ") + node.name);
+    services.logger.info(String("Address: ") + node.address);
+    services.logger.info(String("Address type: ") + node.addressType);
 
     stopScan();
+
+    services.logger.info("Connecting to Ch3rryN0de.");
 
     if (!services.ble.connect(node.address, node.addressType)) {
         services.logger.error("Failed to connect to Ch3rryN0de.");
         return false;
     }
+
+    services.logger.info("Connected to Ch3rryN0de.");
 
     if (!services.ble.writeCharacteristic(
         NodeProtocol::SERVICE_UUID,
@@ -197,7 +206,6 @@ bool ConfigureNode::sendConfig()
     }
 
     services.logger.info("Node configuration sent.");
-
     return true;
 }
 

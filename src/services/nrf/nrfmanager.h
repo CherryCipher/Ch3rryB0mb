@@ -205,6 +205,7 @@ private:
      * @brief Indicates whether the NRFManager is currently running.
      */
     bool running = false;
+    
 
     /**
      * @brief Measures RF activity on a single NRF24 channel.

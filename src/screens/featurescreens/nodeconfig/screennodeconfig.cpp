@@ -155,8 +155,21 @@ void ScreenNodeConfig::startClicked(lv_event_t* event)
 {
     if (context.configureNode == nullptr) return;
 
-    if (!context.configureNode->sendConfig()) return;
-    if (!context.configureNode->startSession()) return;
+    Serial.println("[NODE CONFIG] START clicked.");
+
+    if (!context.configureNode->sendConfig()) {
+        Serial.println("[NODE CONFIG] sendConfig FAILED.");
+        return;
+    }
+
+    Serial.println("[NODE CONFIG] Config sent.");
+
+    if (!context.configureNode->startSession()) {
+        Serial.println("[NODE CONFIG] startSession FAILED.");
+        return;
+    }
+
+    Serial.println("[NODE CONFIG] START sent.");
 }
 
 /**

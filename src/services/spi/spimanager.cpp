@@ -39,12 +39,11 @@ bool SPIManager::start()
     digitalWrite(ModulePins::NRF_CSN, HIGH);
     digitalWrite(ModulePins::CC1101_CSN, HIGH);
 
-    hardwareBus.begin(ModulePins::SPI_SCK, ModulePins::SPI_MISO, ModulePins::SPI_MOSI);
+    hardwareBus.begin(ModulePins::SPI_SCK, ModulePins::SPI_MISO, ModulePins::SPI_MOSI, ModulePins::NRF_CSN);
 
     running = true;
 
     logger.info("SPIManager started.");
-
     return true;
 }
 
