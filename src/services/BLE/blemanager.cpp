@@ -519,13 +519,7 @@ bool BLEManager::startServer()
  * @brief Connects to a BLE device.
  *
  * Stops any active scan, disconnects and removes an existing client and
- * creates a fresh BLE client for the requested device. Conservative BLE
- * connection parameters are used to maximize compatibility between the
- * classic ESP32 central and ESP32-S3 peripheral.
- *
- * Automatic service discovery and MTU exchange are disabled during the
- * initial connection so that link establishment can be tested separately
- * from GATT negotiation.
+ * creates a fresh BLE client for the requested device.
  *
  * @param address BLE MAC address of the remote device.
  * @param addressType BLE address type reported during scanning.
@@ -548,7 +542,6 @@ bool BLEManager::connect(const String& address, uint8_t addressType)
 
     if (client != nullptr) {
         if (client->isConnected()) client->disconnect();
-
         NimBLEDevice::deleteClient(client);
         client = nullptr;
     }
@@ -565,35 +558,10 @@ bool BLEManager::connect(const String& address, uint8_t addressType)
         return false;
     }
 
-    /*
-     * Connection interval:
-     *   min 24 * 1.25 ms = 30 ms
-     *   max 40 * 1.25 ms = 50 ms
-     *
-     * Slave latency:
-     *   0
-     *
-     * Supervision timeout:
-     *   400 * 10 ms = 4 seconds
-     */
     client->setConnectionParams(24, 40, 0, 400);
+    client->setConnectTimeout(10000);
+    client->setConnectRetries(CONNECT_RETRIES);
 
-    /*
-     * Give the controller enough time to establish the physical BLE link.
-     */
-    client->setConnectTimeout(10);
-
-    /*
-     * Parameters:
-     *
-     * address        Remote BLE address.
-     * deleteAttrs    true  - discard cached remote attributes.
-     * asyncConnect   false - connect synchronously.
-     * exchangeMTU    false - do not perform MTU exchange yet.
-     *
-     * This deliberately isolates BLE link establishment from GATT/MTU
-     * negotiation while diagnosing connection error 574.
-     */
     if (!client->connect(bleAddress, true, false, false)) {
         int error = client->getLastError();
 
