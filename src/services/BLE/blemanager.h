@@ -218,19 +218,15 @@ public:
     bool startServer();
 
     /**
-     * @brief Connects to a remote BLE device.
+     * @brief Connects to a BLE device.
      *
-     * The active scan is stopped before the connection attempt. The
-     * client automatically retries connection-establishment failures,
-     * including BLE error 0x3E, which is reported by NimBLE as error 574.
+     * Stops any active scan, creates a fresh BLE client and attempts to establish
+     * a connection using conservative connection parameters.
      *
-     * Automatic MTU negotiation is disabled during connection setup to
-     * improve interoperability with ESP32-S3 peripherals.
+     * @param address BLE MAC address of the remote device.
+     * @param addressType BLE address type reported during scanning.
      *
-     * @param address BLE device address.
-     * @param addressType BLE address type discovered during scanning.
-     *
-     * @return true when connected successfully.
+     * @return true when the BLE connection was established successfully.
      */
     bool connect(const String& address, uint8_t addressType);
 

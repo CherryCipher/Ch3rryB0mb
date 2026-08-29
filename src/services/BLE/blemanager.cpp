@@ -172,10 +172,11 @@ bool BLEManager::isScanning() const
 }
 
 /**
- * @brief Starts legacy connectable BLE advertising.
+ * @brief Starts BLE advertising.
  *
- * Configures conservative legacy advertising suitable for both
- * BLE 4.x ESP32 centrals and BLE 5 capable ESP32-S3 devices.
+ * Stops active scanning, configures the requested device name and optional
+ * service UUID and starts legacy BLE advertising using conservative
+ * intervals for compatibility with classic ESP32 BLE centrals.
  *
  * @param name Device name included in the advertisement.
  * @param serviceUUID Optional service UUID to advertise.
@@ -204,30 +205,20 @@ bool BLEManager::startAdvertising(const String& name, const String& serviceUUID)
 
     advertiser->reset();
 
-    if (!advertiser->setConnectableMode(BLE_GAP_CONN_MODE_UND)) {
-        logger.error("Failed to configure connectable BLE advertising.");
-        return false;
+    NimBLEAdvertisementData advertisementData;
+    advertisementData.setFlags(BLE_HS_ADV_F_DISC_GEN | BLE_HS_ADV_F_BREDR_UNSUP);
+
+    if (!name.isEmpty()) advertisementData.setName(name.c_str());
+
+    if (!serviceUUID.isEmpty()) {
+        advertisementData.addServiceUUID(NimBLEUUID(serviceUUID.c_str()));
     }
 
-    if (!advertiser->setDiscoverableMode(BLE_GAP_DISC_MODE_GEN)) {
-        logger.error("Failed to configure discoverable BLE advertising.");
-        return false;
-    }
+    advertiser->setAdvertisementData(advertisementData);
 
-#ifdef C3N0_S3
+    // 100-150 ms advertising interval.
     advertiser->setMinInterval(160);
     advertiser->setMaxInterval(240);
-#endif
-
-    if (!name.isEmpty() && !advertiser->setName(name.c_str())) {
-        logger.error("Failed to set BLE advertisement name.");
-        return false;
-    }
-
-    if (!serviceUUID.isEmpty() && !advertiser->addServiceUUID(serviceUUID.c_str())) {
-        logger.error("Failed to add BLE service UUID.");
-        return false;
-    }
 
     logger.info(String("Starting BLE advertising as ") + name + ".");
 
@@ -237,6 +228,7 @@ bool BLEManager::startAdvertising(const String& name, const String& serviceUUID)
     }
 
     logger.info("BLE advertising started.");
+
     return true;
 }
 
@@ -524,15 +516,21 @@ bool BLEManager::startServer()
 }
 
 /**
- * @brief Connects to a remote BLE device.
+ * @brief Connects to a BLE device.
  *
- * Stops active BLE discovery before creating a fresh client and explicitly
- * connects to the discovered peer address.
+ * Stops any active scan, disconnects and removes an existing client and
+ * creates a fresh BLE client for the requested device. Conservative BLE
+ * connection parameters are used to maximize compatibility between the
+ * classic ESP32 central and ESP32-S3 peripheral.
  *
- * @param address BLE device address.
- * @param addressType BLE address type discovered during scanning.
+ * Automatic service discovery and MTU exchange are disabled during the
+ * initial connection so that link establishment can be tested separately
+ * from GATT negotiation.
  *
- * @return true when connected successfully.
+ * @param address BLE MAC address of the remote device.
+ * @param addressType BLE address type reported during scanning.
+ *
+ * @return true when the BLE connection was established successfully.
  */
 bool BLEManager::connect(const String& address, uint8_t addressType)
 {
@@ -541,13 +539,24 @@ bool BLEManager::connect(const String& address, uint8_t addressType)
         return false;
     }
 
-    if (!ensureInitialized()) return false;
+    if (!ensureInitialized()) {
+        logger.error("BLE initialization failed.");
+        return false;
+    }
 
     stopScan();
-    stopAdvertising();
-    disconnect();
+
+    if (client != nullptr) {
+        if (client->isConnected()) client->disconnect();
+
+        NimBLEDevice::deleteClient(client);
+        client = nullptr;
+    }
 
     NimBLEAddress bleAddress(address.c_str(), addressType);
+
+    logger.info(String("Connecting to BLE device ") + address + ".");
+    logger.info(String("BLE address type: ") + addressType + ".");
 
     client = NimBLEDevice::createClient();
 
@@ -556,14 +565,48 @@ bool BLEManager::connect(const String& address, uint8_t addressType)
         return false;
     }
 
+    /*
+     * Connection interval:
+     *   min 24 * 1.25 ms = 30 ms
+     *   max 40 * 1.25 ms = 50 ms
+     *
+     * Slave latency:
+     *   0
+     *
+     * Supervision timeout:
+     *   400 * 10 ms = 4 seconds
+     */
+    client->setConnectionParams(24, 40, 0, 400);
+
+    /*
+     * Give the controller enough time to establish the physical BLE link.
+     */
     client->setConnectTimeout(10);
 
-    logger.info(String("Connecting to BLE device ") + address + ".");
-
+    /*
+     * Parameters:
+     *
+     * address        Remote BLE address.
+     * deleteAttrs    true  - discard cached remote attributes.
+     * asyncConnect   false - connect synchronously.
+     * exchangeMTU    false - do not perform MTU exchange yet.
+     *
+     * This deliberately isolates BLE link establishment from GATT/MTU
+     * negotiation while diagnosing connection error 574.
+     */
     if (!client->connect(bleAddress, true, false, false)) {
         int error = client->getLastError();
 
         logger.error(String("BLE connection failed, error: ") + error);
+
+        NimBLEDevice::deleteClient(client);
+        client = nullptr;
+
+        return false;
+    }
+
+    if (!client->isConnected()) {
+        logger.error("BLE connect returned successfully but client is not connected.");
 
         NimBLEDevice::deleteClient(client);
         client = nullptr;
