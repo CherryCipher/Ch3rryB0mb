@@ -341,8 +341,8 @@ void BLEManager::updateDevice(const NimBLEAdvertisedDevice* advertisedDevice)
  * @param manager BLEManager that owns the characteristic.
  * @param callback Application callback invoked on writes.
  */
-BLEManager::CharacteristicCallbacks::CharacteristicCallbacks(BLEManager& manager, BLEWriteCallback callback)
-    : manager(manager), callback(callback)
+BLEManager::CharacteristicCallbacks::CharacteristicCallbacks(BLEWriteCallback callback)
+    : callback(callback)
 {
 }
 
@@ -420,7 +420,7 @@ bool BLEManager::addServerCharacteristic(const String& characteristicUUID, uint3
         return false;
     }
 
-    if (writeCallback != nullptr) characteristic->setCallbacks(new CharacteristicCallbacks(*this, writeCallback));
+    if (writeCallback != nullptr) characteristic->setCallbacks(new CharacteristicCallbacks(writeCallback));
 
     logger.info(String("BLE characteristic created: ") + characteristicUUID);
 

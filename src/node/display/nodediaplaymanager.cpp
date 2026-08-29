@@ -1,18 +1,20 @@
 #include "nodedisplaymanager.h"
 
+#include "hardware/modulepins.h"
+
 #include <Wire.h>
 
-static constexpr uint8_t OLED_SDA = 21;
-static constexpr uint8_t OLED_SCL = 25;
-
 /**
- * @brief Initializes the OLED display.
+ * @brief Initializes the node OLED display.
  *
- * @return True when the display initialized successfully.
+ * Starts the I2C bus using the centrally configured module pins and
+ * initializes the SSD1306 display.
+ *
+ * @return true when the display initialized successfully.
  */
 bool NodeDisplayManager::begin()
 {
-    Wire.begin(OLED_SDA, OLED_SCL);
+    Wire.begin(ModulePins::OLED_SDA, ModulePins::OLED_SCL);
 
     if (!display.begin(SSD1306_SWITCHCAPVCC, OLED_ADDRESS)) return false;
 

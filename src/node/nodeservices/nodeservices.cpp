@@ -5,6 +5,8 @@
 
 #include "nodeservices.h"
 
+#include "hardware/modulepins.h"
+
 /**
  * @brief Constructs the Ch3rryN0de service container.
  */
@@ -70,7 +72,7 @@ void NodeServices::stop()
 /**
  * @brief Starts the NRF24 radio service.
  *
- * Stops the CC1101 when active, restores safe NRF24 and CC1101 pin
+ * Stops the CC1101 radio when active, restores safe shared-radio pin
  * states and starts NRFManager.
  *
  * @return true when NRFManager started successfully.
@@ -81,13 +83,13 @@ bool NodeServices::startNRF()
 
     if (cc1101.isRunning()) stopCC1101();
 
-    pinMode(NRF_CE_PIN, OUTPUT);
-    pinMode(NRF_CSN_PIN, OUTPUT);
-    pinMode(CC1101_CSN_PIN, OUTPUT);
+    pinMode(ModulePins::NRF_CE, OUTPUT);
+    pinMode(ModulePins::NRF_CSN, OUTPUT);
+    pinMode(ModulePins::CC1101_CSN, OUTPUT);
 
-    digitalWrite(NRF_CE_PIN, LOW);
-    digitalWrite(NRF_CSN_PIN, HIGH);
-    digitalWrite(CC1101_CSN_PIN, HIGH);
+    digitalWrite(ModulePins::NRF_CE, LOW);
+    digitalWrite(ModulePins::NRF_CSN, HIGH);
+    digitalWrite(ModulePins::CC1101_CSN, HIGH);
 
     delay(10);
 
@@ -103,6 +105,9 @@ bool NodeServices::startNRF()
 
 /**
  * @brief Stops the NRF24 radio service.
+ *
+ * Stops NRFManager and returns the NRF24 control pins to their inactive
+ * states.
  */
 void NodeServices::stopNRF()
 {
@@ -110,12 +115,15 @@ void NodeServices::stopNRF()
 
     nrf.stop();
 
-    digitalWrite(NRF_CE_PIN, LOW);
-    digitalWrite(NRF_CSN_PIN, HIGH);
+    digitalWrite(ModulePins::NRF_CE, LOW);
+    digitalWrite(ModulePins::NRF_CSN, HIGH);
 }
 
 /**
  * @brief Starts the CC1101 radio service.
+ *
+ * Stops the NRF24 radio when active, restores safe shared-radio pin
+ * states and starts CC1101Manager.
  *
  * @return true when CC1101Manager started successfully.
  */
@@ -125,9 +133,13 @@ bool NodeServices::startCC1101()
 
     if (nrf.isRunning()) stopNRF();
 
-    digitalWrite(NRF_CE_PIN, LOW);
-    digitalWrite(NRF_CSN_PIN, HIGH);
-    digitalWrite(CC1101_CSN_PIN, HIGH);
+    pinMode(ModulePins::NRF_CE, OUTPUT);
+    pinMode(ModulePins::NRF_CSN, OUTPUT);
+    pinMode(ModulePins::CC1101_CSN, OUTPUT);
+
+    digitalWrite(ModulePins::NRF_CE, LOW);
+    digitalWrite(ModulePins::NRF_CSN, HIGH);
+    digitalWrite(ModulePins::CC1101_CSN, HIGH);
 
     if (!cc1101.start()) {
         logger.error("Failed to start CC1101Manager.");
@@ -139,6 +151,9 @@ bool NodeServices::startCC1101()
 
 /**
  * @brief Stops the CC1101 radio service.
+ *
+ * Stops CC1101Manager and returns the CC1101 chip select line to its
+ * inactive state.
  */
 void NodeServices::stopCC1101()
 {
@@ -146,19 +161,22 @@ void NodeServices::stopCC1101()
 
     cc1101.stop();
 
-    digitalWrite(CC1101_CSN_PIN, HIGH);
+    digitalWrite(ModulePins::CC1101_CSN, HIGH);
 }
 
 /**
  * @brief Configures shared radio pins to safe inactive states.
+ *
+ * Both SPI radios are deselected and the NRF24 Chip Enable line is
+ * driven low so neither radio becomes active during startup.
  */
 void NodeServices::configureRadioPins()
 {
-    pinMode(NRF_CE_PIN, OUTPUT);
-    pinMode(NRF_CSN_PIN, OUTPUT);
-    pinMode(CC1101_CSN_PIN, OUTPUT);
+    pinMode(ModulePins::NRF_CE, OUTPUT);
+    pinMode(ModulePins::NRF_CSN, OUTPUT);
+    pinMode(ModulePins::CC1101_CSN, OUTPUT);
 
-    digitalWrite(NRF_CE_PIN, LOW);
-    digitalWrite(NRF_CSN_PIN, HIGH);
-    digitalWrite(CC1101_CSN_PIN, HIGH);
+    digitalWrite(ModulePins::NRF_CE, LOW);
+    digitalWrite(ModulePins::NRF_CSN, HIGH);
+    digitalWrite(ModulePins::CC1101_CSN, HIGH);
 }

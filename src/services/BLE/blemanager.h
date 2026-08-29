@@ -283,10 +283,9 @@ private:
         /**
          * @brief Constructs a characteristic callback router.
          *
-         * @param manager BLEManager that owns the characteristic.
-         * @param callback Application callback invoked on writes.
+         * @param callback Application callback invoked when data is written.
          */
-        CharacteristicCallbacks(BLEManager& manager, BLEWriteCallback callback);
+        explicit CharacteristicCallbacks(BLEWriteCallback callback);
 
         /**
          * @brief Handles a remote write to a local characteristic.
@@ -298,16 +297,12 @@ private:
 
     private:
         /**
-         * @brief BLEManager owning this callback.
-         */
-        BLEManager& manager;
-
-        /**
          * @brief Application callback invoked on characteristic writes.
          */
         BLEWriteCallback callback;
     };
 
+    
     /**
      * @brief Reference to the application's Logger.
      */

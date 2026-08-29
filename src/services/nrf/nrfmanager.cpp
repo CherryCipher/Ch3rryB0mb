@@ -5,17 +5,21 @@
 
 #include "nrfmanager.h"
 
+#include "hardware/modulepins.h"
+
 /**
  * @brief Constructs a new NRFManager.
  *
- * Stores references to the application's Logger and SPIManager
- * and configures the NRF24 CE and CSN pins.
+ * Stores references to the application's Logger and SPIManager and
+ * configures the RF24 instance using the centrally defined NRF24 pins.
  *
  * @param logger Reference to the application's Logger.
  * @param spiManager Reference to the application's SPIManager.
  */
 NRFManager::NRFManager(Logger& logger, SPIManager& spiManager)
-    : logger(logger), spiManager(spiManager), radio(NRF_CE, NRF_CSN)
+    : logger(logger),
+      spiManager(spiManager),
+      radio(ModulePins::NRF_CE, ModulePins::NRF_CSN)
 {
 }
 

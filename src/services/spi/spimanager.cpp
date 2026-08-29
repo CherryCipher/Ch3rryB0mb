@@ -4,6 +4,7 @@
  */
 
 #include "spimanager.h"
+#include "hardware/modulepins.h"
 
 /**
  * @brief Constructs a new SPIManager.
@@ -14,18 +15,17 @@
  */
 SPIManager::SPIManager(Logger& logger)
     : logger(logger),
-      hardwareBus(VSPI)
+      hardwareBus(ModulePins::SPI_BUS)
 {
 }
 
 /**
- * @brief Initializes the shared hardware SPI bus.
+ * @brief Starts the shared hardware SPI bus.
  *
- * Configures the chip-select pins of all known SPI peripherals as outputs
- * and drives them HIGH before starting the hardware SPI bus. This ensures
- * that all peripherals are deselected during initialization.
+ * Configures all SPI chip select pins in their inactive state before
+ * initializing the shared SPI bus.
  *
- * @return true if initialization succeeded.
+ * @return true when the SPI manager started successfully.
  */
 bool SPIManager::start()
 {
@@ -33,16 +33,13 @@ bool SPIManager::start()
 
     logger.info("Starting SPIManager.");
 
-    // Deselect NRF24L01+.
-    pinMode(NRF_CSN_PIN, OUTPUT);
-    digitalWrite(NRF_CSN_PIN, HIGH);
+    pinMode(ModulePins::NRF_CSN, OUTPUT);
+    pinMode(ModulePins::CC1101_CSN, OUTPUT);
 
-    // Deselect CC1101.
-    pinMode(CC1101_CSN_PIN, OUTPUT);
-    digitalWrite(CC1101_CSN_PIN, HIGH);
+    digitalWrite(ModulePins::NRF_CSN, HIGH);
+    digitalWrite(ModulePins::CC1101_CSN, HIGH);
 
-    // Start the shared hardware SPI bus.
-    hardwareBus.begin(HARDWARE_SPI_SCK, HARDWARE_SPI_MISO, HARDWARE_SPI_MOSI);
+    hardwareBus.begin(ModulePins::SPI_SCK, ModulePins::SPI_MISO, ModulePins::SPI_MOSI);
 
     running = true;
 
@@ -64,8 +61,8 @@ bool SPIManager::stop()
     if (!running) return true;
 
     // Ensure all SPI peripherals remain deselected.
-    digitalWrite(NRF_CSN_PIN, HIGH);
-    digitalWrite(CC1101_CSN_PIN, HIGH);
+    digitalWrite(ModulePins::NRF_CSN, HIGH);
+    digitalWrite(ModulePins::CC1101_CSN, HIGH);
 
     hardwareBus.end();
 

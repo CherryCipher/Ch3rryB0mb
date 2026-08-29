@@ -180,16 +180,6 @@ public:
 
 private:
     /**
-     * @brief GPIO pin connected to the NRF24 Chip Enable pin.
-     */
-    static constexpr uint8_t NRF_CE = 27;
-
-    /**
-     * @brief GPIO pin connected to the NRF24 Chip Select pin.
-     */
-    static constexpr uint8_t NRF_CSN = 22;
-
-    /**
      * @brief Time spent listening during one RF activity sample.
      *
      * The RF24 scanner example uses approximately 128 microseconds.

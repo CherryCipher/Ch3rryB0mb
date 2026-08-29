@@ -129,21 +129,6 @@ public:
 
 private:
     /**
-     * @brief NRF24 Chip Enable GPIO.
-     */
-    static constexpr uint8_t NRF_CE_PIN = 27;
-
-    /**
-     * @brief NRF24 Chip Select GPIO.
-     */
-    static constexpr uint8_t NRF_CSN_PIN = 22;
-
-    /**
-     * @brief CC1101 Chip Select GPIO.
-     */
-    static constexpr uint8_t CC1101_CSN_PIN = 16;
-
-    /**
      * @brief Configures shared radio pins to safe inactive states.
      */
     void configureRadioPins();
