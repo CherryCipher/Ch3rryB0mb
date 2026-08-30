@@ -4,7 +4,6 @@
  */
 
 #include "screennodeconfig.h"
-
 #include "screens/screenmanager.h"
 #include "../../uiwidgets/uiwidget.h"
 
@@ -28,6 +27,7 @@ lv_obj_t* ScreenNodeConfig::create(ScreenManager& screenManager, ConfigureNode& 
 
     context.screenManager = &screenManager;
     context.configureNode = &configureNode;
+    context.screen = screen;
 
     UIWidgets::addHeader(screen, 0, 0, "N0DE CONFIG");
 
@@ -40,8 +40,8 @@ lv_obj_t* ScreenNodeConfig::create(ScreenManager& screenManager, ConfigureNode& 
     }
 
     const BLEDeviceInfo& node = configureNode.getSelectedNode();
-
     String nodeName = node.name.length() > 0 ? node.name : "C3N0";
+
     UIWidgets::addText(screen, 15, 50, nodeName.c_str(), 210);
 
     String nodeInfo = String(node.rssi) + " dBm | " + node.address;
@@ -108,6 +108,61 @@ void ScreenNodeConfig::updateControls()
 }
 
 /**
+ * @brief Replaces the configuration controls with a success message.
+ *
+ * Shows the configuration that was sent to the node and informs the user
+ * that the node must be reset before it can be configured again.
+ */
+void ScreenNodeConfig::showSuccess()
+{
+    if (context.screen == nullptr || context.configureNode == nullptr) return;
+
+    lv_obj_clean(context.screen);
+
+    UIWidgets::addHeader(context.screen, 0, 0, "N0DE CONFIGURED");
+
+    const BLEDeviceInfo& node = context.configureNode->getSelectedNode();
+    const NodeConfig& config = context.configureNode->getConfig();
+
+    String nodeName = node.name.length() > 0 ? node.name : "C3N0";
+    UIWidgets::addText(context.screen, 15, 55, nodeName.c_str(), 210);
+
+    UIWidgets::addText(context.screen, 15, 95, "NODE CONFIGURED", 210);
+
+    String radio = "RADIO: " + String(ConfigureNode::getRadioName(config.radio));
+    UIWidgets::addText(context.screen, 15, 130, radio.c_str(), 210);
+
+    String mode = "MODE: " + String(ConfigureNode::getModeName(config.mode));
+    UIWidgets::addText(context.screen, 15, 155, mode.c_str(), 210);
+
+    String parameter;
+
+    switch (config.radio) {
+        case NodeRadio::BLE:
+            parameter = "BLE";
+            break;
+
+        case NodeRadio::NRF24:
+            parameter = "CHANNEL: " + String(config.channel);
+            break;
+
+        case NodeRadio::CC1101:
+            parameter = "FREQ: " + String(config.frequency, 3) + " MHz";
+            break;
+    }
+
+    UIWidgets::addText(context.screen, 15, 180, parameter.c_str(), 210);
+    UIWidgets::addText(context.screen, 15, 215, "RESET NODE TO\nCONFIGURE AGAIN", 210);
+
+    lv_obj_t* closeButton = UIWidgets::addButton(context.screen, 65, 270, "CLOSE", 110, 40);
+    lv_obj_add_event_cb(closeButton, closeClicked, LV_EVENT_CLICKED, &context);
+
+    radioButton = nullptr;
+    modeButton = nullptr;
+    parameterLabel = nullptr;
+}
+
+/**
  * @brief Handles the radio selection button.
  *
  * @param event Pointer to the LVGL event.
@@ -137,7 +192,6 @@ void ScreenNodeConfig::modeClicked(lv_event_t* event)
     if (context.configureNode == nullptr) return;
 
     NodeConfig& config = context.configureNode->getConfig();
-
     config.mode = config.mode == NodeMode::Beacon ? NodeMode::Listen : NodeMode::Beacon;
 
     updateControls();
@@ -146,8 +200,9 @@ void ScreenNodeConfig::modeClicked(lv_event_t* event)
 /**
  * @brief Handles the start button.
  *
- * Sends the current configuration and START command to the selected
- * Ch3rryN0de.
+ * Sends the current node configuration followed by the START command.
+ * When both operations succeed, the screen changes to a confirmation
+ * state while BLE remains available until the user closes the screen.
  *
  * @param event Pointer to the LVGL event.
  */
@@ -170,6 +225,22 @@ void ScreenNodeConfig::startClicked(lv_event_t* event)
     }
 
     Serial.println("[NODE CONFIG] START sent.");
+
+    showSuccess();
+}
+
+/**
+ * @brief Handles the close button after successful configuration.
+ *
+ * Fully shuts down BLE before returning directly to the main menu. This
+ * ensures Wi-Fi can safely use the shared ESP32 radio afterwards.
+ *
+ * @param event Pointer to the LVGL event.
+ */
+void ScreenNodeConfig::closeClicked(lv_event_t* event)
+{
+    if (context.configureNode != nullptr) context.configureNode->stop();
+    if (context.screenManager != nullptr) context.screenManager->home();
 }
 
 /**
@@ -195,6 +266,7 @@ void ScreenNodeConfig::screenDeleted(lv_event_t* event)
     modeButton = nullptr;
     parameterLabel = nullptr;
 
+    context.screen = nullptr;
     context.screenManager = nullptr;
     context.configureNode = nullptr;
 }

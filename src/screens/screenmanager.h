@@ -112,6 +112,14 @@ public:
      */
     void back();
 
+    /**
+     * @brief Returns directly to the main menu.
+     *
+     * Clears the navigation history and shows the main menu without storing
+     * the current screen in the history stack.
+     */
+    void home();
+
 private:
     /**
      * @brief Maximum number of screens stored in navigation history.

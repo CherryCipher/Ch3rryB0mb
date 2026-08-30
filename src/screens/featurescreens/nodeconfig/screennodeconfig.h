@@ -3,13 +3,13 @@
  * @brief Declaration of the Ch3rryN0de configuration screen.
  *
  * The screen allows the user to configure the radio and operating mode
- * for a selected Ch3rryN0de.
+ * for a selected Ch3rryN0de and displays confirmation after a node
+ * session has been started successfully.
  */
 
 #pragma once
 
 #include <lvgl.h>
-
 #include "app/features/configurenode/configurenode.h"
 
 class ScreenManager;
@@ -40,6 +40,7 @@ private:
     {
         ScreenManager* screenManager = nullptr;
         ConfigureNode* configureNode = nullptr;
+        lv_obj_t* screen = nullptr;
     };
 
     static Context context;
@@ -52,6 +53,11 @@ private:
      * @brief Updates the configuration controls.
      */
     static void updateControls();
+
+    /**
+     * @brief Replaces the configuration controls with a success message.
+     */
+    static void showSuccess();
 
     /**
      * @brief Handles the radio selection button.
@@ -73,6 +79,15 @@ private:
      * @param event Pointer to the LVGL event.
      */
     static void startClicked(lv_event_t* event);
+
+    /**
+     * @brief Handles the close button after successful configuration.
+     *
+     * Fully stops the BLE feature and returns directly to the main menu.
+     *
+     * @param event Pointer to the LVGL event.
+     */
+    static void closeClicked(lv_event_t* event);
 
     /**
      * @brief Handles the back button.

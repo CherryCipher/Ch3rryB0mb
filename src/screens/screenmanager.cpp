@@ -226,3 +226,15 @@ void ScreenManager::switchScreen( lv_obj_t* newScreen )
     if (oldScreen != nullptr)
         lv_obj_delete(oldScreen);
 }
+
+/**
+ * @brief Returns directly to the main menu.
+ *
+ * Clears all navigation history and shows the main menu without creating
+ * a new history entry.
+ */
+void ScreenManager::home()
+{
+    historySize = 0;
+    showInternal(Screen::MainMenu, false);
+}
