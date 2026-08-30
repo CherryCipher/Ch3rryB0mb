@@ -395,7 +395,8 @@ void BLEManager::CharacteristicCallbacks::onWrite(NimBLECharacteristic* characte
  * @brief Creates a local GATT server and service.
  *
  * Installs server callbacks when the server is first created so
- * connection and disconnection events can be tracked.
+ * connection and disconnection events can be tracked. BLEManager
+ * retains ownership of the callback instance.
  *
  * @param serviceUUID UUID of the service to create.
  *
@@ -407,7 +408,6 @@ bool BLEManager::createServer(const String& serviceUUID)
         logger.error("BLEManager is not running.");
         return false;
     }
-
     if (!ensureInitialized()) return false;
 
     if (server == nullptr) {
@@ -419,11 +419,10 @@ bool BLEManager::createServer(const String& serviceUUID)
         }
 
         serverCallbacks = new ServerCallbacks(*this);
-        server->setCallbacks(serverCallbacks);
+        server->setCallbacks(serverCallbacks, false);
     }
 
     serverService = server->createService(serviceUUID.c_str());
-
     if (serverService == nullptr) {
         logger.error("Failed to create BLE service.");
         return false;
@@ -660,8 +659,9 @@ bool BLEManager::writeCharacteristic(const String& serviceUUID, const String& ch
 /**
  * @brief Completely shuts down the BLE subsystem.
  *
- * Stops active BLE operations, releases local BLE state and
- * fully deinitializes NimBLE.
+ * Stops active BLE operations, fully deinitializes NimBLE and releases
+ * BLEManager-owned state. Callback objects are released only after the
+ * NimBLE server has been destroyed.
  */
 void BLEManager::shutdown()
 {
@@ -673,23 +673,24 @@ void BLEManager::shutdown()
     devices = nullptr;
     deviceCount = 0;
 
+    if (initialized) 
+    {
+        logger.info("Deinitializing NimBLE.");
+
+        NimBLEDevice::deinit(true);
+
+        scanner = nullptr;
+        advertiser = nullptr;
+        server = nullptr;
+        serverService = nullptr;
+        client = nullptr;
+        initialized = false;
+
+        logger.info("NimBLE deinitialized.");
+    }
+
     delete serverCallbacks;
     serverCallbacks = nullptr;
-
-    if (!initialized) return;
-
-    logger.info("Deinitializing NimBLE.");
-
-    NimBLEDevice::deinit(true);
-
-    scanner = nullptr;
-    advertiser = nullptr;
-    server = nullptr;
-    serverService = nullptr;
-    client = nullptr;
-    initialized = false;
-
-    logger.info("NimBLE deinitialized.");
 }
 
 /**

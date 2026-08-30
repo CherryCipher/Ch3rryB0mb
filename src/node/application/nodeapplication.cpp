@@ -239,13 +239,16 @@ void NodeApplication::handleCommand(const uint8_t* data, size_t length)
 
 /**
  * @brief Processes a pending START request.
+ *
+ * Starts the configured radio session and leaves BLE configuration mode
+ * after the session has started successfully. The node remains in its
+ * configured state until it is reset.
  */
 void NodeApplication::processStartRequest()
 {
     if (!startRequested) return;
 
     startRequested = false;
-
     if (sessionRunning) stopSession();
 
     if (!startSession()) {
@@ -255,7 +258,12 @@ void NodeApplication::processStartRequest()
     }
 
     sessionRunning = true;
-    setNodeStatus(NodeStatus::Ready);
+    setNodeStatus(NodeStatus::Running);
+
+    services.logger.info("Node session running.");
+    services.logger.info("Leaving BLE configuration mode.");
+
+    services.ble.stop();
 }
 
 /**
@@ -317,6 +325,10 @@ void NodeApplication::stopSession()
 /**
  * @brief Starts an NRF24 beacon session.
  *
+ * Validates the configured channel and interval, starts the NRF24 radio
+ * and configures it as a transmitter using the shared node address.
+ * The active beacon configuration is shown on the optional OLED display.
+ *
  * @return true when the beacon session started successfully.
  */
 bool NodeApplication::startNRFBeacon()
@@ -325,7 +337,6 @@ bool NodeApplication::startNRFBeacon()
         services.logger.error("Invalid NRF beacon channel.");
         return false;
     }
-
     if (activeConfig.interval == 0) {
         services.logger.error("Invalid NRF beacon interval.");
         return false;
@@ -348,6 +359,8 @@ bool NodeApplication::startNRFBeacon()
         activeConfig.interval +
         " ms."
     );
+
+    services.display.showNRFMode("BEACON", activeConfig.channel);
 
     return true;
 }
