@@ -373,22 +373,22 @@ private:
     /**
      * @brief Index where the next captured packet will be written.
      */
-    volatile uint8_t packetWriteIndex = 0;
+    uint8_t packetWriteIndex = 0;
 
     /**
      * @brief Number of valid packet records currently stored.
      */
-    volatile uint8_t capturedPacketCount = 0;
+    uint8_t capturedPacketCount = 0;
 
     /**
      * @brief Sequence number assigned to captured packets.
      */
-    volatile uint32_t capturedPacketSequence = 0;
+    uint32_t capturedPacketSequence = 0;
 
     /**
      * @brief Indicates whether promiscuous packet capture is active.
      */
-    volatile bool packetCaptureRunning = false;
+    bool packetCaptureRunning = false;
 
     /**
      * @brief Protects packet ring buffer access between Wi-Fi and application tasks.
