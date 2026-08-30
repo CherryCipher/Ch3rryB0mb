@@ -26,12 +26,11 @@ NRFManager::NRFManager(Logger& logger, SPIManager& spiManager)
 /**
  * @brief Initializes the NRF24 radio.
  *
- * Verifies that the shared SPI infrastructure is available,
- * initializes the NRF24 using the hardware SPI bus and places
- * the radio in an inactive state.
+ * Verifies that the shared SPI infrastructure is available, initializes
+ * the NRF24 on the shared hardware SPI bus and places the radio in an
+ * inactive state until configured for a session.
  *
- * @return true if the NRF24 radio was initialized successfully.
- * @return false otherwise.
+ * @return true when the NRF24 initialized successfully.
  */
 bool NRFManager::start()
 {
@@ -43,26 +42,6 @@ bool NRFManager::start()
         logger.error("SPIManager is not running.");
         return false;
     }
-    
-    bool detected = radio.begin(&spiManager.getHardwareBus());
-
-    logger.info(String("radio.begin(): ") + (detected ? "OK" : "FAIL"));
-
-    if (!detected) {
-        logger.error("NRF24 radio not detected.");
-        return false;
-    }
-
-    logger.info(String("radio.begin(): ") + (detected ? "OK" : "FAIL"));
-
-    if (!detected) {
-        logger.error("NRF24 radio not detected.");
-        return false;
-    }
-
-    logger.info(String("isChipConnected(): ") + (radio.isChipConnected() ? "YES" : "NO"));
-
-    delay(100);
 
     if (!radio.begin(&spiManager.getHardwareBus())) {
         logger.error("NRF24 radio not detected.");
@@ -74,8 +53,6 @@ bool NRFManager::start()
         return false;
     }
 
-    logger.info("NRF24 SPI connection OK.");
-
     radio.stopConstCarrier();
     radio.stopListening();
     radio.setAutoAck(false);
@@ -86,6 +63,7 @@ bool NRFManager::start()
 
     logger.info("NRF24 radio detected.");
     logger.info("NRFManager started.");
+
     return true;
 }
 

@@ -165,10 +165,10 @@ public:
     bool startSession();
 
     /**
-     * @brief Stops node discovery and releases feature-level BLE activity.
+     * @brief Stops node configuration and fully releases BLE.
      *
-     * The shared NimBLE subsystem remains initialized so another BLE
-     * feature can use it without a deinitialization cycle.
+     * Stops active BLE operations and deinitializes NimBLE so Wi-Fi can
+     * safely use the shared ESP32 radio afterwards.
      */
     void stop();
 

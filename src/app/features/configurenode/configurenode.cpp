@@ -297,6 +297,12 @@ bool ConfigureNode::hasNode(const String& address) const
     return false;
 }
 
+/**
+ * @brief Stops node configuration and fully releases BLE.
+ *
+ * Stops active BLE operations and deinitializes NimBLE so Wi-Fi can
+ * safely use the shared ESP32 radio afterwards.
+ */
 void ConfigureNode::stop()
 {
     services.ble.stop();

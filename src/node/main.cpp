@@ -16,8 +16,7 @@ NodeApplication application(services);
 /**
  * @brief Initializes the Ch3rryN0de firmware.
  *
- * Starts all required node services, performs the NRF24 hardware test
- * and then starts the node application in BLE configuration mode.
+ * Starts the shared node services and enters BLE configuration mode.
  */
 void setup()
 {
@@ -29,19 +28,13 @@ void setup()
         return;
     }
 
-    services.logger.info("Starting NRF24 radio.");
-
-    if (services.nrf.start()) {
-        services.logger.info("NRF24 hardware test: OK.");
-        services.nrf.stop();
-    } else {
-        services.logger.error("NRF24 hardware test: FAIL.");
-    }
-
     if (!application.start()) {
         services.logger.error("Failed to start NodeApplication.");
         return;
     }
+
+    services.logger.info("NodeApplication started succesfull.");
+    services.logger.printBanner();
 }
 
 /**
