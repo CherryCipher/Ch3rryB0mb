@@ -305,5 +305,5 @@ bool ConfigureNode::hasNode(const String& address) const
  */
 void ConfigureNode::stop()
 {
-    services.ble.stop();
+    services.ble.shutdown();
 }
