@@ -2,9 +2,8 @@
  * @file screennodeconfig.h
  * @brief Declaration of the Ch3rryN0de configuration screen.
  *
- * The screen allows the user to configure the radio and operating mode
- * for a selected Ch3rryN0de and displays confirmation after a node
- * session has been started successfully.
+ * Provides radio and mode configuration for NRF24 and CC1101
+ * Ch3rryN0de sessions.
  */
 
 #pragma once
@@ -17,6 +16,13 @@ class ScreenManager;
 /**
  * @class ScreenNodeConfig
  * @brief Provides configuration controls for a selected Ch3rryN0de.
+ *
+ * The visible settings automatically change based on the selected
+ * radio and operating mode.
+ *
+ * NRF24 uses a channel with a calculated frequency. CC1101 uses a
+ * configurable frequency. Beacon mode additionally exposes a
+ * transmission interval.
  */
 class ScreenNodeConfig
 {
@@ -33,6 +39,26 @@ public:
 
 private:
     /**
+     * @brief Lowest NRF24 transmission channel exposed by the UI.
+     */
+    static constexpr uint8_t MIN_NRF_CHANNEL = 2;
+
+    /**
+     * @brief Highest NRF24 transmission channel exposed by the UI.
+     */
+    static constexpr uint8_t MAX_NRF_CHANNEL = 80;
+
+    /**
+     * @brief Minimum beacon transmission interval in milliseconds.
+     */
+    static constexpr uint16_t MIN_INTERVAL = 100;
+
+    /**
+     * @brief Maximum beacon transmission interval in milliseconds.
+     */
+    static constexpr uint16_t MAX_INTERVAL = 60000;
+
+    /**
      * @struct Context
      * @brief Callback context for the node configuration screen.
      */
@@ -47,12 +73,88 @@ private:
 
     static lv_obj_t* radioButton;
     static lv_obj_t* modeButton;
-    static lv_obj_t* parameterLabel;
+
+    static lv_obj_t* channelLabel;
+    static lv_obj_t* channelInput;
+
+    static lv_obj_t* frequencyLabel;
+    static lv_obj_t* frequencyValueLabel;
+    static lv_obj_t* frequencyInput;
+
+    static lv_obj_t* intervalLabel;
+    static lv_obj_t* intervalInput;
+
+    static lv_obj_t* startButton;
+    static lv_obj_t* keyboard;
 
     /**
-     * @brief Updates the configuration controls.
+     * @brief Updates the visible configuration controls.
      */
     static void updateControls();
+
+    /**
+     * @brief Updates the calculated NRF24 frequency display.
+     */
+    static void updateNRFFrequency();
+
+    /**
+     * @brief Stores all configuration fields relevant to the active session.
+     *
+     * @return true when all relevant values are valid.
+     * @return false otherwise.
+     */
+    static bool storeInputs();
+
+    /**
+     * @brief Stores the selected NRF24 channel.
+     *
+     * @return true when the channel is valid.
+     */
+    static bool storeChannel();
+
+    /**
+     * @brief Stores the selected CC1101 frequency.
+     *
+     * @return true when the frequency is valid.
+     */
+    static bool storeFrequency();
+
+    /**
+     * @brief Stores the selected beacon interval.
+     *
+     * @return true when the interval is valid.
+     */
+    static bool storeInterval();
+
+    /**
+     * @brief Returns whether a frequency is supported by the CC1101.
+     *
+     * @param frequency Frequency in MHz.
+     *
+     * @return true when the frequency is inside a supported range.
+     */
+    static bool isValidCC1101Frequency(float frequency);
+
+    /**
+     * @brief Handles focus on a configuration input.
+     *
+     * @param event Pointer to the LVGL event.
+     */
+    static void inputFocused(lv_event_t* event);
+
+    /**
+     * @brief Handles completion or cancellation of keyboard input.
+     *
+     * @param event Pointer to the LVGL event.
+     */
+    static void keyboardFinished(lv_event_t* event);
+
+    /**
+     * @brief Updates the NRF24 frequency while the channel is edited.
+     *
+     * @param event Pointer to the LVGL event.
+     */
+    static void channelChanged(lv_event_t* event);
 
     /**
      * @brief Replaces the configuration controls with a success message.
@@ -74,30 +176,28 @@ private:
     static void modeClicked(lv_event_t* event);
 
     /**
-     * @brief Handles the start button.
+     * @brief Handles the START button.
      *
      * @param event Pointer to the LVGL event.
      */
     static void startClicked(lv_event_t* event);
 
     /**
-     * @brief Handles the close button after successful configuration.
-     *
-     * Fully stops the BLE feature and returns directly to the main menu.
+     * @brief Handles the CLOSE button.
      *
      * @param event Pointer to the LVGL event.
      */
     static void closeClicked(lv_event_t* event);
 
     /**
-     * @brief Handles the back button.
+     * @brief Handles the BACK button.
      *
      * @param event Pointer to the LVGL event.
      */
     static void backClicked(lv_event_t* event);
 
     /**
-     * @brief Cleans up static screen references.
+     * @brief Clears static screen references when the screen is deleted.
      *
      * @param event Pointer to the LVGL event.
      */
