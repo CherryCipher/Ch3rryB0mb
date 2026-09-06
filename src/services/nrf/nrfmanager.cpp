@@ -54,7 +54,7 @@ bool NRFManager::start()
     radio.stopConstCarrier();
     radio.stopListening();
     radio.setAutoAck(false);
-    radio.disableCRC();
+    //radio.disableCRC();
     radio.powerDown();
 
     running = true;
@@ -132,15 +132,10 @@ bool NRFManager::configureTransmitter(uint8_t channel, const uint8_t* address, b
     radio.setDataRate(RF24_1MBPS);
     radio.setPALevel(RF24_PA_LOW);
     radio.setPayloadSize(MAX_PAYLOAD_SIZE);
+    radio.setAutoAck(acknowledged);
 
-    if (acknowledged) {
-        radio.setAutoAck(true);
-        radio.setRetries(5, 15);
-    } else {
-        radio.setAutoAck(false);
-        radio.disableCRC();
-    }
-    
+    if (acknowledged) radio.setRetries(5, 15);
+
     radio.openWritingPipe(address);
 
     logger.info(String("NRF transmitter configured on channel ") + channel + (acknowledged ? " with ACK." : " without ACK."));
@@ -183,11 +178,7 @@ bool NRFManager::configureReceiver(uint8_t channel, const uint8_t* address)
 
     radio.setChannel(channel);
     radio.setAddressWidth(5);
-
-    //radio.setAutoAck(true);
-    radio.setAutoAck(false);
-
-    radio.setCRCLength(RF24_CRC_16);
+    radio.setAutoAck(true);
     radio.setDataRate(RF24_1MBPS);
     radio.setPALevel(RF24_PA_LOW);
     radio.setPayloadSize(MAX_PAYLOAD_SIZE);
