@@ -49,7 +49,7 @@ public:
     /**
      * @brief Default NRF24 communication channel.
      */
-    static constexpr uint8_t DEFAULT_CHANNEL = 30;
+    static constexpr uint8_t DEFAULT_CHANNEL = 71;
 
     /**
      * @brief Constructs the NRF Send feature.

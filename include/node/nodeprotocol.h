@@ -107,7 +107,7 @@ struct __attribute__((packed)) NodeConfig
     uint8_t version = NodeProtocol::VERSION;
     NodeRadio radio = NodeRadio::NRF24;
     NodeMode mode = NodeMode::Listen;
-    uint8_t channel = 30;
+    uint8_t channel = 71;
     float frequency = 868.300f;
     uint16_t interval = 500;
 };

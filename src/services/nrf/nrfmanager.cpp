@@ -200,9 +200,26 @@ bool NRFManager::configureReceiver(uint8_t channel, const uint8_t* address)
  * @return true when a packet is available.
  * @return false otherwise.
  */
+/* bool NRFManager::available()
+{
+    if (!running) return false;
+
+    return radio.available();
+} */
 bool NRFManager::available()
 {
     if (!running) return false;
+
+    static uint32_t lastCheck = 0;
+    if (millis() - lastCheck >= 250) {
+        lastCheck = millis();
+
+        radio.stopListening();
+        radio.startListening();
+        delayMicroseconds(200);
+
+        if (radio.testRPD()) logger.info("NRF RPD: RF activity detected.");
+    }
 
     return radio.available();
 }
