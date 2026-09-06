@@ -9,7 +9,6 @@
 #pragma once
 
 #include <Arduino.h>
-
 #include "node/nodeprotocol.h"
 
 class NodeServices;
@@ -26,8 +25,6 @@ class NodeServices;
  *
  * The node initially enters BLE configuration mode. Configuration and
  * commands received through BLE are stored and processed by update().
- *
- * NRF24 beacon mode is currently supported as the first radio session.
  */
 class NodeApplication
 {
@@ -180,6 +177,24 @@ private:
      * interval has elapsed.
      */
     void updateNRFBeacon();
+
+    /**
+     * @brief Starts an NRF24 listen session.
+     *
+     * Initializes the NRF24 radio and configures it as a receiver
+     * using the configured channel and shared node address.
+     *
+     * @return true when the listen session started successfully.
+     */
+    bool startNRFListen();
+
+    /**
+     * @brief Updates an active NRF24 listen session.
+     *
+     * Checks for received packets without blocking and displays the
+     * latest received text message on the node OLED.
+     */
+    void updateNRFListen();
 
     /**
      * @brief Updates the node status exposed through BLE.

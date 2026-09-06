@@ -129,6 +129,13 @@ private:
     static void nrfScannerClicked(lv_event_t* event);
 
     /**
+     * @brief Handles the NRF Send menu button event.
+     *
+     * @param event Pointer to the LVGL event.
+     */
+    static void nrfSendClicked(lv_event_t* event);
+
+    /**
      * @brief Handles the SubGHz Scanner menu button event.
      *
      * @param event Pointer to the LVGL event.

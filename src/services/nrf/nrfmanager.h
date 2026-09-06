@@ -2,15 +2,14 @@
  * @file nrfmanager.h
  * @brief Declaration of the NRF24 radio manager.
  *
- * Provides shared NRF24 functionality including RF activity scanning
- * and packet transmission.
+ * Provides shared NRF24 functionality including RF activity scanning,
+ * packet transmission and packet reception.
  */
 
 #pragma once
 
 #include <Arduino.h>
 #include <RF24.h>
-
 #include "../logger/logger.h"
 #include "../spi/spimanager.h"
 
@@ -24,9 +23,9 @@
  * It provides RF activity scanning for the complete NRF24 spectrum,
  * individual NRF24 channels and individual 2.4 GHz Wi-Fi bands.
  *
- * The manager also provides generic NRF24 packet transmission so higher
- * level features can configure and use the radio without accessing the
- * underlying RF24 instance directly.
+ * The manager also provides generic NRF24 packet transmission and
+ * reception so higher level features can use the radio without
+ * accessing the underlying RF24 instance directly.
  *
  * RF activity is measured using the NRF24 Received Power Detector (RPD).
  * Scan results therefore represent activity percentages rather than
@@ -99,22 +98,66 @@ public:
      */
     bool isRunning() const;
 
+/**
+ * @brief Configures the NRF24 for packet transmission.
+ *
+ * Stops listening and configures the radio for transmission using
+ * the selected NRF24 channel and destination address.
+ *
+ * When acknowledged is enabled, 16-bit CRC, automatic acknowledgements
+ * and retransmissions are enabled. When disabled, packets are transmitted
+ * without acknowledgements for beacon-style communication.
+ *
+ * The destination address must contain five address bytes.
+ *
+ * @param channel NRF24 channel between 0 and 125.
+ * @param address Pointer to the five-byte destination address.
+ * @param acknowledged Enables reliable acknowledged transmission.
+ *
+ * @return true if the transmitter was configured successfully.
+ * @return false if the manager is not running or the configuration is invalid.
+ */
+bool configureTransmitter(uint8_t channel, const uint8_t* address, bool acknowledged = false);
+
     /**
-     * @brief Configures the NRF24 for packet transmission.
+     * @brief Configures the NRF24 for acknowledged packet reception.
      *
-     * Stops listening and configures the radio for unacknowledged
-     * transmission using the selected NRF24 channel and destination
-     * address.
+     * Configures the radio for 1 Mbps communication using a static
+     * 32-byte payload, 16-bit CRC and automatic acknowledgements.
+     * Reading pipe 1 is opened using the supplied address and the
+     * radio immediately enters listening mode.
      *
-     * The destination address must contain five address bytes.
+     * The address must contain five address bytes.
      *
      * @param channel NRF24 channel between 0 and 125.
-     * @param address Pointer to the five-byte destination address.
+     * @param address Pointer to the five-byte receiver address.
      *
-     * @return true if the transmitter was configured successfully.
+     * @return true if the receiver was configured successfully.
      * @return false if the manager is not running or the configuration is invalid.
      */
-    bool configureTransmitter(uint8_t channel, const uint8_t* address);
+    bool configureReceiver(uint8_t channel, const uint8_t* address);
+
+    /**
+     * @brief Returns whether an NRF24 packet is waiting in the receive FIFO.
+     *
+     * This function is non-blocking and can safely be polled from the
+     * application's update loop.
+     *
+     * @return true when a packet is available.
+     * @return false when no packet is available or the manager is not running.
+     */
+    bool available();
+
+    /**
+     * @brief Reads an available NRF24 packet.
+     *
+     * @param data Pointer to the destination buffer.
+     * @param length Maximum number of bytes to read.
+     *
+     * @return true when a packet was read.
+     * @return false if no packet is available or the arguments are invalid.
+     */
+    bool receive(void* data, uint8_t length);
 
     /**
      * @brief Transmits a packet using the current NRF24 configuration.
@@ -205,7 +248,6 @@ private:
      * @brief Indicates whether the NRFManager is currently running.
      */
     bool running = false;
-    
 
     /**
      * @brief Measures RF activity on a single NRF24 channel.

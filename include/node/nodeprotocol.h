@@ -44,7 +44,7 @@ namespace NodeProtocol
     /**
      * @brief Shared NRF24 address used by Ch3rryN0de lab sessions.
      */
-    static constexpr uint8_t NRF_ADDRESS[6] = "C3N0";
+    static constexpr uint8_t NRF_ADDRESS[6] = "C3N01";
 
     /**
      * @brief Default payload transmitted by NRF beacon mode.

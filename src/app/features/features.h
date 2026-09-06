@@ -8,6 +8,7 @@
 #include "blefoxhunt/blefoxhunt.h"
 #include "packetviewer/packetviewer.h"
 #include "configurenode/configurenode.h"
+#include "nrfsend/nrfsend.h"
 
 class Services;
 
@@ -80,6 +81,11 @@ public:
      * @brief Ch3rryN0de configuration feature.
      */
     ConfigureNode configureNode;
+    
+    /**
+     * @brief NRF Send feature.
+     */
+    NRFSend nrfSend;
 
     
 private:

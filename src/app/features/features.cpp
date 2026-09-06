@@ -16,6 +16,7 @@ Features::Features(Services& services)
     , nrfScanner(services)
     , cc1101Scanner(services)
     , configureNode(services)
+    , nrfSend(services)
 {
 }
 

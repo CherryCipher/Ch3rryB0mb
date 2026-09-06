@@ -4,7 +4,6 @@
  */
 
 #include "nrfmanager.h"
-
 #include "hardware/modulepins.h"
 
 /**
@@ -37,7 +36,6 @@ bool NRFManager::start()
     if (running) return true;
 
     logger.info("Starting NRFManager.");
-
     if (!spiManager.isRunning()) {
         logger.error("SPIManager is not running.");
         return false;
@@ -105,22 +103,21 @@ bool NRFManager::isRunning() const
  *
  * @param channel NRF24 channel between 0 and 125.
  * @param address Pointer to the five-byte destination address.
+ * @param acknowledged Enables reliable acknowledged transmission.
  *
  * @return true if the transmitter was configured successfully.
  * @return false otherwise.
  */
-bool NRFManager::configureTransmitter(uint8_t channel, const uint8_t* address)
+bool NRFManager::configureTransmitter(uint8_t channel, const uint8_t* address, bool acknowledged)
 {
     if (!running) {
         logger.error("NRFManager is not running.");
         return false;
     }
-
     if (channel >= NRF_CHANNEL_COUNT) {
         logger.error("Invalid NRF channel.");
         return false;
     }
-
     if (address == nullptr) {
         logger.error("Invalid NRF destination address.");
         return false;
@@ -128,15 +125,123 @@ bool NRFManager::configureTransmitter(uint8_t channel, const uint8_t* address)
 
     radio.stopListening();
     radio.powerUp();
+    radio.flush_tx();
 
     radio.setChannel(channel);
-    radio.setAutoAck(false);
-    radio.disableCRC();
+    radio.setAddressWidth(5);
     radio.setDataRate(RF24_1MBPS);
     radio.setPALevel(RF24_PA_LOW);
+    radio.setPayloadSize(MAX_PAYLOAD_SIZE);
+
+    if (acknowledged) {
+        radio.setAutoAck(true);
+        radio.setRetries(5, 15);
+    } else {
+        radio.setAutoAck(false);
+        radio.disableCRC();
+    }
+    
     radio.openWritingPipe(address);
 
-    logger.info(String("NRF transmitter configured on channel ") + channel + ".");
+    logger.info(String("NRF transmitter configured on channel ") + channel + (acknowledged ? " with ACK." : " without ACK."));
+
+    Serial.println("--- NRF TX CONFIG ---");
+    radio.printPrettyDetails();
+
+    return true;
+}
+
+/**
+ * @brief Configures the NRF24 for acknowledged packet reception.
+ *
+ * Configures the receiver for 1 Mbps communication, a static 32-byte
+ * payload, 16-bit CRC and automatic acknowledgements.
+ *
+ * @param channel NRF24 channel between 0 and 125.
+ * @param address Pointer to the five-byte receiver address.
+ *
+ * @return true if the receiver was configured successfully.
+ * @return false otherwise.
+ */
+bool NRFManager::configureReceiver(uint8_t channel, const uint8_t* address)
+{
+    if (!running) {
+        logger.error("NRFManager is not running.");
+        return false;
+    }
+    if (channel >= NRF_CHANNEL_COUNT) {
+        logger.error("Invalid NRF channel.");
+        return false;
+    }
+    if (address == nullptr) {
+        logger.error("Invalid NRF receiver address.");
+        return false;
+    }
+
+    radio.stopListening();
+    radio.powerUp();
+
+    radio.setChannel(channel);
+    radio.setAddressWidth(5);
+
+    //radio.setAutoAck(true);
+    radio.setAutoAck(false);
+
+    radio.setCRCLength(RF24_CRC_16);
+    radio.setDataRate(RF24_1MBPS);
+    radio.setPALevel(RF24_PA_LOW);
+    radio.setPayloadSize(MAX_PAYLOAD_SIZE);
+    radio.openReadingPipe(1, address);
+    radio.flush_rx();
+    radio.startListening();
+
+    logger.info(String("NRF receiver listening on channel ") + channel + ".");
+
+    Serial.println("--- NRF RX CONFIG ---");
+    radio.printPrettyDetails();
+
+    return true;
+}
+
+/**
+ * @brief Returns whether an NRF24 packet is waiting in the receive FIFO.
+ *
+ * @return true when a packet is available.
+ * @return false otherwise.
+ */
+bool NRFManager::available()
+{
+    if (!running) return false;
+
+    return radio.available();
+}
+
+/**
+ * @brief Reads an available NRF24 packet.
+ *
+ * @param data Pointer to the destination buffer.
+ * @param length Maximum number of bytes to read.
+ *
+ * @return true when a packet was read.
+ * @return false otherwise.
+ */
+bool NRFManager::receive(void* data, uint8_t length)
+{
+    if (!running) {
+        logger.error("NRFManager is not running.");
+        return false;
+    }
+    if (data == nullptr) {
+        logger.error("NRF receive buffer is null.");
+        return false;
+    }
+    if (length == 0 || length > MAX_PAYLOAD_SIZE) {
+        logger.error("Invalid NRF receive buffer length.");
+        return false;
+    }
+    if (!radio.available()) return false;
+
+    radio.read(data, length);
 
     return true;
 }
@@ -156,12 +261,10 @@ bool NRFManager::send(const void* data, uint8_t length)
         logger.error("NRFManager is not running.");
         return false;
     }
-
     if (data == nullptr) {
         logger.error("NRF payload is null.");
         return false;
     }
-
     if (length == 0 || length > MAX_PAYLOAD_SIZE) {
         logger.error("Invalid NRF payload length.");
         return false;
@@ -190,7 +293,6 @@ bool NRFManager::scanSpectrum(uint8_t results[NRF_CHANNEL_COUNT], uint16_t sampl
         logger.error("NRFManager is not running.");
         return false;
     }
-
     if (samplesPerChannel == 0) {
         logger.error("Spectrum scan requires at least one sample.");
         return false;
@@ -226,12 +328,10 @@ bool NRFManager::scanNrfChannel(uint8_t channel, uint8_t& activity, uint16_t sam
         logger.error("NRFManager is not running.");
         return false;
     }
-
     if (channel >= NRF_CHANNEL_COUNT) {
         logger.error("Invalid NRF channel.");
         return false;
     }
-
     if (samples == 0) {
         logger.error("NRF channel scan requires at least one sample.");
         return false;
@@ -263,12 +363,10 @@ bool NRFManager::scanWifiChannel(uint8_t wifiChannel, uint8_t results[WIFI_SCAN_
         logger.error("NRFManager is not running.");
         return false;
     }
-
     if (wifiChannel < 1 || wifiChannel > WIFI_CHANNEL_COUNT) {
         logger.error("Invalid Wi-Fi channel.");
         return false;
     }
-
     if (samplesPerChannel == 0) {
         logger.error("Wi-Fi channel scan requires at least one sample.");
         return false;

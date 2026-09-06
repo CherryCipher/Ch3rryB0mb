@@ -111,6 +111,9 @@ void ScreenMainMenu::renderNRFPage()
 
     lv_obj_t* nrfScannerButton = UIWidgets::addButton(pageContainer, 15, 10, "> NRF Sc4n", 100, 45);
     lv_obj_add_event_cb(nrfScannerButton, nrfScannerClicked, LV_EVENT_CLICKED, screenManager);
+
+    lv_obj_t* nrfSendButton = UIWidgets::addButton(pageContainer, 125, 10, "> NRF Send", 100, 45);
+    lv_obj_add_event_cb(nrfSendButton, nrfSendClicked, LV_EVENT_CLICKED, screenManager);
 }
 
 /**
@@ -239,6 +242,19 @@ void ScreenMainMenu::nrfScannerClicked(lv_event_t* event)
     if (manager == nullptr) return;
 
     manager->show(Screen::NRFScanner);
+}
+
+/**
+ * @brief Handles the NRF Send menu button event.
+ *
+ * @param event Pointer to the LVGL event.
+ */
+void ScreenMainMenu::nrfSendClicked(lv_event_t* event)
+{
+    ScreenManager* manager = static_cast<ScreenManager*>(lv_event_get_user_data(event));
+    if (manager == nullptr) return;
+
+    manager->show(Screen::NRFSend);
 }
 
 /**

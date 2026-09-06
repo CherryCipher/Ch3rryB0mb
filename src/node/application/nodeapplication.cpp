@@ -6,18 +6,7 @@
 #include "nodeapplication.h"
 
 #include <cstring>
-
 #include "../nodeservices/nodeservices.h"
-
-/**
- * @brief Shared NRF24 destination address used by C3N0 beacon sessions.
- */
-static const uint8_t NRF_ADDRESS[6] = "C3N0";
-
-/**
- * @brief Payload transmitted by NRF24 beacon mode.
- */
-static constexpr const char* NRF_BEACON_PAYLOAD = "C3N0";
 
 NodeApplication* NodeApplication::instance = nullptr;
 
@@ -48,22 +37,18 @@ bool NodeApplication::start()
         services.logger.error("Failed to start BLEManager.");
         return false;
     }
-
     if (!services.ble.createServer(NodeProtocol::SERVICE_UUID)) {
         services.logger.error("Failed to create node BLE service.");
         return false;
     }
-
     if (!services.ble.addServerCharacteristic(NodeProtocol::CONFIG_UUID, NIMBLE_PROPERTY::WRITE, bleWriteCallback)) {
         services.logger.error("Failed to create CONFIG characteristic.");
         return false;
     }
-
     if (!services.ble.addServerCharacteristic(NodeProtocol::COMMAND_UUID, NIMBLE_PROPERTY::WRITE, bleWriteCallback)) {
         services.logger.error("Failed to create COMMAND characteristic.");
         return false;
     }
-
     if (!services.ble.addServerCharacteristic(NodeProtocol::STATUS_UUID, NIMBLE_PROPERTY::READ)) {
         services.logger.error("Failed to create STATUS characteristic.");
         return false;
@@ -75,14 +60,12 @@ bool NodeApplication::start()
         services.logger.error("Failed to start node BLE server.");
         return false;
     }
-
-    services.logger.info("Node BLE server ready.");
-
     if (!services.ble.startAdvertising(NODE_NAME, NodeProtocol::SERVICE_UUID)) {
         services.logger.error("Failed to start BLE advertising.");
         return false;
     }
 
+    services.logger.info("Node BLE server ready.");
     services.logger.info(String("Node configuration mode active as ") + NODE_NAME + ".");
     services.display.showConfigMode();
 
@@ -95,12 +78,12 @@ bool NodeApplication::start()
 void NodeApplication::update()
 {
     processStartRequest();
-
     if (!sessionRunning) return;
 
     switch (activeConfig.radio) {
         case NodeRadio::NRF24:
             if (activeConfig.mode == NodeMode::Beacon) updateNRFBeacon();
+            else if (activeConfig.mode == NodeMode::Listen) updateNRFListen();
             break;
 
         case NodeRadio::BLE:
@@ -137,7 +120,6 @@ void NodeApplication::handleBLEWrite(const String& characteristicUUID, const uin
         handleConfig(data, length);
         return;
     }
-
     if (characteristicUUID.equalsIgnoreCase(NodeProtocol::COMMAND_UUID)) {
         handleCommand(data, length);
         return;
@@ -179,16 +161,12 @@ void NodeApplication::handleConfig(const uint8_t* data, size_t length)
 
     Serial.print("RADIO: ");
     Serial.println(static_cast<uint8_t>(activeConfig.radio));
-
     Serial.print("MODE: ");
     Serial.println(static_cast<uint8_t>(activeConfig.mode));
-
     Serial.print("CHANNEL: ");
     Serial.println(activeConfig.channel);
-
     Serial.print("FREQUENCY: ");
     Serial.println(activeConfig.frequency, 3);
-
     Serial.print("INTERVAL: ");
     Serial.println(activeConfig.interval);
 
@@ -275,12 +253,11 @@ bool NodeApplication::startSession()
 {
     switch (activeConfig.radio) {
         case NodeRadio::NRF24:
-            if (activeConfig.mode != NodeMode::Beacon) {
-                services.logger.error("NRF listen mode is not implemented yet.");
-                return false;
-            }
+            if (activeConfig.mode == NodeMode::Beacon) return startNRFBeacon();
+            if (activeConfig.mode == NodeMode::Listen) return startNRFListen();
 
-            return startNRFBeacon();
+            services.logger.error("Unknown NRF mode.");
+            return false;
 
         case NodeRadio::BLE:
             services.logger.error("BLE node sessions are not implemented yet.");
@@ -305,7 +282,7 @@ void NodeApplication::stopSession()
 
     switch (activeConfig.radio) {
         case NodeRadio::NRF24:
-            if (services.nrf.isRunning()) services.nrf.stop();
+            services.stopNRF();
             break;
 
         case NodeRadio::BLE:
@@ -316,7 +293,6 @@ void NodeApplication::stopSession()
 
     sessionRunning = false;
     lastBeacon = 0;
-
     setNodeStatus(configReceived ? NodeStatus::ConfigReceived : NodeStatus::Idle);
 
     services.logger.info("Node session stopped.");
@@ -341,25 +317,17 @@ bool NodeApplication::startNRFBeacon()
         services.logger.error("Invalid NRF beacon interval.");
         return false;
     }
-
     if (!services.startNRF()) return false;
 
-    if (!services.nrf.configureTransmitter(activeConfig.channel, NRF_ADDRESS)) {
+    if (!services.nrf.configureTransmitter(activeConfig.channel, NodeProtocol::NRF_ADDRESS, false)) {
         services.logger.error("Failed to configure NRF transmitter.");
-        services.nrf.stop();
+        services.stopNRF();
         return false;
     }
 
     lastBeacon = millis();
 
-    services.logger.info(
-        String("NRF beacon started on channel ") +
-        activeConfig.channel +
-        " every " +
-        activeConfig.interval +
-        " ms."
-    );
-
+    services.logger.info(String("NRF beacon started on channel ") + activeConfig.channel + " every " + activeConfig.interval + " ms.");
     services.display.showNRFMode("BEACON", activeConfig.channel);
 
     return true;
@@ -374,8 +342,56 @@ void NodeApplication::updateNRFBeacon()
 
     lastBeacon = millis();
 
-    if (!services.nrf.send(NRF_BEACON_PAYLOAD, strlen(NRF_BEACON_PAYLOAD) + 1))
+    if (!services.nrf.send(NodeProtocol::NRF_BEACON_PAYLOAD, strlen(NodeProtocol::NRF_BEACON_PAYLOAD) + 1))
         services.logger.warning("NRF beacon transmission failed.");
+}
+
+/**
+ * @brief Starts an NRF24 listen session.
+ *
+ * Validates the configured channel, starts the NRF24 radio and
+ * configures it as a receiver using the shared node address.
+ *
+ * @return true when the listen session started successfully.
+ */
+bool NodeApplication::startNRFListen()
+{
+    if (activeConfig.channel >= NRFManager::NRF_CHANNEL_COUNT) {
+        services.logger.error("Invalid NRF listen channel.");
+        return false;
+    }
+    if (!services.startNRF()) return false;
+
+    if (!services.nrf.configureReceiver(activeConfig.channel, NodeProtocol::NRF_ADDRESS)) {
+        services.logger.error("Failed to configure NRF receiver.");
+        services.stopNRF();
+        return false;
+    }
+
+    services.logger.info(String("NRF listener started on channel ") + activeConfig.channel + ".");
+    services.display.showNRFMode("LISTEN", activeConfig.channel);
+
+    return true;
+}
+
+/**
+ * @brief Updates an active NRF24 listen session.
+ *
+ * Checks the NRF24 receive FIFO without blocking. When a packet is
+ * available it is read into a null-terminated text buffer and shown
+ * on the optional OLED display.
+ */
+void NodeApplication::updateNRFListen()
+{
+    if (!services.nrf.available()) return;
+
+    char message[NRFManager::MAX_PAYLOAD_SIZE + 1] = {};
+    if (!services.nrf.receive(message, NRFManager::MAX_PAYLOAD_SIZE)) return;
+
+    message[NRFManager::MAX_PAYLOAD_SIZE] = '\0';
+
+    services.logger.info(String("NRF message received: ") + message);
+    services.display.showMessage(message);
 }
 
 /**
