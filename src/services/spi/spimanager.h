@@ -13,6 +13,7 @@
 
 #include "services/logger/logger.h"
 
+
 /**
  * @class SPIManager
  * @brief Manages the shared hardware SPI bus.
@@ -79,27 +80,4 @@ private:
      * 
     */
     bool running = false;
-
-    /** @brief Hardware SPI clock pin. */
-    static constexpr uint8_t HARDWARE_SPI_SCK = 18;
-
-    /** @brief Hardware SPI MISO pin shared by all SPI peripherals. 
-     * 
-    */
-    static constexpr uint8_t HARDWARE_SPI_MISO = 19;
-
-    /** @brief Hardware SPI MOSI pin shared by all SPI peripherals. 
-     * 
-    */
-    static constexpr uint8_t HARDWARE_SPI_MOSI = 23;
-
-    /** @brief NRF24L01+ SPI chip-select pin. 
-     * 
-    */
-    static constexpr uint8_t NRF_CSN_PIN = 22;
-
-    /** @brief CC1101 SPI chip-select pin. 
-     * 
-    */
-    static constexpr uint8_t CC1101_CSN_PIN = 16;
 };

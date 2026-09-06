@@ -525,7 +525,10 @@ void WiFiManager::capturePacket(const wifi_promiscuous_pkt_t* packet, wifi_promi
 
     WiFiPacketInfo info;
 
+    portENTER_CRITICAL(&packetMux);
     info.id = ++capturedPacketSequence;
+    portEXIT_CRITICAL(&packetMux);
+
     info.rssi = packet->rx_ctrl.rssi;
     info.channel = packet->rx_ctrl.channel;
     info.length = length;

@@ -1,70 +1,127 @@
-#ifdef TOUCH_XPT2046_SPI
+/**
+ * @file lvgl_touch_xpt2046_spi.c
+ * @brief LVGL touch driver initialization for XPT2046 over SPI.
+ *
+ * Provides XPT2046 touch controller initialization and LVGL input
+ * device integration for ESP32 Smart Display boards.
+ */
 
-#include <esp32_smartdisplay.h>
-#include <esp_touch_xpt2046.h>
+#include <esp_log.h>
+#include <esp_err.h>
+
 #include <driver/spi_master.h>
-#include <driver/spi_common_internal.h>
 
-void xpt2046_lvgl_touch_cb(lv_indev_t *indev, lv_indev_data_t *data)
+#include <esp_lcd_panel_io.h>
+#include <esp_touch_xpt2046.h>
+
+#include "esp32_smartdisplay.h"
+
+static const char* TAG = "XPT2046";
+
+/**
+ * @brief Reads touch data from the XPT2046 controller for LVGL.
+ *
+ * Retrieves the latest touch coordinates and updates the LVGL input
+ * device state accordingly.
+ *
+ * @param indev LVGL input device.
+ * @param data LVGL input data structure to update.
+ */
+static void xpt2046_lvgl_touch_cb(lv_indev_t* indev, lv_indev_data_t* data)
 {
-    esp_lcd_touch_handle_t touch_handle = indev->user_data;
+    esp_lcd_touch_handle_t touch_handle = lv_indev_get_user_data(indev);
 
-    uint16_t x[1];
-    uint16_t y[1];
-    uint8_t touch_cnt = 0;
-
-    // Read touch controller data
-    ESP_ERROR_CHECK(esp_lcd_touch_read_data(touch_handle));
-    // Get coordinates
-    bool pressed = esp_lcd_touch_get_coordinates(touch_handle, x, y, NULL, &touch_cnt, 1);
-    if (pressed && touch_cnt > 0)
-    {
-        data->point.x = x[0];
-        data->point.y = y[0];
-        data->state = LV_INDEV_STATE_PRESSED;
-        log_v("Pressed at: (%d,%d)", data->point.x, data->point.y);
-    }
-    else
+    if (touch_handle == NULL) {
         data->state = LV_INDEV_STATE_RELEASED;
+        return;
+    }
+
+    uint16_t touch_x[1] = {0};
+    uint16_t touch_y[1] = {0};
+    uint16_t touch_strength[1] = {0};
+    uint8_t touch_count = 0;
+
+    esp_lcd_touch_read_data(touch_handle);
+
+    bool touched = esp_lcd_touch_get_coordinates(
+        touch_handle,
+        touch_x,
+        touch_y,
+        touch_strength,
+        &touch_count,
+        1
+    );
+
+    if (!touched || touch_count == 0) {
+        data->state = LV_INDEV_STATE_RELEASED;
+        return;
+    }
+
+    data->point.x = touch_x[0];
+    data->point.y = touch_y[0];
+    data->state = LV_INDEV_STATE_PRESSED;
 }
 
-lv_indev_t *lvgl_touch_init()
+/**
+ * @brief Initializes the XPT2046 touch controller.
+ *
+ * Initializes the configured SPI bus if required, creates the LCD panel
+ * IO interface used by the XPT2046 touch controller and registers the
+ * controller as an LVGL pointer input device.
+ *
+ * ESP_ERR_INVALID_STATE from spi_bus_initialize() is accepted because it
+ * indicates that the selected SPI host has already been initialized.
+ */
+void lvgl_touch_init(void)
 {
-    lv_indev_t *indev = lv_indev_create();
-    log_v("indev:0x%08x", indev);
+    ESP_LOGD(TAG, "lvgl_touch_init");
 
-    // Create SPI bus only if not already initialized (S035R shares the SPI bus)
-    if(spi_bus_get_attr(XPT2046_SPI_HOST) == NULL) {
-        const spi_bus_config_t spi_bus_config = {
-            .mosi_io_num = XPT2046_SPI_BUS_MOSI,
-            .miso_io_num = XPT2046_SPI_BUS_MISO,
-            .sclk_io_num = XPT2046_SPI_BUS_SCLK,
-            .quadwp_io_num = XPT2046_SPI_BUS_QUADWP,
-            .quadhd_io_num = XPT2046_SPI_BUS_QUADHD};
-        log_d("spi_bus_config: mosi_io_num:%d, miso_io_num:%d, sclk_io_num:%d, quadwp_io_num:%d, quadhd_io_num:%d, max_transfer_sz:%d, flags:0x%08x, intr_flags:0x%04x", spi_bus_config.mosi_io_num, spi_bus_config.miso_io_num, spi_bus_config.sclk_io_num, spi_bus_config.quadwp_io_num, spi_bus_config.quadhd_io_num, spi_bus_config.max_transfer_sz, spi_bus_config.flags, spi_bus_config.intr_flags);
-        ESP_ERROR_CHECK_WITHOUT_ABORT(spi_bus_initialize(XPT2046_SPI_HOST, &spi_bus_config, XPT2046_SPI_DMA_CHANNEL));
+    const spi_bus_config_t spi_bus_config = {
+        .mosi_io_num = XPT2046_SPI_BUS_MOSI,
+        .miso_io_num = XPT2046_SPI_BUS_MISO,
+        .sclk_io_num = XPT2046_SPI_BUS_SCLK,
+        .quadwp_io_num = XPT2046_SPI_BUS_QUADWP,
+        .quadhd_io_num = XPT2046_SPI_BUS_QUADHD,
+        .max_transfer_sz = 0,
+    };
+
+    esp_err_t bus_result = spi_bus_initialize(
+        XPT2046_SPI_HOST,
+        &spi_bus_config,
+        XPT2046_SPI_DMA_CHANNEL
+    );
+
+    if (bus_result != ESP_OK && bus_result != ESP_ERR_INVALID_STATE) {
+        ESP_LOGE(TAG, "Failed to initialize XPT2046 SPI bus: %s", esp_err_to_name(bus_result));
+        ESP_ERROR_CHECK(bus_result);
+        return;
     }
 
-    // Attach the touch controller to the SPI bus
     const esp_lcd_panel_io_spi_config_t io_spi_config = {
         .cs_gpio_num = XPT2046_SPI_CONFIG_CS,
         .dc_gpio_num = XPT2046_SPI_CONFIG_DC,
         .spi_mode = XPT2046_SPI_CONFIG_SPI_MODE,
         .pclk_hz = XPT2046_SPI_CONFIG_PCLK_HZ,
-        .user_ctx = indev,
         .trans_queue_depth = XPT2046_SPI_CONFIG_TRANS_QUEUE_DEPTH,
         .lcd_cmd_bits = XPT2046_SPI_CONFIG_LCD_CMD_BITS,
         .lcd_param_bits = XPT2046_SPI_CONFIG_LCD_PARAM_BITS,
         .flags = {
-            .dc_as_cmd_phase = XPT2046_SPI_CONFIG_FLAGS_DC_AS_CMD_PHASE,
             .dc_low_on_data = XPT2046_SPI_CONFIG_FLAGS_DC_LOW_ON_DATA,
             .octal_mode = XPT2046_SPI_CONFIG_FLAGS_OCTAL_MODE,
-            .lsb_first = XPT2046_SPI_CONFIG_FLAGS_LSB_FIRST}};
-    log_d("io_spi_config: cs_gpio_num:%d, dc_gpio_num:%d, spi_mode:%d, pclk_hz:%d, trans_queue_depth:%d, user_ctx:0x%08x, on_color_trans_done:0x%08x, lcd_cmd_bits:%d, lcd_param_bits:%d, flags:{dc_as_cmd_phase:%d, dc_low_on_data:%d, octal_mode:%d, lsb_first:%d}", io_spi_config.cs_gpio_num, io_spi_config.dc_gpio_num, io_spi_config.spi_mode, io_spi_config.pclk_hz, io_spi_config.trans_queue_depth, io_spi_config.user_ctx, io_spi_config.on_color_trans_done, io_spi_config.lcd_cmd_bits, io_spi_config.lcd_param_bits, io_spi_config.flags.dc_as_cmd_phase, io_spi_config.flags.dc_low_on_data, io_spi_config.flags.octal_mode, io_spi_config.flags.lsb_first);
-    esp_lcd_panel_io_handle_t io_handle;
-    ESP_ERROR_CHECK(esp_lcd_new_panel_io_spi((esp_lcd_spi_bus_handle_t)XPT2046_SPI_HOST, &io_spi_config, &io_handle));
+            .lsb_first = XPT2046_SPI_CONFIG_FLAGS_LSB_FIRST,
+        },
+    };
 
-    // Create touch configuration
+    esp_lcd_panel_io_handle_t io_handle = NULL;
+
+    ESP_ERROR_CHECK(
+        esp_lcd_new_panel_io_spi(
+            (esp_lcd_spi_bus_handle_t)XPT2046_SPI_HOST,
+            &io_spi_config,
+            &io_handle
+        )
+    );
+
     const esp_lcd_touch_config_t touch_config = {
         .x_max = XPT2046_TOUCH_CONFIG_X_MAX,
         .y_max = XPT2046_TOUCH_CONFIG_Y_MAX,
@@ -72,18 +129,35 @@ lv_indev_t *lvgl_touch_init()
         .int_gpio_num = XPT2046_TOUCH_CONFIG_INT,
         .levels = {
             .reset = XPT2046_TOUCH_CONFIG_LEVELS_RESET,
-            .interrupt = XPT2046_TOUCH_CONFIG_LEVELS_INTERRUPT},
-        .flags = {.swap_xy = TOUCH_SWAP_XY, .mirror_x = TOUCH_MIRROR_X, .mirror_y = TOUCH_MIRROR_Y},
-        .user_data = io_handle};
-    log_d("touch_config: x_max:%d, y_max:%d, rst_gpio_num:%d, int_gpio_num:%d, levels:{reset:%d, interrupt:%d}, flags:{swap_xy:%d, mirror_x:%d, mirror_y:%d}, user_data:0x%08x", touch_config.x_max, touch_config.y_max, touch_config.rst_gpio_num, touch_config.int_gpio_num, touch_config.levels.reset, touch_config.levels.interrupt, touch_config.flags.swap_xy, touch_config.flags.mirror_x, touch_config.flags.mirror_y, touch_config.user_data);
-    esp_lcd_touch_handle_t touch_handle;
-    ESP_ERROR_CHECK(esp_lcd_touch_new_spi_xpt2046(io_handle, &touch_config, &touch_handle));
+            .interrupt = XPT2046_TOUCH_CONFIG_LEVELS_INTERRUPT,
+        },
+        .flags = {
+            .swap_xy = TOUCH_SWAP_XY,
+            .mirror_x = TOUCH_MIRROR_X,
+            .mirror_y = TOUCH_MIRROR_Y,
+        },
+    };
 
-    indev->type = LV_INDEV_TYPE_POINTER;
-    indev->user_data = touch_handle;
-    indev->read_cb = xpt2046_lvgl_touch_cb;
+    esp_lcd_touch_handle_t touch_handle = NULL;
 
-    return indev;
+    ESP_ERROR_CHECK(
+        esp_lcd_touch_new_spi_xpt2046(
+            io_handle,
+            &touch_config,
+            &touch_handle
+        )
+    );
+
+    lv_indev_t* indev = lv_indev_create();
+
+    if (indev == NULL) {
+        ESP_LOGE(TAG, "Failed to create LVGL touch input device.");
+        return;
+    }
+
+    lv_indev_set_type(indev, LV_INDEV_TYPE_POINTER);
+    lv_indev_set_read_cb(indev, xpt2046_lvgl_touch_cb);
+    lv_indev_set_user_data(indev, touch_handle);
+
+    ESP_LOGD(TAG, "XPT2046 touch initialized.");
 }
-
-#endif

@@ -144,4 +144,14 @@ private:
      */
     bool serviceDown = false;
 
+    /**
+     * @brief Prints current heap usage information to the serial monitor.
+     *
+     * Displays the total free heap, largest available 8-bit allocation block
+     * and total free internal RAM for debugging memory usage between services.
+     *
+     * @param label Description printed alongside the heap statistics.
+     */
+    void printHeap(const char* label);
+
 };

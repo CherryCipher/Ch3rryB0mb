@@ -34,7 +34,9 @@ enum class Screen : uint8_t
     BLEExplorer,
     BLEFoxHunt,
     NRFScanner,
-    CC1101Scanner
+    CC1101Scanner,
+    NodeFinder,
+    NodeConfig
 };
 
 /**
@@ -109,6 +111,14 @@ public:
      * If the history stack is empty, this method does nothing.
      */
     void back();
+
+    /**
+     * @brief Returns directly to the main menu.
+     *
+     * Clears the navigation history and shows the main menu without storing
+     * the current screen in the history stack.
+     */
+    void home();
 
 private:
     /**

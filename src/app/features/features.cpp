@@ -15,6 +15,7 @@ Features::Features(Services& services)
     , bleFoxHunt(services)
     , nrfScanner(services)
     , cc1101Scanner(services)
+    , configureNode(services)
 {
 }
 

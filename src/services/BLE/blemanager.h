@@ -1,50 +1,65 @@
 /**
  * @file blemanager.h
  * @brief Declaration of the BLE manager.
+ *
+ * Provides shared Bluetooth Low Energy functionality including scanning,
+ * advertising, GATT server hosting and GATT client communication.
  */
 
 #pragma once
 
 #include <Arduino.h>
 #include <NimBLEDevice.h>
+
 #include "../logger/logger.h"
 
 /**
  * @struct BLEDeviceInfo
  * @brief Contains information about a discovered BLE device.
  *
- * Represents one BLE advertiser discovered by the BLEManager.
- * The structure contains only information required by Ch3rryB0mb
- * features and does not expose the underlying NimBLE API.
+ * Represents one BLE advertiser discovered by BLEManager.
+ * Only application-relevant information is exposed so higher-level
+ * features do not depend directly on NimBLE objects.
  */
 struct BLEDeviceInfo
 {
     String name;
     String address;
+    String serviceUUID;
+
     int8_t rssi = -127;
     int8_t txPower = 0;
+
     bool hasTxPower = false;
     uint32_t lastSeen = 0;
+    uint8_t addressType = BLE_ADDR_PUBLIC;
 };
 
 /**
+ * @brief Callback invoked when data is written to a local BLE characteristic.
+ *
+ * @param characteristicUUID UUID of the written characteristic.
+ * @param data Pointer to the received data.
+ * @param length Number of received bytes.
+ */
+using BLEWriteCallback = void (*)(const String& characteristicUUID, const uint8_t* data, size_t length);
+
+/**
  * @class BLEManager
- * @brief Manages Bluetooth Low Energy scanning.
+ * @brief Manages shared Bluetooth Low Energy functionality.
  *
- * BLEManager provides a small abstraction around the ESP32 BLE radio.
+ * BLEManager owns the NimBLE lifecycle and provides generic BLE
+ * functionality to both Ch3rryB0mb and Ch3rryN0de.
  *
- * It continuously receives BLE advertisements without blocking the
- * application loop. Discovered devices are stored internally and can
- * later be used by BLE features such as the BLE Explorer and Fox Hunt.
- *
- * Applications should not directly use the NimBLE API. BLE operations
- * should be performed through BLEManager.
+ * Feature-level operations such as stopping a scan or disconnecting a
+ * client do not deinitialize NimBLE. A complete shutdown is performed
+ * only through stop() or shutdown().
  */
 class BLEManager : private NimBLEScanCallbacks
 {
 public:
     /**
-     * @brief Maximum number of BLE devices stored by the manager.
+     * @brief Maximum number of discovered BLE devices stored by the manager.
      */
     static constexpr uint8_t MAX_DEVICES = 40;
 
@@ -56,62 +71,93 @@ public:
     explicit BLEManager(Logger& logger);
 
     /**
-     * @brief Initializes the BLE subsystem.
+     * @brief Starts the BLE manager.
      *
-     * Initializes NimBLE and configures the BLE scanner.
-     * Scanning is not automatically started.
+     * Marks the BLE subsystem as available. NimBLE itself is initialized
+     * lazily when the first BLE operation is requested.
      *
-     * @return true if initialization succeeded.
+     * @return true when the manager is ready.
      */
     bool start();
 
     /**
-     * @brief Stops BLE scanning and disables the manager.
+     * @brief Stops the complete BLE subsystem.
+     *
+     * Stops active BLE operations and fully deinitializes NimBLE.
+     * This should be used when another subsystem requires BLE to be
+     * released, not for ordinary BLE feature navigation.
      *
      * @return true when the manager has stopped.
      */
     bool stop();
 
     /**
-     * @brief Returns whether the BLEManager is running.
+     * @brief Returns whether the BLE manager is running.
      *
-     * @return true if initialized and available.
-     * @return false otherwise.
+     * @return true when the manager is available.
      */
     bool isRunning() const;
 
     /**
      * @brief Starts continuous BLE scanning.
      *
-     * Existing scan results are cleared before the scan starts.
+     * Stops active advertising, clears previous scan results and starts
+     * a new active scan.
      *
-     * @return true if scanning started successfully.
-     * @return false if the manager is unavailable.
+     * @return true when scanning started successfully.
      */
     bool startScan();
 
     /**
      * @brief Stops the active BLE scan.
+     *
+     * NimBLE remains initialized so another BLE feature can immediately
+     * reuse the subsystem.
      */
     void stopScan();
 
     /**
-     * @brief Returns whether a BLE scan is active.
+     * @brief Returns whether BLE scanning is active.
      *
-     * @return true if scanning.
-     * @return false otherwise.
+     * @return true when scanning is active.
      */
     bool isScanning() const;
 
     /**
-     * @brief Clears all stored BLE devices.
+     * @brief Starts BLE advertising.
+     *
+     * Stops active scanning before advertising begins.
+     *
+     * @param name Device name included in the advertisement.
+     * @param serviceUUID Optional service UUID to advertise.
+     *
+     * @return true when advertising started successfully.
+     */
+    bool startAdvertising(const String& name, const String& serviceUUID = "");
+
+    /**
+     * @brief Stops BLE advertising.
+     *
+     * NimBLE remains initialized.
+     */
+    void stopAdvertising();
+
+    /**
+     * @brief Returns whether BLE advertising is active.
+     *
+     * @return true when advertising is active.
+     */
+    bool isAdvertising() const;
+
+    /**
+     * @brief Clears all stored BLE scan results.
      */
     void clearDevices();
 
     /**
      * @brief Returns the number of discovered BLE devices.
      *
-     * @return Number of stored devices.
+     * @return Number of stored BLE devices.
      */
     uint8_t getDeviceCount() const;
 
@@ -125,20 +171,99 @@ public:
     const BLEDeviceInfo& getDevice(uint8_t index) const;
 
     /**
-     * @brief Finds a stored BLE device by address.
+     * @brief Finds a discovered BLE device by address.
      *
      * @param address BLE address to search for.
      *
-     * @return Index of the device or -1 when not found.
+     * @return Device index or -1 when not found.
      */
     int findDevice(const String& address) const;
 
     /**
+     * @brief Creates a local GATT server and service.
+     *
+     * @param serviceUUID UUID of the service to create.
+     *
+     * @return true when the service was created successfully.
+     */
+    bool createServer(const String& serviceUUID);
+
+    /**
+     * @brief Adds a characteristic to the current local GATT service.
+     *
+     * @param characteristicUUID UUID of the characteristic.
+     * @param properties NimBLE characteristic property flags.
+     * @param writeCallback Optional callback invoked when data is written.
+     *
+     * @return true when the characteristic was created successfully.
+     */
+    bool addServerCharacteristic(const String& characteristicUUID, uint32_t properties, BLEWriteCallback writeCallback = nullptr);
+
+    /**
+     * @brief Updates the value of a local GATT characteristic.
+     *
+     * @param characteristicUUID UUID of the characteristic to update.
+     * @param data Pointer to the new characteristic value.
+     * @param length Number of bytes in the value.
+     *
+     * @return true when the characteristic value was updated successfully.
+     */
+    bool setServerCharacteristicValue(const String& characteristicUUID, const uint8_t* data, size_t length);
+
+    /**
+     * @brief Starts the configured local GATT server.
+     *
+     * @return true when the server started successfully.
+     */
+    bool startServer();
+
+    /**
+     * @brief Connects to a BLE device.
+     *
+     * Stops any active scan, creates a fresh BLE client and attempts to establish
+     * a connection using conservative connection parameters.
+     *
+     * @param address BLE MAC address of the remote device.
+     * @param addressType BLE address type reported during scanning.
+     *
+     * @return true when the BLE connection was established successfully.
+     */
+    bool connect(const String& address, uint8_t addressType);
+
+    /**
+     * @brief Disconnects and removes the active BLE client.
+     *
+     * NimBLE remains initialized after the client is released.
+     */
+    void disconnect();
+
+    /**
+     * @brief Returns whether a BLE client connection is active.
+     *
+     * @return true when connected to a remote BLE server.
+     */
+    bool isConnected() const;
+
+    /**
+     * @brief Writes raw data to a remote GATT characteristic.
+     *
+     * @param serviceUUID UUID of the remote service.
+     * @param characteristicUUID UUID of the remote characteristic.
+     * @param data Pointer to the data to write.
+     * @param length Number of bytes to write.
+     *
+     * @return true when the characteristic was written successfully.
+     */
+    bool writeCharacteristic(const String& serviceUUID, const String& characteristicUUID, const uint8_t* data, size_t length);
+
+    /**
      * @brief Completely shuts down the BLE subsystem.
      *
-     * Stops scanning, releases the BLE device cache and deinitializes
-     * NimBLE so its runtime memory becomes available to other subsystems
-     * such as Wi-Fi.
+     * Stops scanning and advertising, disconnects clients, releases
+     * scan state and fully deinitializes NimBLE.
+     *
+     * BLEManager itself remains available when running is true and can
+     * initialize NimBLE again when required.
      */
     void shutdown();
 
@@ -154,40 +279,106 @@ private:
     static constexpr uint16_t SCAN_WINDOW_MS = 30;
 
     /**
-     * @brief Reference to the application's Logger.
+     * @brief Number of automatic retries for connection-establishment failures.
      */
+    static constexpr uint8_t CONNECT_RETRIES = 5;
+
+    /**
+     * @class CharacteristicCallbacks
+     * @brief Routes local characteristic writes to an application callback.
+     */
+    class CharacteristicCallbacks : public NimBLECharacteristicCallbacks
+    {
+    public:
+        /**
+         * @brief Constructs a characteristic callback router.
+         *
+         * @param callback Application callback invoked when data is written.
+         */
+        explicit CharacteristicCallbacks(BLEWriteCallback callback);
+
+        /**
+         * @brief Handles a remote write to a local characteristic.
+         *
+         * @param characteristic Characteristic that received the write.
+         * @param connInfo Information about the connected peer.
+         */
+        void onWrite(NimBLECharacteristic* characteristic, NimBLEConnInfo& connInfo) override;
+
+    private:
+        /**
+         * @brief Application callback invoked on characteristic writes.
+         */
+        BLEWriteCallback callback;
+    };
+
+    /**
+     * @class ServerCallbacks
+     * @brief Handles local BLE GATT server connection events.
+     *
+     * Used mainly by Ch3rryN0de to log incoming BLE client connections
+     * and restart advertising after a client disconnects.
+     */
+    class ServerCallbacks : public NimBLEServerCallbacks
+    {
+    public:
+        /**
+         * @brief Constructs BLE server callbacks.
+         *
+         * @param manager BLEManager that owns the server.
+         */
+        explicit ServerCallbacks(BLEManager& manager);
+
+        /**
+         * @brief Handles an incoming BLE client connection.
+         *
+         * @param server Local NimBLE server.
+         * @param connInfo Information about the connected peer.
+         */
+        void onConnect(NimBLEServer* server, NimBLEConnInfo& connInfo) override;
+
+        /**
+         * @brief Handles a BLE client disconnection.
+         *
+         * Advertising is restarted so the node immediately becomes
+         * configurable again.
+         *
+         * @param server Local NimBLE server.
+         * @param connInfo Information about the disconnected peer.
+         * @param reason BLE disconnection reason.
+         */
+        void onDisconnect(NimBLEServer* server, NimBLEConnInfo& connInfo, int reason) override;
+
+    private:
+        BLEManager& manager;
+    };
+
     Logger& logger;
 
-    /**
-     * @brief NimBLE scanner instance.
-     */
     NimBLEScan* scanner = nullptr;
+    NimBLEAdvertising* advertiser = nullptr;
+    NimBLEServer* server = nullptr;
+    NimBLEService* serverService = nullptr;
+    NimBLEClient* client = nullptr;
 
-    /**
-     * @brief Devices discovered during the current scan.
-     */
     BLEDeviceInfo* devices = nullptr;
 
-    /**
-     * @brief Number of valid devices currently stored.
-     */
+    ServerCallbacks* serverCallbacks = nullptr;
+
     uint8_t deviceCount = 0;
 
-    /**
-     * @brief Indicates whether BLEManager is available.
-     */
     bool running = false;
-
-    /**
-     * @brief Indicates whether NimBLE has been initialized.
-     */
     bool initialized = false;
 
     /**
-     * @brief Processes a received BLE advertisement.
+     * @brief Initializes the NimBLE stack when required.
      *
-     * Called by NimBLE whenever a complete advertisement result
-     * becomes available.
+     * @return true when NimBLE is available.
+     */
+    bool ensureInitialized();
+
+    /**
+     * @brief Processes a received BLE advertisement.
      *
      * @param advertisedDevice BLE advertisement received by NimBLE.
      */
@@ -195,8 +386,6 @@ private:
 
     /**
      * @brief Stores or updates a discovered BLE device.
-     *
-     * Existing devices are matched using their BLE address.
      *
      * @param advertisedDevice BLE advertisement to process.
      */

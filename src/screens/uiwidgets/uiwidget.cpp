@@ -90,12 +90,12 @@ lv_obj_t* UIWidgets::addButton(lv_obj_t* parent, int x, int y, const char* text,
     lv_obj_set_style_shadow_width(button, 0, LV_PART_MAIN);
 
     // Pressed state styling.
-    lv_obj_set_style_bg_color(button, lv_color_hex(0xA00024), LV_PART_MAIN | LV_STATE_PRESSED);
+    lv_obj_set_style_bg_color(button, lv_color_hex(0xA00024), static_cast<lv_style_selector_t>(LV_PART_MAIN) | LV_STATE_PRESSED);
 
     // Disabled state styling.
-    lv_obj_set_style_bg_color(button, lv_color_hex(0x101010), LV_PART_MAIN | LV_STATE_DISABLED);
-    lv_obj_set_style_border_color(button, lv_color_hex(0x444444), LV_PART_MAIN | LV_STATE_DISABLED);
-    lv_obj_set_style_text_color(button, lv_color_hex(0x666666), LV_PART_MAIN | LV_STATE_DISABLED);
+    lv_obj_set_style_bg_color(button, lv_color_hex(0x101010), static_cast<lv_style_selector_t>(LV_PART_MAIN) | LV_STATE_DISABLED);
+    lv_obj_set_style_border_color(button, lv_color_hex(0x444444), static_cast<lv_style_selector_t>(LV_PART_MAIN) | LV_STATE_DISABLED);
+    lv_obj_set_style_text_color(button, lv_color_hex(0x666666), static_cast<lv_style_selector_t>(LV_PART_MAIN) | LV_STATE_DISABLED);
 
     // Button label.
     lv_obj_t* label = lv_label_create(button);
@@ -274,7 +274,7 @@ lv_obj_t* UIWidgets::addKeyboard(lv_obj_t* parent, int width, int height)
     lv_obj_set_style_text_color(keyboard, lv_color_hex(0xFFFFFF), LV_PART_ITEMS);
 
     // Pressed key styling.
-    lv_obj_set_style_bg_color(keyboard, lv_color_hex(0x7A0019), LV_PART_ITEMS | LV_STATE_PRESSED);
+    lv_obj_set_style_bg_color(keyboard, lv_color_hex(0x7A0019), static_cast<lv_style_selector_t>(LV_PART_ITEMS) | LV_STATE_PRESSED);
 
     // Keyboard starts hidden.
     lv_obj_add_flag(keyboard, LV_OBJ_FLAG_HIDDEN);
@@ -309,8 +309,8 @@ lv_obj_t* UIWidgets::addToggle(lv_obj_t* parent, int x, int y, bool checked)
     lv_obj_set_style_border_color(toggle, lv_color_hex(0xFF7A00), LV_PART_MAIN);
 
     // Indicator styling.
-    lv_obj_set_style_bg_color(toggle, lv_color_hex(0x7A0019), LV_PART_INDICATOR | LV_STATE_CHECKED);
-    lv_obj_set_style_bg_opa(toggle, LV_OPA_COVER, LV_PART_INDICATOR | LV_STATE_CHECKED);
+    lv_obj_set_style_bg_color(toggle, lv_color_hex(0x7A0019), static_cast<lv_style_selector_t>(LV_PART_INDICATOR) | LV_STATE_CHECKED);
+    lv_obj_set_style_bg_opa(toggle, LV_OPA_COVER, static_cast<lv_style_selector_t>(LV_PART_INDICATOR) | LV_STATE_CHECKED);
 
     // Knob styling.
     lv_obj_set_style_bg_color(toggle, lv_color_hex(0xFFFFFF), LV_PART_KNOB);

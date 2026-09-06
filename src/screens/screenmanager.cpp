@@ -23,6 +23,9 @@
 #include "featurescreens/bleexplorer/screenbleexplorer.h"
 #include "featurescreens/blefoxhunt/screenblefoxhunt.h"
 
+#include "featurescreens/nodefinder/screennodefinder.h"
+#include "featurescreens/nodeconfig/screennodeconfig.h"
+
 /**
  * @brief Constructs a new ScreenManager.
  *
@@ -137,6 +140,14 @@ void ScreenManager::showInternal( Screen screen, bool addToHistory )
         case Screen::CC1101Scanner:
             newScreen = ScreenCC1101Scanner::create(*this, features.cc1101Scanner);
             break;
+
+        case Screen::NodeFinder:
+            newScreen = ScreenNodeFinder::create(*this, features.configureNode);
+            break;
+
+        case Screen::NodeConfig:
+            newScreen = ScreenNodeConfig::create(*this, features.configureNode);
+            break;
     }
 
     if (newScreen == nullptr)
@@ -214,4 +225,16 @@ void ScreenManager::switchScreen( lv_obj_t* newScreen )
 
     if (oldScreen != nullptr)
         lv_obj_delete(oldScreen);
+}
+
+/**
+ * @brief Returns directly to the main menu.
+ *
+ * Clears all navigation history and shows the main menu without creating
+ * a new history entry.
+ */
+void ScreenManager::home()
+{
+    historySize = 0;
+    showInternal(Screen::MainMenu, false);
 }

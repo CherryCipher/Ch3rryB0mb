@@ -5,6 +5,8 @@
 
 #include "cc1101manager.h"
 
+#include "hardware/modulepins.h"
+
 /**
  * @brief Constructs a new CC1101Manager.
  *
@@ -14,7 +16,7 @@
 CC1101Manager::CC1101Manager(Logger& logger, SPIManager& spiManager)
     : logger(logger),
       spiManager(spiManager),
-      module(CC1101_CSN, CC1101_GDO0, RADIOLIB_NC, RADIOLIB_NC, spiManager.getHardwareBus()),
+      module(ModulePins::CC1101_CSN, ModulePins::CC1101_GDO0, RADIOLIB_NC, RADIOLIB_NC, spiManager.getHardwareBus()),
       radio(&module)
 {
 }

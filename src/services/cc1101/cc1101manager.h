@@ -102,12 +102,6 @@ public:
     bool isScanning() const;
 
 private:
-    /** @brief GPIO pin connected to the CC1101 Chip Select pin. */
-    static constexpr uint8_t CC1101_CSN = 16;
-
-    /** @brief GPIO pin connected to the CC1101 GDO0 pin. */
-    static constexpr uint8_t CC1101_GDO0 = 35;
-
     /**
      * @brief Receiver settling time before reading live RSSI.
      */

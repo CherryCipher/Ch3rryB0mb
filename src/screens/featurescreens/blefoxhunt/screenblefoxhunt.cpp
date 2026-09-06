@@ -66,7 +66,7 @@ lv_obj_t* ScreenBLEFoxHunt::create(ScreenManager& screenManager, BLEFoxHunt& ble
 
     lastSeenLabel = UIWidgets::addText(screen, 15, 215, "LAST SEEN: searching...", 210);
 
-    UIWidgets::addText( screen, 15, 250, "Go find the target\nRSSI 0 dBm == found!", 210 );
+    UIWidgets::addText( screen, 15, 250, "Go find the target\nRSSI -30~ dBm == found!", 210 );
 
     huntStarted = false;
 
