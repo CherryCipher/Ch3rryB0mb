@@ -1,9 +1,6 @@
 /**
  * @file screenapmodeconfig.cpp
- * @brief Implementation of the AP Mode configuration screen.
- *
- * This file creates the AP Mode configuration interface and handles
- * configuration screen events.
+ * @brief Implementation of the Ch3rryB0mb AP Mode configuration screen.
  */
 
 #include "screenapmodeconfig.h"
@@ -26,6 +23,11 @@ lv_obj_t* ScreenAPModeConfig::ssidInput = nullptr;
  * @brief Password input field used by the configuration screen.
  */
 lv_obj_t* ScreenAPModeConfig::passwordInput = nullptr;
+
+/**
+ * @brief Password validation error label.
+ */
+lv_obj_t* ScreenAPModeConfig::passwordError = nullptr;
 
 /**
  * @brief Input field used to configure the WiFi channel.
@@ -80,8 +82,9 @@ lv_obj_t* ScreenAPModeConfig::create(ScreenManager& screenManager, APMode& apMod
     ssidInput = UIWidgets::addInput(content, 15, 40, config.ssid.c_str(), 210);
 
     // Password.
-    UIWidgets::addText(content, 15, 95, "PASSWORD", 210);
-    passwordInput = UIWidgets::addInput(content, 15, 120, config.password.c_str(), 210, true);
+    UIWidgets::addText(content, 15, 95, "PASSWORD (MIN 8 CHARS)", 210);
+    passwordInput = UIWidgets::addInput(content, 15, 120, config.password.c_str(), 210);
+    passwordError = UIWidgets::addText(content, 15, 155, "", 210);
 
     // WiFi channel.
     UIWidgets::addText(content, 15, 175, "CHANNEL (1-13)", 210);
@@ -103,7 +106,7 @@ lv_obj_t* ScreenAPModeConfig::create(ScreenManager& screenManager, APMode& apMod
     saveContext.screenManager = &screenManager;
     lv_obj_add_event_cb(saveButton, saveClicked, LV_EVENT_CLICKED, &saveContext);
 
-    //We add a space so the keyboard does not cover up the bottom content
+    // We add a space so the keyboard does not cover up the bottom content.
     UIWidgets::addSpacer(content, 0, 470, 1, 150);
 
     // Create the on-screen keyboard.
@@ -133,8 +136,7 @@ void ScreenAPModeConfig::backClicked(lv_event_t* event)
 {
     ScreenManager* screenManager = static_cast<ScreenManager*>(lv_event_get_user_data(event));
 
-    if (screenManager == nullptr)
-        return;
+    if (screenManager == nullptr) return;
 
     screenManager->back();
 }
@@ -149,13 +151,11 @@ void ScreenAPModeConfig::backClicked(lv_event_t* event)
  */
 void ScreenAPModeConfig::inputFocused(lv_event_t* event)
 {
-    if (keyboard == nullptr)
-        return;
+    if (keyboard == nullptr) return;
 
     lv_obj_t* input = static_cast<lv_obj_t*>(lv_event_get_target(event));
 
-    if (input == nullptr)
-        return;
+    if (input == nullptr) return;
 
     lv_keyboard_set_textarea(keyboard, input);
     lv_obj_clear_flag(keyboard, LV_OBJ_FLAG_HIDDEN);
@@ -171,8 +171,7 @@ void ScreenAPModeConfig::inputFocused(lv_event_t* event)
  */
 void ScreenAPModeConfig::keyboardFinished(lv_event_t* event)
 {
-    if (keyboard == nullptr)
-        return;
+    if (keyboard == nullptr) return;
 
     lv_keyboard_set_textarea(keyboard, nullptr);
     lv_obj_add_flag(keyboard, LV_OBJ_FLAG_HIDDEN);
@@ -181,9 +180,9 @@ void ScreenAPModeConfig::keyboardFinished(lv_event_t* event)
 /**
  * @brief Handles the SAVE button event.
  *
- * Reads the edited configuration values, validates numeric settings,
- * stores the updated configuration in APMode and returns to the previous
- * screen.
+ * Reads the edited configuration values, validates the password and
+ * numeric settings, stores the updated configuration in APMode and
+ * returns to the previous screen.
  *
  * @param event Pointer to the LVGL event.
  */
@@ -209,6 +208,15 @@ void ScreenAPModeConfig::saveClicked(lv_event_t* event)
     // Read text values.
     newConfig.ssid = lv_textarea_get_text(ssidInput);
     newConfig.password = lv_textarea_get_text(passwordInput);
+
+    // Validate password.
+    if (newConfig.password.length() < 8)
+    {
+        if (passwordError != nullptr) lv_label_set_text(passwordError, "PASSWORD TOO SHORT!");
+        return;
+    }
+
+    if (passwordError != nullptr) lv_label_set_text(passwordError, "");
 
     // Read numeric values.
     int channel = atoi(lv_textarea_get_text(channelInput));

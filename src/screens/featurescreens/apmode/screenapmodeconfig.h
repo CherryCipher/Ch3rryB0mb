@@ -40,7 +40,7 @@ public:
      *
      * @return Pointer to the created LVGL screen object.
      */
-    static lv_obj_t* create( ScreenManager& screenManager, APMode& apMode );
+    static lv_obj_t* create(ScreenManager& screenManager, APMode& apMode);
 
 private:
     /**
@@ -52,6 +52,11 @@ private:
      * @brief Access Point password input field.
      */
     static lv_obj_t* passwordInput;
+
+    /**
+     * @brief Password validation error label.
+     */
+    static lv_obj_t* passwordError;
 
     /**
      * @brief Input field used to configure the WiFi channel.
@@ -78,8 +83,8 @@ private:
     /**
      * @brief Handles the SAVE button event.
      *
-     * The actual configuration update functionality will be connected
-     * to APMode when configuration apply support is implemented.
+     * Validates the configuration, stores it in APMode and returns
+     * to the previous screen.
      *
      * @param event Pointer to the LVGL event.
      */
@@ -121,8 +126,9 @@ private:
     /**
      * @struct SaveContext
      * @brief Context required by the SAVE button callback.
-     * 
-     * we do this so we can call config AP AND back at the sametime
+     *
+     * We do this so we can update AP Mode and navigate back
+     * from the same callback.
      */
     struct SaveContext
     {
